@@ -1,0 +1,14 @@
+import { Field, ObjectType } from '@nestjs/graphql';
+import { AuthStatusEnum } from '../../enum/auth.status.enum';
+
+@ObjectType('AuthStatusType')
+export class AuthStatusType {
+  @Field(() => AuthStatusEnum, { nullable: true })
+  status?: AuthStatusEnum;
+
+  @Field(() => String, { nullable: true })
+  token?: string;
+
+  @Field(() => Date, { nullable: true })
+  expireAt?: Date;
+}

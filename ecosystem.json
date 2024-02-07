@@ -1,0 +1,12 @@
+{
+  "apps": [
+    {
+      "name": "01wire-be",
+      "script": "dist/main.js",
+      "env": {
+        "NODE_ENV": "production"
+      },
+      "time": true
+    }
+  ]
+}
