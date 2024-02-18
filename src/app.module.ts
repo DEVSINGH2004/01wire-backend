@@ -16,6 +16,10 @@ import { EventModule } from './core/events/event.module';
 import { ArticleModule } from './core/article/article.module';
 import { OrderModule } from './core/order/order.module';
 import { ProductModule } from './core/product/product.module';
+import { BundleModule } from './core/bundle/bundle.module';
+import { WalletModule } from './core/wallet/wallet.module';
+import { ClientModule } from './core/client/client.module';
+import { TransactionModule } from './core/transaction/transaction.module';
 
 @Module({
   imports: [
@@ -38,6 +42,10 @@ import { ProductModule } from './core/product/product.module';
     ArticleModule,
     OrderModule,
     ProductModule,
+    BundleModule,
+    WalletModule,
+    ClientModule,
+    TransactionModule
   ],
   controllers: [AppController],
   providers: [AppService, EmailService, JwtService, SlackService]

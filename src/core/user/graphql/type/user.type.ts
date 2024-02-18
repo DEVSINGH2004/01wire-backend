@@ -15,8 +15,14 @@ export class UserType {
   @Field(() => String)
   email: string;
 
+  @Field(() => String, { nullable: true })
+  phoneNumber?: string;
+
   @Field(() => Boolean)
   isEmailVerified: boolean;
+
+  @Field(() => Boolean)
+  isKycVerified: boolean;
 
   @Field(() => Date)
   createdAt: Date;

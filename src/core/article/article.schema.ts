@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 import * as uuid from 'uuid';
+import { ArticleStatusEnum } from './enum/article.status.enum';
 
 type ArticleDocument = Article & Document;
 
@@ -16,16 +17,46 @@ class Article extends Document {
   userId: string;
 
   @Prop({
-    type: [String],
+    type: String,
     required: true
   })
-  ArticleIds: string[];
+  title: string;
 
   @Prop({
-    type: Number,
+    type: String,
     required: true
   })
-  amount: number;
+  content: string;
+
+  @Prop({
+    type: String,
+    default: null
+  })
+  summary: string;
+
+  @Prop({
+    type: String,
+    default: null
+  })
+  featureImage: string;
+
+  @Prop({
+    type: [String],
+    default: []
+  })
+  articleImages: string[];
+
+  @Prop({
+    type: String,
+    default: ArticleStatusEnum.DRAFT
+  })
+  status: ArticleStatusEnum;
+
+  @Prop({
+    type: String,
+    default: null
+  })
+  notes: string;
 
   @Prop()
   createdAt: Date;

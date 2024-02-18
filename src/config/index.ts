@@ -46,6 +46,10 @@ const config = (config: Record<string, unknown>) => {
       user: {
         key: `user_${NODE_ENV}`,
         ttl: 300
+      },
+      article: {
+        key: `article_${NODE_ENV}`,
+        ttl: 300
       }
     },
     // TODO: Fill this

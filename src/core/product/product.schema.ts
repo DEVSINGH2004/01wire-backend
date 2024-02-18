@@ -1,6 +1,9 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Prop, Schema, SchemaFactory, raw } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 import * as uuid from 'uuid';
+import { ProductLinkTypeEnum } from './enum/product.link.type.enum';
+import { ProductCategoryEnum } from './enum/product.category.enum';
+import { ProductTimelineEnum } from './enum/product.timeline.enum';
 
 type ProductDocument = Product & Document;
 
@@ -13,19 +16,62 @@ class Product extends Document {
     type: String,
     required: true
   })
-  userId: string;
+  title: string;
+
+  @Prop({
+    type: String,
+    required: true
+  })
+  image: string;
+
+  @Prop(
+    raw({
+      da: { type: Number, default: 0 },
+      pa: { type: Number, default: 0 },
+      dr: { type: Number, default: 0 },
+      ur: { type: Number, default: 0 },
+      traffic: { type: Number, default: 0 }
+    })
+  )
+  stats: {
+    da: number;
+    pa: number;
+    dr: number;
+    ur: number;
+    traffic: number;
+  };
 
   @Prop({
     type: [String],
+    enum: ProductCategoryEnum,
     required: true
   })
-  productIds: string[];
+  categories: ProductCategoryEnum[];
+
+  @Prop({
+    type: String,
+    enum: ProductLinkTypeEnum,
+    required: true
+  })
+  linkType: ProductLinkTypeEnum;
+
+  @Prop({
+    type: String
+  })
+  sampleUrl: string;
+
+  @Prop({
+    type: String,
+    enum: ProductTimelineEnum,
+    default: ProductTimelineEnum.WEEK_1
+  })
+  timeline: ProductTimelineEnum;
 
   @Prop({
     type: Number,
     required: true
   })
-  amount: number;
+  price: number;
 
   @Prop()
   createdAt: Date;

@@ -34,6 +34,12 @@ class User extends Document {
 
   @Prop({
     type: String,
+    default: null
+  })
+  phoneNumber: string;
+
+  @Prop({
+    type: String,
     default: null,
     select: false
   })
@@ -51,6 +57,18 @@ class User extends Document {
     default: false
   })
   isEmailVerified: boolean;
+
+  @Prop({
+    type: Boolean,
+    default: false
+  })
+  isKycVerified: boolean;
+
+  @Prop({
+    type: Boolean,
+    default: false
+  })
+  isBlocked: boolean;
 
   @Prop({
     type: [String],
