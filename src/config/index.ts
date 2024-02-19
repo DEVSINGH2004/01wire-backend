@@ -47,8 +47,16 @@ const config = (config: Record<string, unknown>) => {
         key: `user_${NODE_ENV}`,
         ttl: 300
       },
+      wallet: {
+        key: `wallet_${NODE_ENV}`,
+        ttl: 300
+      },
       article: {
         key: `article_${NODE_ENV}`,
+        ttl: 300
+      },
+      product: {
+        key: `product_${NODE_ENV}`,
         ttl: 300
       }
     },

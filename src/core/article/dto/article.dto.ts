@@ -7,6 +7,5 @@ export const articleDto = z.object({
   title: z.string().nullish(),
   content: z.string().nullish(),
   summary: z.string().nullish(),
-  status: nativeEnum(ArticleStatusEnum).nullish(),
-  notes: z.string().nullish()
+  status: nativeEnum(ArticleStatusEnum).default(ArticleStatusEnum.DRAFT)
 });

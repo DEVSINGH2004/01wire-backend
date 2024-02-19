@@ -1,8 +1,8 @@
 import { createZodDto } from 'nestjs-zod';
+import { articleDto } from './article.dto';
 
-/* const poolUpdateDto = poolDto.omit({
-  // status: true,
-  // clientId: true
-}); */
+const articleUpdateDto = articleDto.omit({
+  status: true
+});
 
-// export class PoolUpdateDto extends createZodDto(poolUpdateDto) {}
+export class ArticleUpdateDto extends createZodDto(articleUpdateDto) {}

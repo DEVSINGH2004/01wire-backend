@@ -1,4 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Article, ArticleDocument } from '../article.schema';
 import { Model } from 'mongoose';
@@ -7,6 +11,10 @@ import { ArticleFilterDto } from '../dto/article.filter.dto';
 import { validate } from 'nestjs-zod';
 import { paginateResponse } from 'src/common/utils';
 import { ArticleLoaderService } from './article.loader.service';
+import { ArticleCreateDto } from '../dto/article.create.dto';
+import { ArticleUpdateDto } from '../dto/article.update.dto';
+import assert from 'assert';
+import { IMe } from 'src/common/graphql/interface/context.interface';
 
 @Injectable()
 export class ArticleService {
@@ -29,7 +37,20 @@ export class ArticleService {
     return loader.loadMany(ids);
   }
 
-  async getById(id: string, userId?: string): Promise<ArticleDocument> {
+  private async _validateOwnership(
+    _id: string,
+    userId: string
+  ): Promise<Article> {
+    const obj = await this.load(_id);
+    assert(!!obj, new NotFoundException('Article not found'));
+    assert(
+      obj.userId === userId,
+      new BadRequestException('Invalid article ownership')
+    );
+    return obj;
+  }
+
+  async getById(id: string, userId?: string): Promise<Article> {
     const obj = await this.load(id);
     if (!obj) return null;
     if (obj.userId !== userId) return null;
@@ -74,5 +95,41 @@ export class ArticleService {
       data,
       paginationInfo
     };
+  }
+
+  async create(dto: ArticleCreateDto): Promise<Article> {
+    Object.keys(dto).forEach(
+      (key) => (dto[key] === null || dto[key] === '') && delete dto[key]
+    );
+    dto = validate(dto, ArticleCreateDto);
+    return this.model.create(dto);
+  }
+
+  async update(dto: ArticleUpdateDto): Promise<Article> {
+    Object.keys(dto).forEach(
+      (key) => (dto[key] === null || dto[key] === '') && delete dto[key]
+    );
+    dto = validate(dto, ArticleUpdateDto);
+    const { id, userId, ...needToUpdate } = dto;
+    await this._validateOwnership(id, userId);
+
+    const articleObj = await this.model.findOneAndUpdate(
+      { _id: id, userId },
+      { $set: { ...needToUpdate } },
+      { new: true }
+    );
+    return articleObj;
+  }
+
+  async delete(_id: string, me: IMe) {
+    await this._validateOwnership(_id, me.userId);
+    const res = await this.model.softDelete({ _id });
+    /* if (res.modifiedCount) {
+      this.eventEmitter.emit(EventDomainEnum.KEYWORD, {
+        action: EventActionEnum.DELETE,
+        data: { keywordId: _id }
+      });
+    } */
+    return true;
   }
 }

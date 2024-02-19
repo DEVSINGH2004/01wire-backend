@@ -6,12 +6,14 @@ import { validate } from 'nestjs-zod';
 import { UserLoaderService } from './user.loader.service';
 import * as bcryptjs from 'bcryptjs';
 import * as assert from 'assert';
+import * as uuid from 'uuid';
 import { UserLoginDto } from '../dto/user.login.dto';
 import { UserSignupDto } from '../dto/user.signup.dto';
 import { UserResetPasswordDto } from '../dto/user.reset.password.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { EventDomainEnum } from 'src/core/events/enum/event.domain.enum';
 import { EventActionEnum } from 'src/core/events/enum/event.action.enum';
+import { WalletService } from 'src/core/wallet/services/wallet.service';
 
 @Injectable()
 export class UserService {
@@ -19,6 +21,7 @@ export class UserService {
     @InjectModel(User.name)
     protected model: Model<User>,
     private loaderService: UserLoaderService,
+    private walletService: WalletService,
     private eventEmitter: EventEmitter2
   ) {}
 
@@ -104,7 +107,11 @@ export class UserService {
 
     parsedDto.password = await bcryptjs.hash(password, 10);
 
+    const userId = uuid.v4();
+    const walletObj = await this.walletService.createWallet(userId);
     const user = new this.model({
+      _id: userId,
+      walletId: walletObj._id,
       ...parsedDto,
       ...(email && {
         rawEmail: this._getRawEmail(email),

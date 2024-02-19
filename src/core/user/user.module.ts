@@ -4,6 +4,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { User, UserSchema } from './user.schema';
 import { UserLoaderService } from './services/user.loader.service';
 import { UserResolver } from './graphql/user.resolver';
+import { WalletModule } from '../wallet/wallet.module';
 
 @Module({
   imports: [
@@ -12,7 +13,8 @@ import { UserResolver } from './graphql/user.resolver';
         name: User.name,
         schema: UserSchema
       }
-    ])
+    ]),
+    WalletModule
   ],
   providers: [UserService, UserLoaderService, UserResolver],
   exports: [UserService]

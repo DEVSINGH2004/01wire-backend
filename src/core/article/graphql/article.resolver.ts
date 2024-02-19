@@ -47,7 +47,7 @@ export class ArticleResolver {
     @Args('params') params: ArticleCreateInput,
     @Context() { me }: IGraphqlContext
   ) {
-    // return this.poolService.create({ userId: me.userId, ...params });
+    return this.articleService.create({ userId: me.userId, ...params });
   }
 
   @Mutation(() => ArticleType)
@@ -55,20 +55,17 @@ export class ArticleResolver {
     @Args('params') params: ArticleUpdateInput,
     @Context() { me }: IGraphqlContext
   ) {
-    /* return this.articleService.update({
-      userId: me.userId,
-      ...params
-    }); */
+    return this.articleService.update({ userId: me.userId, ...params });
   }
 
   @Mutation(() => Boolean)
-  async delete(
+  async deleteArticle(
     @Args('id')
     id: string,
     @Context()
     { me }: IGraphqlContext
   ): Promise<boolean> {
-    // return this.articleService.delete(id, me);
+    return this.articleService.delete(id, me);
     return;
   }
 }

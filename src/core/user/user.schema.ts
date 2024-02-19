@@ -19,6 +19,12 @@ class User extends Document {
 
   @Prop({
     type: String,
+    unique: true
+  })
+  walletId: string;
+
+  @Prop({
+    type: String,
     enum: UserTypeEnum,
     default: UserTypeEnum.USER
   })

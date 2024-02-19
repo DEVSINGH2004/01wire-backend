@@ -1,7 +1,7 @@
 import { Field, Int, ObjectType } from '@nestjs/graphql';
 
 @ObjectType('ProductStatsType')
-export class PoolStatsType {
+export class ProductStatsType {
   @Field(() => Int, { nullable: true })
   da?: number;
 
