@@ -58,6 +58,10 @@ const config = (config: Record<string, unknown>) => {
       product: {
         key: `product_${NODE_ENV}`,
         ttl: 300
+      },
+      bundle: {
+        key: `bundle_${NODE_ENV}`,
+        ttl: 300
       }
     },
     // TODO: Fill this

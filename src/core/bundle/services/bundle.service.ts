@@ -2,11 +2,55 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Bundle } from '../bundle.schema';
 import { Model } from 'mongoose';
+import { BundleLoaderService } from './bundle.loader.service';
+import { PaginationInputDto } from 'src/common/dto/pagination.input.dto';
+import { validate } from 'nestjs-zod';
+import { paginateResponse } from 'src/common/utils';
 
 @Injectable()
 export class BundleService {
   constructor(
     @InjectModel(Bundle.name)
-    protected model: Model<Bundle>
+    protected model: Model<Bundle>,
+    private loaderService: BundleLoaderService
   ) {}
+
+  async load(_id: string): Promise<Bundle> {
+    const loader = await this.loaderService.init();
+    return loader.load(_id);
+  }
+
+  async loadMany(
+    ids: string[],
+    q: Record<string, any> = null
+  ): Promise<Bundle[]> {
+    const loader = await this.loaderService.init(q);
+    return loader.loadMany(ids);
+  }
+
+  async getFilteredPaginated(paginationDto: PaginationInputDto) {
+    paginationDto = validate(paginationDto, PaginationInputDto);
+    let { currentPage, perPage } = paginationDto;
+    perPage = perPage <= 50 ? perPage : 50;
+    const q = {};
+
+    //generate query
+    const [data, itemCount] = await Promise.all([
+      this.model
+        .find(q)
+        .limit(perPage)
+        .skip(currentPage * perPage),
+      this.model.countDocuments(q)
+    ]);
+    const { paginationInfo } = paginateResponse(
+      itemCount,
+      perPage,
+      currentPage
+    );
+
+    return {
+      data,
+      paginationInfo
+    };
+  }
 }
