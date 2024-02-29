@@ -40,12 +40,6 @@ class User extends Document {
 
   @Prop({
     type: String,
-    default: null
-  })
-  phoneNumber: string;
-
-  @Prop({
-    type: String,
     default: null,
     select: false
   })

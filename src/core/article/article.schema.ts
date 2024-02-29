@@ -1,7 +1,10 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Prop, Schema, SchemaFactory, raw } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 import * as uuid from 'uuid';
 import { ArticleStatusEnum } from './enum/article.status.enum';
+import { LanguageEnum } from 'src/common/enum/language.enum';
+import { ArticleCategoryEnum } from './enum/article.category.enum';
+import { ArticlePublishTypeEnum } from './enum/article.publish.type.enum';
 
 type ArticleDocument = Article & Document;
 
@@ -15,6 +18,19 @@ class Article extends Document {
     required: true
   })
   userId: string;
+
+  @Prop({
+    type: String,
+    required: true
+  })
+  clientId: string;
+
+  @Prop({
+    type: String,
+    enum: LanguageEnum,
+    required: true
+  })
+  language: LanguageEnum;
 
   @Prop({
     type: String,
@@ -41,6 +57,12 @@ class Article extends Document {
   featureImage: string;
 
   @Prop({
+    type: String,
+    default: null
+  })
+  featureImageDesc: string;
+
+  @Prop({
     type: [String],
     default: []
   })
@@ -48,15 +70,72 @@ class Article extends Document {
 
   @Prop({
     type: String,
+    enum: ArticleStatusEnum,
     default: ArticleStatusEnum.DRAFT
   })
   status: ArticleStatusEnum;
 
   @Prop({
     type: String,
+    enum: ArticleCategoryEnum,
+    required: true
+  })
+  category: ArticleCategoryEnum;
+
+  @Prop({
+    type: String,
+    enum: ArticlePublishTypeEnum,
+    required: true
+  })
+  publishType: ArticlePublishTypeEnum;
+
+  @Prop({
+    type: String,
+    default: null
+  })
+  timezone: string;
+
+  @Prop({
+    type: String,
     default: null
   })
   notes: string;
+
+  @Prop(
+    raw({
+      name: { type: String, default: null },
+      email: { type: String, default: null },
+      phone: { type: String, default: null },
+      website: { type: String, default: null },
+      address: { type: String, default: null },
+      state: { type: String, default: null },
+      country: { type: String, default: null },
+      facebook: { type: String, default: null },
+      instagram: { type: String, default: null },
+      linkedIn: { type: String, default: null },
+      twitter: { type: String, default: null },
+      youtube: { type: String, default: null },
+      others: { type: String, default: null }
+    })
+  )
+  mediaContact: {
+    name: string;
+    email: string;
+    phone: string;
+    website: string;
+    address: string;
+    state: string;
+    country: string;
+    facebook: string;
+    instagram: string;
+    linkedIn: string;
+    twitter: string;
+    youtube: string;
+    others: string;
+  };
+
+  @Prop({ type: Date, required: true })
+  publishAt: Date;
 
   @Prop()
   createdAt: Date;
