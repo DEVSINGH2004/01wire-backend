@@ -56,7 +56,7 @@ const config = (config: Record<string, unknown>) => {
         ttl: 300
       },
       product: {
-        key: `product_${NODE_ENV}`,
+        key: `publication_${NODE_ENV}`,
         ttl: 300
       },
       bundle: {

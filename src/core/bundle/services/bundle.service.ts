@@ -6,6 +6,9 @@ import { BundleLoaderService } from './bundle.loader.service';
 import { PaginationInputDto } from 'src/common/dto/pagination.input.dto';
 import { validate } from 'nestjs-zod';
 import { paginateResponse } from 'src/common/utils';
+import { BundleCreateDto } from '../dto/bundle.create.dto';
+import { BundleUpdateDto } from '../dto/bundle.update.dto';
+import { IMe } from 'src/common/graphql/interface/context.interface';
 
 @Injectable()
 export class BundleService {
@@ -52,5 +55,39 @@ export class BundleService {
       data,
       paginationInfo
     };
+  }
+
+  async create(dto: BundleCreateDto): Promise<Bundle> {
+    Object.keys(dto).forEach(
+      (key) => (dto[key] === null || dto[key] === '') && delete dto[key]
+    );
+    dto = validate(dto, BundleCreateDto);
+    return this.model.create(dto);
+  }
+
+  async update(dto: BundleUpdateDto): Promise<Bundle> {
+    Object.keys(dto).forEach(
+      (key) => (dto[key] === null || dto[key] === '') && delete dto[key]
+    );
+    dto = validate(dto, BundleUpdateDto);
+    const { id, userId, ...needToUpdate } = dto;
+
+    const BundleObj = await this.model.findOneAndUpdate(
+      { _id: id, userId },
+      { $set: { ...needToUpdate } },
+      { new: true }
+    );
+    return BundleObj;
+  }
+
+  async delete(_id: string, me: IMe) {
+    const res = await this.model.softDelete({ _id });
+    /* if (res.modifiedCount) {
+      this.eventEmitter.emit(EventDomainEnum.KEYWORD, {
+        action: EventActionEnum.DELETE,
+        data: { keywordId: _id }
+      });
+    } */
+    return true;
   }
 }

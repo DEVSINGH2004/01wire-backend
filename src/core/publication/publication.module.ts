@@ -7,8 +7,15 @@ import { PublicationService } from './services/publication.service';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: Publication.name, schema: PublicationSchema }])
+    MongooseModule.forFeature([
+      { name: Publication.name, schema: PublicationSchema }
+    ])
   ],
-  providers: [PublicationService, PublicationResolver, PublicationLoaderService]
+  providers: [
+    PublicationService,
+    PublicationResolver,
+    PublicationLoaderService
+  ],
+  exports: [PublicationService]
 })
 export class PublicationModule {}

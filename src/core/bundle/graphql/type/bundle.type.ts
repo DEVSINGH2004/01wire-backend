@@ -1,4 +1,6 @@
 import { Field, ID, Int, ObjectType } from '@nestjs/graphql';
+import { BundleTypeEnum } from '../../enum/bundle.type.enum';
+import { BundleCategoryEnum } from '../../enum/bundle.category.enum';
 
 @ObjectType('BundleType')
 export class BundleType {
@@ -6,7 +8,16 @@ export class BundleType {
   id: string;
 
   @Field(() => [ID])
-  productIds: string[];
+  publicationIds: string[];
+
+  @Field(() => BundleTypeEnum)
+  type: BundleTypeEnum;
+
+  @Field(() => BundleCategoryEnum)
+  category: BundleCategoryEnum;
+
+  @Field(() => String)
+  traffic: string;
 
   @Field(() => Int)
   price: number;

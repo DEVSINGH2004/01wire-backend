@@ -1,6 +1,8 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 import * as uuid from 'uuid';
+import { BundleTypeEnum } from './enum/bundle.type.enum';
+import { BundleCategoryEnum } from './enum/bundle.category.enum';
 
 type BundleDocument = Bundle & Document;
 
@@ -13,7 +15,27 @@ class Bundle extends Document {
     type: [String],
     default: []
   })
-  productIds: string[];
+  publicationIds: string[];
+
+  @Prop({
+    type: String,
+    enum: BundleTypeEnum,
+    required: true
+  })
+  type: BundleTypeEnum;
+
+  @Prop({
+    type: String,
+    enum: BundleCategoryEnum,
+    required: true
+  })
+  category: BundleCategoryEnum;
+
+  @Prop({
+    type: String,
+    default: null
+  })
+  traffic: string;
 
   @Prop({
     type: Number,

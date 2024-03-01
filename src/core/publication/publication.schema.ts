@@ -86,4 +86,9 @@ type PublicationTypeWithoutDocument = Omit<Publication, keyof Document> & {
   _id: string;
 };
 
-export { Publication, PublicationDocument, PublicationSchema, PublicationTypeWithoutDocument };
+export {
+  Publication,
+  PublicationDocument,
+  PublicationSchema,
+  PublicationTypeWithoutDocument
+};
