@@ -1,14 +1,14 @@
 import { Prop, Schema, SchemaFactory, raw } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 import * as uuid from 'uuid';
-import { ProductLinkTypeEnum } from './enum/product.link.type.enum';
-import { ProductCategoryEnum } from './enum/product.category.enum';
-import { ProductTimelineEnum } from './enum/product.timeline.enum';
+import { PublicationCategoryEnum } from './enum/publication.category.enum';
+import { PublicationLinkTypeEnum } from './enum/publication.link.type.enum';
+import { PublicationTimelineEnum } from './enum/publication.timeline.enum';
 
-type ProductDocument = Product & Document;
+type PublicationDocument = Publication & Document;
 
 @Schema({ timestamps: true })
-class Product extends Document {
+class Publication extends Document {
   @Prop({ type: String, default: () => uuid.v4() })
   _id: string;
 
@@ -43,17 +43,17 @@ class Product extends Document {
 
   @Prop({
     type: [String],
-    enum: ProductCategoryEnum,
+    enum: PublicationCategoryEnum,
     required: true
   })
-  categories: ProductCategoryEnum[];
+  categories: PublicationCategoryEnum[];
 
   @Prop({
     type: String,
-    enum: ProductLinkTypeEnum,
+    enum: PublicationLinkTypeEnum,
     required: true
   })
-  linkType: ProductLinkTypeEnum;
+  linkType: PublicationLinkTypeEnum;
 
   @Prop({
     type: String
@@ -62,10 +62,10 @@ class Product extends Document {
 
   @Prop({
     type: String,
-    enum: ProductTimelineEnum,
-    default: ProductTimelineEnum.WEEK_1
+    enum: PublicationTimelineEnum,
+    default: PublicationTimelineEnum.WEEK_1
   })
-  timeline: ProductTimelineEnum;
+  timeline: PublicationTimelineEnum;
 
   @Prop({
     type: Number,
@@ -80,10 +80,10 @@ class Product extends Document {
   updatedAt: Date;
 }
 
-const ProductSchema = SchemaFactory.createForClass(Product);
+const PublicationSchema = SchemaFactory.createForClass(Publication);
 
-type ProductTypeWithoutDocument = Omit<Product, keyof Document> & {
+type PublicationTypeWithoutDocument = Omit<Publication, keyof Document> & {
   _id: string;
 };
 
-export { Product, ProductDocument, ProductSchema, ProductTypeWithoutDocument };
+export { Publication, PublicationDocument, PublicationSchema, PublicationTypeWithoutDocument };

@@ -101,6 +101,18 @@ class Article extends Document {
   })
   notes: string;
 
+  @Prop({
+    type: [String],
+    default: null
+  })
+  bundleIds: string[];
+
+  @Prop({
+    type: [String],
+    default: null
+  })
+  publicationIds: string[];
+
   @Prop(
     raw({
       name: { type: String, default: null },

@@ -1,11 +1,11 @@
 import { Field, ObjectType } from '@nestjs/graphql';
 import { PaginationType } from 'src/common/graphql/type/pagination.type';
-import { ProductType } from './product.type';
+import { ClientType } from './client.type';
 
-@ObjectType('ProductPaginationType')
-export class ProductPaginationType {
-  @Field(() => [ProductType])
-  data: ProductType[];
+@ObjectType('ClientPaginationType')
+export class ClientPaginationType {
+  @Field(() => [ClientType])
+  data: ClientType[];
 
   @Field(() => PaginationType)
   paginationInfo: PaginationType;

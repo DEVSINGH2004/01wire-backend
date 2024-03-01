@@ -1,21 +1,21 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Product } from '../product.schema';
+import { Publication } from '../publication.schema';
 import { Model } from 'mongoose';
-import { ProductLoaderService } from './product.loader.service';
 import { PaginationInputDto } from 'src/common/dto/pagination.input.dto';
 import { validate } from 'nestjs-zod';
 import { paginateResponse } from 'src/common/utils';
+import { PublicationLoaderService } from './publication.loader.service';
 
 @Injectable()
-export class ProductService {
+export class PublicationService {
   constructor(
-    @InjectModel(Product.name)
-    protected model: Model<Product>,
-    private loaderService: ProductLoaderService
+    @InjectModel(Publication.name)
+    protected model: Model<Publication>,
+    private loaderService: PublicationLoaderService
   ) {}
 
-  async load(_id: string): Promise<Product> {
+  async load(_id: string): Promise<Publication> {
     const loader = await this.loaderService.init();
     return loader.load(_id);
   }
@@ -23,7 +23,7 @@ export class ProductService {
   async loadMany(
     ids: string[],
     q: Record<string, any> = null
-  ): Promise<Product[]> {
+  ): Promise<Publication[]> {
     const loader = await this.loaderService.init(q);
     return loader.loadMany(ids);
   }
