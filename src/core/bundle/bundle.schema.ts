@@ -44,6 +44,12 @@ class Bundle extends Document {
   price: number;
 
   @Prop({
+    type: Number,
+    required: true
+  })
+  maxPrice: number;
+
+  @Prop({
     type: String,
     default: null
   })
