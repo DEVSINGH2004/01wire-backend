@@ -27,7 +27,7 @@ export class AllExceptionsFilter extends BaseExceptionFilter {
     }
 
     const statusCode = 400;
-    const errorMessage = 'Validation error';
+    const errorMessage = 'validation error';
     const errors = exception.errors.map((error) => error.message);
     const errorResponse = {
       statusCode,

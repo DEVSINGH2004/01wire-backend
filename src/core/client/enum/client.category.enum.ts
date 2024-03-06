@@ -1,7 +1,7 @@
 import { registerEnumType } from '@nestjs/graphql';
 
-export enum ClientCategoryTypeEnum {
+export enum ClientCategoryEnum {
   AGRICULTURE = 'AGRICULTURE'
 }
 
-registerEnumType(ClientCategoryTypeEnum, { name: 'ClientCategoryTypeEnum' });
+registerEnumType(ClientCategoryEnum, { name: 'ClientCategoryEnum' });

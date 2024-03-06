@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Bundle } from '../bundle.schema';
 import { Model } from 'mongoose';
@@ -9,13 +9,16 @@ import { paginateResponse } from 'src/common/utils';
 import { BundleCreateDto } from '../dto/bundle.create.dto';
 import { BundleUpdateDto } from '../dto/bundle.update.dto';
 import { IMe } from 'src/common/graphql/interface/context.interface';
+import { PublicationService } from 'src/core/publication/services/publication.service';
+import assert from 'assert';
 
 @Injectable()
 export class BundleService {
   constructor(
     @InjectModel(Bundle.name)
     protected model: Model<Bundle>,
-    private loaderService: BundleLoaderService
+    private loaderService: BundleLoaderService,
+    private publicationService: PublicationService
   ) {}
 
   async load(_id: string): Promise<Bundle> {
@@ -62,6 +65,17 @@ export class BundleService {
       (key) => (dto[key] === null || dto[key] === '') && delete dto[key]
     );
     dto = validate(dto, BundleCreateDto);
+    const { publicationIds } = dto;
+    const publicationList = await this.publicationService.loadMany(
+      publicationIds
+    );
+
+    assert(
+      publicationList.length === publicationIds.length,
+      new BadRequestException('one or few of publication ids are invalid')
+    );
+
+    //TODO: calculate maxPrice
     return this.model.create(dto);
   }
 
@@ -70,14 +84,25 @@ export class BundleService {
       (key) => (dto[key] === null || dto[key] === '') && delete dto[key]
     );
     dto = validate(dto, BundleUpdateDto);
-    const { id, userId, ...needToUpdate } = dto;
+    const { id, ...needToUpdate } = dto;
+    if (dto?.publicationIds?.length) {
+      const publicationList = await this.publicationService.loadMany(
+        dto.publicationIds
+      );
 
-    const BundleObj = await this.model.findOneAndUpdate(
-      { _id: id, userId },
+      assert(
+        publicationList.length === dto.publicationIds.length,
+        new BadRequestException('one or few of publication ids are invalid')
+      );
+    }
+
+    //TODO: calculate maxPrice
+    const bundleObj = await this.model.findOneAndUpdate(
+      { _id: id },
       { $set: { ...needToUpdate } },
       { new: true }
     );
-    return BundleObj;
+    return bundleObj;
   }
 
   async delete(_id: string, me: IMe) {

@@ -15,6 +15,7 @@ import { ArticleCreateDto } from '../dto/article.create.dto';
 import { ArticleUpdateDto } from '../dto/article.update.dto';
 import assert from 'assert';
 import { IMe } from 'src/common/graphql/interface/context.interface';
+import { ArticleStatusEnum } from '../enum/article.status.enum';
 
 @Injectable()
 export class ArticleService {
@@ -42,10 +43,10 @@ export class ArticleService {
     userId: string
   ): Promise<Article> {
     const obj = await this.load(_id);
-    assert(!!obj, new NotFoundException('Article not found'));
+    assert(!!obj, new NotFoundException('article not found'));
     assert(
       obj.userId === userId,
-      new BadRequestException('Invalid article ownership')
+      new BadRequestException('invalid article ownership')
     );
     return obj;
   }
@@ -111,9 +112,16 @@ export class ArticleService {
     );
     dto = validate(dto, ArticleUpdateDto);
     const { id, userId, ...needToUpdate } = dto;
-    await this._validateOwnership(id, userId);
+    let articleObj = await this._validateOwnership(id, userId);
+    assert(
+      articleObj.status === ArticleStatusEnum.DRAFT ||
+        articleObj.status === ArticleStatusEnum.REJECTED,
+      new BadRequestException(
+        `article in ${articleObj.status} state cannot be edited`
+      )
+    );
 
-    const articleObj = await this.model.findOneAndUpdate(
+    articleObj = await this.model.findOneAndUpdate(
       { _id: id, userId },
       { $set: { ...needToUpdate } },
       { new: true }
@@ -122,7 +130,13 @@ export class ArticleService {
   }
 
   async delete(_id: string, me: IMe) {
-    await this._validateOwnership(_id, me.userId);
+    let articleObj = await this._validateOwnership(_id, me.userId);
+    assert(
+      articleObj.status === ArticleStatusEnum.DRAFT,
+      new BadRequestException(
+        `article in ${articleObj.status} state cannot be deleted`
+      )
+    );
     const res = await this.model.softDelete({ _id });
     /* if (res.modifiedCount) {
       this.eventEmitter.emit(EventDomainEnum.KEYWORD, {

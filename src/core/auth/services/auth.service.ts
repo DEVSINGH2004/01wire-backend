@@ -69,7 +69,7 @@ export class AuthService {
 
   async loginViaOtp(email: string): Promise<{ token: string; expireAt: Date }> {
     const user = await this.userService.getUserByEmail(email);
-    assert(user, new BadRequestException('User not found'));
+    assert(user, new BadRequestException('user not found'));
     const otpObj = await this.otpService.sendVerificationOtp(user._id);
     const token = otpObj._id;
     return { token, expireAt: otpObj.expireAt };

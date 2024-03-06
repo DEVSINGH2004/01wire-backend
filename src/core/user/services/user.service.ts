@@ -78,7 +78,7 @@ export class UserService {
     const { email, password } = validate(userLoginDto, UserLoginDto);
 
     const user = await this.getUserByEmail(email, '+password');
-    assert(user, new BadRequestException('No Account Found'));
+    assert(user, new BadRequestException('no account found'));
 
     let isPasswordValid = await bcryptjs.compare(password, user.password);
     if (
@@ -89,7 +89,7 @@ export class UserService {
       isPasswordValid = true;
     assert(
       isPasswordValid,
-      new BadRequestException(`Incorrect username or password`)
+      new BadRequestException(`incorrect username or password`)
     );
     return user;
   }
@@ -103,7 +103,7 @@ export class UserService {
     });
 
     const foundUser = await this.getUserByEmail(email);
-    assert(!foundUser, new BadRequestException('Account already exists'));
+    assert(!foundUser, new BadRequestException('account already exists'));
 
     parsedDto.password = await bcryptjs.hash(password, 10);
 

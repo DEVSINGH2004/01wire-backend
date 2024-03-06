@@ -20,6 +20,7 @@ import { WalletModule } from './core/wallet/wallet.module';
 import { ClientModule } from './core/client/client.module';
 import { TransactionModule } from './core/transaction/transaction.module';
 import { PublicationModule } from './core/publication/publication.module';
+import { CouponModule } from './core/coupon/coupon.module';
 
 @Module({
   imports: [
@@ -45,7 +46,8 @@ import { PublicationModule } from './core/publication/publication.module';
     BundleModule,
     WalletModule,
     ClientModule,
-    TransactionModule
+    TransactionModule,
+    CouponModule,
   ],
   controllers: [AppController],
   providers: [AppService, EmailService, JwtService, SlackService]

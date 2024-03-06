@@ -127,7 +127,7 @@ class Article extends Document {
       linkedIn: { type: String, default: null },
       twitter: { type: String, default: null },
       youtube: { type: String, default: null },
-      others: { type: String, default: null }
+      other: { type: String, default: null }
     })
   )
   mediaContact: {
@@ -143,7 +143,7 @@ class Article extends Document {
     linkedIn: string;
     twitter: string;
     youtube: string;
-    others: string;
+    other: string;
   };
 
   @Prop({ type: Date, required: true })

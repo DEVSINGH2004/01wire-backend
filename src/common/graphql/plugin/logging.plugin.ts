@@ -20,10 +20,10 @@ export class LoggingPlugin implements ApolloServerPlugin<IGraphqlContext> {
         logger.fields['responseBody'] = requestContext.response.body;
         if (errors && errors.length) {
           logger.fields['errors'] = errors;
-          logger.error('Request error - willSendResponse');
+          logger.error('request error - willSendResponse');
         } else {
           logger.fields['respCode'] = 200;
-          logger.log('Request success - willSendResponse');
+          logger.log('request success - willSendResponse');
         }
       }
     };

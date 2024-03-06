@@ -46,19 +46,19 @@ const genCtx = async (
   try {
     parsedQuery = gql(body.query);
   } catch (error) {
-    throw new Error('Error parsing GraphQL query');
+    throw new Error('error parsing GraphQL query');
   }
 
   // Safely accessing operation name
   const operationName =
     parsedQuery.definitions[0]?.selectionSet?.selections[0]?.name?.value;
   if (!operationName) {
-    throw new Error('Operation name could not be determined from the query');
+    throw new Error('operation name could not be determined from the query');
   }
 
   try {
     if (!headers.authorization) {
-      throw new UnauthorizedException('Authorization token not found');
+      throw new UnauthorizedException('authorization token not found');
     }
     const token = getToken(headers.authorization);
     const decoded: any = decodeToken(token, configService);
@@ -71,7 +71,7 @@ const genCtx = async (
       (!userObj?.email || !userObj.isEmailVerified) &&
       !UNVERIFIED_EMAIL_ALLOWED_OPERATIONS.includes(operationName)
     ) {
-      throw new ForbiddenError('Email not verified yet');
+      throw new ForbiddenError('email not verified yet');
     }
 
     const ctx: IGraphqlContext = {

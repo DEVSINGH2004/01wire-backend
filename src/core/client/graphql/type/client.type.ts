@@ -1,6 +1,6 @@
 import { Field, ID, ObjectType } from '@nestjs/graphql';
 import { ClientTypeEnum } from '../../enum/client.type.enum';
-import { ClientCategoryTypeEnum } from '../../enum/client.category.enum';
+import { ClientCategoryEnum } from '../../enum/client.category.enum';
 import { ClientSocialType } from './client.social.type';
 
 @ObjectType('ClientType')
@@ -17,8 +17,8 @@ export class ClientType {
   @Field(() => ClientTypeEnum)
   type: ClientTypeEnum;
 
-  @Field(() => ClientCategoryTypeEnum)
-  category: ClientCategoryTypeEnum;
+  @Field(() => ClientCategoryEnum)
+  category: ClientCategoryEnum;
 
   @Field(() => String)
   email: string;

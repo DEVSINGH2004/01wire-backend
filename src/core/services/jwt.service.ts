@@ -25,10 +25,10 @@ export class JwtService {
     return new Promise((resolve, reject) => {
       return jwt.verify(token, secret, function (err, payload: any) {
         if (err?.name === 'TokenExpiredError')
-          return reject(new BadRequestException('Token expired'));
-        if (err) return reject(new BadRequestException('Invalid token'));
+          return reject(new BadRequestException('token expired'));
+        if (err) return reject(new BadRequestException('invalid token'));
         if (!payload || typeof payload === 'string')
-          return reject(new BadRequestException('Unexpected payload'));
+          return reject(new BadRequestException('unexpected payload'));
         return resolve(payload);
       });
     });
@@ -39,9 +39,9 @@ export class JwtService {
     token = token.replace(/^Bearer\s/, '');
     return new Promise<string>((resolve, reject) => {
       jwt.verify(token, secret, async (err, payload) => {
-        if (err) return reject(new BadRequestException('Invalid token'));
+        if (err) return reject(new BadRequestException('invalid token'));
         if (!payload || typeof payload === 'string')
-          return reject(new BadRequestException('Unexpected payload'));
+          return reject(new BadRequestException('unexpected payload'));
 
         const newToken = await this.signToken({
           userId: payload.userId,

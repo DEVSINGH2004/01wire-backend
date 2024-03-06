@@ -2,7 +2,7 @@ import { Prop, Schema, SchemaFactory, raw } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 import * as uuid from 'uuid';
 import { ClientTypeEnum } from './enum/client.type.enum';
-import { ClientCategoryTypeEnum } from './enum/client.category.enum';
+import { ClientCategoryEnum } from './enum/client.category.enum';
 
 type ClientDocument = Client & Document;
 
@@ -35,10 +35,10 @@ class Client extends Document {
 
   @Prop({
     type: String,
-    enum: ClientCategoryTypeEnum,
+    enum: ClientCategoryEnum,
     required: true
   })
-  category: ClientCategoryTypeEnum;
+  category: ClientCategoryEnum;
 
   @Prop({
     type: String,
@@ -71,7 +71,7 @@ class Client extends Document {
       linkedIn: { type: String, default: null },
       twitter: { type: String, default: null },
       youtube: { type: String, default: null },
-      others: { type: String, default: null }
+      other: { type: String, default: null }
     })
   )
   social: {
@@ -80,7 +80,7 @@ class Client extends Document {
     linkedIn: string;
     twitter: string;
     youtube: string;
-    others: string;
+    other: string;
   };
 
   @Prop()

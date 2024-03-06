@@ -1,7 +1,9 @@
 import { createZodDto } from 'nestjs-zod';
-import {  clinetDto } from './client.dto';
+import { clientCreateDto } from './client.create.dto';
+import { z } from 'nestjs-zod/z';
 
-const clientUpdateDto = clinetDto.omit({
-});
+const clientUpdateDto = clientCreateDto
+  .partial()
+  .extend({ id: z.string().uuid() });
 
 export class ClientUpdateDto extends createZodDto(clientUpdateDto) {}

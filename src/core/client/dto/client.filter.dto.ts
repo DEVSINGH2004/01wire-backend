@@ -1,11 +1,15 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'nestjs-zod/z';
-import { ClientTypeEnum } from '../enum/client.type.enum';
+import { ClientCategoryEnum } from '../enum/client.category.enum';
+import { clientCreateDto } from './client.create.dto';
 
-const filterDto = z.object({
-  type: z.nativeEnum(ClientTypeEnum).nullish(),
-  startTime: z.date().nullish(),
-  endTime: z.date().nullish()
-});
+const filterDto = clientCreateDto
+  .pick({
+    type: true
+  })
+  .extend({
+    categories: z.array(z.nativeEnum(ClientCategoryEnum))
+  })
+  .partial();
 
 export class ClientFilterDto extends createZodDto(filterDto) {}

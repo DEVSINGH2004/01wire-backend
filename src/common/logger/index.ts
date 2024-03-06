@@ -27,7 +27,7 @@ class Logger {
 
   static createInstance(context?: string, fields?: Record<string, any>) {
     if (!this.winston)
-      throw new Error('Call initWinston before calling this method');
+      throw new Error('call initWinston before calling this method');
     return new Logger(this.winston, context, fields);
   }
 

@@ -42,10 +42,10 @@ export class ClientService {
     userId: string
   ): Promise<Client> {
     const obj = await this.load(_id);
-    assert(!!obj, new NotFoundException('Client not found'));
+    assert(!!obj, new NotFoundException('client not found'));
     assert(
       obj.userId === userId,
-      new BadRequestException('Invalid client ownership')
+      new BadRequestException('invalid client ownership')
     );
     return obj;
   }
@@ -70,13 +70,7 @@ export class ClientService {
 
     //generate query
     if (filterDto.type) q['type'] = filterDto.type;
-    if (filterDto.startTime && filterDto.endTime) {
-      q['createdAt'] = { $gte: filterDto.startTime, $lte: filterDto.endTime };
-    } else if (filterDto.startTime) {
-      q['createdAt'] = { $gte: filterDto.startTime };
-    } else if (filterDto.endTime) {
-      q['createdAt'] = { $lte: filterDto.endTime };
-    }
+    if (filterDto.type) q['categories'] = { $in: filterDto.categories };
 
     const [data, itemCount] = await Promise.all([
       this.model

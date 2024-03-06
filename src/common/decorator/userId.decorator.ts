@@ -21,7 +21,7 @@ export const UserId = createParamDecorator(async (_, ctx: ExecutionContext) => {
   const token = getToken(request.headers.authorization);
   if (!token) return;
   if (typeof token !== 'string') {
-    throw new BadRequestException('Invalid token');
+    throw new BadRequestException('invalid token');
   }
   const decoded = await new Promise<JwtPayload>((resolve, reject) => {
     verify(token, JWT_SECRET, (err, decoded: JwtPayload) => {

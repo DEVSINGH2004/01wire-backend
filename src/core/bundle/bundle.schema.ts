@@ -55,6 +55,12 @@ class Bundle extends Document {
   })
   notes: string;
 
+  @Prop({
+    type: String,
+    default: null
+  })
+  image: string;
+
   @Prop()
   createdAt: Date;
 

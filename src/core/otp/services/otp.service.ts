@@ -32,7 +32,7 @@ export class OtpService {
 
   async sendVerificationOtp(userId: string, expireInMs?: number) {
     const userObj = await this.userService.load(userId);
-    assert(userObj, new BadRequestException('User not found'));
+    assert(userObj, new BadRequestException('user not found'));
     return this.sendOtp(userId, userObj.email, OtpTypeEnum.EMAIL, expireInMs);
   }
 
