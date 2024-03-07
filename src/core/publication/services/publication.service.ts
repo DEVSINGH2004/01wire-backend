@@ -76,10 +76,10 @@ export class PublicationService {
       (key) => (dto[key] === null || dto[key] === '') && delete dto[key]
     );
     dto = validate(dto, PublicationUpdateDto);
-    const { id, userId, ...needToUpdate } = dto;
+    const { id, ...needToUpdate } = dto;
 
     const publicationObj = await this.model.findOneAndUpdate(
-      { _id: id, userId },
+      { _id: id },
       { $set: { ...needToUpdate } },
       { new: true }
     );

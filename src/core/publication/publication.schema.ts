@@ -63,7 +63,7 @@ class Publication extends Document {
   @Prop({
     type: String,
     enum: PublicationTimelineEnum,
-    default: PublicationTimelineEnum.WEEK_1
+    required: true
   })
   timeline: PublicationTimelineEnum;
 

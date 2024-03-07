@@ -28,7 +28,7 @@ export class PublicationResolver {
     @Args('params') params: PublicationCreateInput,
     @Context() { me }: IGraphqlContext
   ) {
-    return this.publicationService.create({ userId: me.userId, ...params });
+    return this.publicationService.create(params);
   }
 
   @Mutation(() => PublicationType)
@@ -36,7 +36,7 @@ export class PublicationResolver {
     @Args('params') params: PublicationUpdateInput,
     @Context() { me }: IGraphqlContext
   ) {
-    return this.publicationService.update({ userId: me.userId, ...params });
+    return this.publicationService.update(params);
   }
 
   @Mutation(() => Boolean)
@@ -47,6 +47,5 @@ export class PublicationResolver {
     { me }: IGraphqlContext
   ): Promise<boolean> {
     return this.publicationService.delete(id, me);
-    return;
   }
 }
