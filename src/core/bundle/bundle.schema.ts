@@ -53,7 +53,7 @@ class Bundle extends Document {
     type: String,
     default: null
   })
-  notes: string;
+  description: string;
 
   @Prop({
     type: String,

@@ -1,10 +1,8 @@
-import { Field, ID, InputType } from '@nestjs/graphql';
+import { Field, ID, InputType, PartialType } from '@nestjs/graphql';
+import { BundleCreateInput } from './bundle.create.input';
 
 @InputType()
-export class BundleUpdateInput {
+export class BundleUpdateInput extends PartialType(BundleCreateInput) {
   @Field(() => ID)
   id: string;
-
-  @Field(() => String, { nullable: true })
-  title?: string;
 }

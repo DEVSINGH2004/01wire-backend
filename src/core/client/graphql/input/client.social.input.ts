@@ -1,22 +1,8 @@
-import { Field, InputType } from '@nestjs/graphql';
+import { InputType, PartialType } from '@nestjs/graphql';
+import { ClientSocialType } from '../type/client.social.type';
 
 @InputType()
-export class ClientSocialInput {
-  @Field(() => String, { nullable: true })
-  facebook?: string;
-
-  @Field(() => String, { nullable: true })
-  instagram?: string;
-
-  @Field(() => String, { nullable: true })
-  linkedIn?: string;
-
-  @Field(() => String, { nullable: true })
-  twitter?: string;
-
-  @Field(() => String, { nullable: true })
-  youtube?: string;
-
-  @Field(() => String, { nullable: true })
-  other?: string;
-}
+export class ClientSocialInput extends PartialType(
+  ClientSocialType,
+  InputType
+) {}

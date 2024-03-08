@@ -1,15 +1,12 @@
-import { Field, InputType } from '@nestjs/graphql';
-import { ClientTypeEnum } from '../../enum/client.type.enum';
+import { Field, InputType, PartialType, PickType } from '@nestjs/graphql';
 import { ClientCategoryEnum } from '../../enum/client.category.enum';
+import { ClientCreateInput } from './client.create.input';
 
 @InputType()
-export class ClientFilterInput {
-  @Field(() => String, { nullable: true })
-  title?: string;
-
-  @Field(() => ClientTypeEnum, { nullable: true })
-  type?: ClientTypeEnum;
-
+export class ClientFilterInput extends PartialType(
+  PickType(ClientCreateInput, ['title', 'type'] as const),
+  InputType
+) {
   @Field(() => [ClientCategoryEnum], { nullable: true })
   categories?: ClientCategoryEnum[];
 }

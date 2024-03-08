@@ -58,7 +58,7 @@ class Publication extends Document {
   @Prop({
     type: String
   })
-  sampleUrl: string;
+  url: string;
 
   @Prop({
     type: String,

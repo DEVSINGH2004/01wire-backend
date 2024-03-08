@@ -39,7 +39,7 @@ export class PublicationResolver {
     return this.publicationService.update(params);
   }
 
-  @Mutation(() => Boolean)
+  /* @Mutation(() => Boolean)
   async deletePublication(
     @Args('id')
     id: string,
@@ -47,5 +47,5 @@ export class PublicationResolver {
     { me }: IGraphqlContext
   ): Promise<boolean> {
     return this.publicationService.delete(id, me);
-  }
+  } */
 }

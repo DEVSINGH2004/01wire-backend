@@ -26,13 +26,13 @@ export class ClientType {
   @Field(() => String)
   website: string;
 
-  @Field(() => String)
+  @Field(() => String, { nullable: true })
   ticker: string;
 
-  @Field(() => String)
+  @Field(() => String, { nullable: true })
   logo: string;
 
-  @Field(() => ClientSocialType)
+  @Field(() => ClientSocialType, { nullable: true })
   social: ClientSocialType;
 
   @Field(() => Date)

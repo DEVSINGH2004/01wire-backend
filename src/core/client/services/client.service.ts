@@ -8,13 +8,13 @@ import { Model } from 'mongoose';
 import { PaginationInputDto } from 'src/common/dto/pagination.input.dto';
 import { validate } from 'nestjs-zod';
 import { paginateResponse } from 'src/common/utils';
-import assert from 'assert';
 import { IMe } from 'src/common/graphql/interface/context.interface';
-import { Client } from '../client.schema';
 import { ClientLoaderService } from './client.loader.service';
 import { ClientFilterDto } from '../dto/client.filter.dto';
 import { ClientCreateDto } from '../dto/client.create.dto';
 import { ClientUpdateDto } from '../dto/client.update.dto';
+import { Client } from '../client.schema';
+import * as assert from 'assert';
 
 @Injectable()
 export class ClientService {
@@ -96,6 +96,12 @@ export class ClientService {
       (key) => (dto[key] === null || dto[key] === '') && delete dto[key]
     );
     dto = validate(dto, ClientCreateDto);
+    const { userId, title } = dto;
+    const isFound = await this.model.countDocuments({ title, userId });
+    assert(
+      isFound === 0,
+      new BadRequestException(`A client with title ${title} already exists`)
+    );
     return this.model.create(dto);
   }
 
@@ -106,10 +112,22 @@ export class ClientService {
     dto = validate(dto, ClientUpdateDto);
     const { id, userId, ...needToUpdate } = dto;
     await this._validateOwnership(id, userId);
-
+    if (dto.title) {
+      const isFound = await this.model.countDocuments({
+        _id: { $ne: id },
+        title: dto.title,
+        userId
+      });
+      assert(
+        isFound === 0,
+        new BadRequestException(
+          `A client with title ${dto.title} already exists`
+        )
+      );
+    }
     const ClientObj = await this.model.findOneAndUpdate(
       { _id: id, userId },
-      { $set: { ...needToUpdate } },
+      { $set: needToUpdate },
       { new: true }
     );
     return ClientObj;

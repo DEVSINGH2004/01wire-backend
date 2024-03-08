@@ -8,7 +8,7 @@ export const bundleCreateDto = z.object({
   type: nativeEnum(BundleTypeEnum),
   category: nativeEnum(BundleCategoryEnum),
   price: z.number(),
-  notes: z.string().nullish(),
+  description: z.string().nullish(),
   image: z.string().nullish()
 });
 

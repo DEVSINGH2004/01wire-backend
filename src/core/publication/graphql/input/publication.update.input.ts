@@ -1,10 +1,10 @@
-import { Field, ID, InputType } from '@nestjs/graphql';
+import { Field, ID, InputType, PartialType } from '@nestjs/graphql';
+import { PublicationCreateInput } from './publication.create.input';
 
 @InputType()
-export class PublicationUpdateInput {
+export class PublicationUpdateInput extends PartialType(
+  PublicationCreateInput
+) {
   @Field(() => ID)
   id: string;
-
-  @Field(() => String, { nullable: true })
-  title?: string;
 }

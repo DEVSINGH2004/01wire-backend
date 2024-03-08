@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Publication } from '../publication.schema';
 import { Model } from 'mongoose';
@@ -10,6 +10,7 @@ import { PublicationFilterDto } from '../dto/publication.filter.dto';
 import { PublicationCreateDto } from '../dto/publication.create.dto';
 import { PublicationUpdateDto } from '../dto/publication.update.dto';
 import { IMe } from 'src/common/graphql/interface/context.interface';
+import * as assert from 'assert';
 
 @Injectable()
 export class PublicationService {
@@ -42,7 +43,7 @@ export class PublicationService {
     perPage = perPage <= 50 ? perPage : 50;
     const q = {};
 
-    if (filterDto?.filterIds.length) q['_id'] = { $nin: filterDto.filterIds };
+    if (filterDto?.filterIds?.length) q['_id'] = { $nin: filterDto.filterIds };
     //generate query
     const [data, itemCount] = await Promise.all([
       this.model
@@ -68,6 +69,14 @@ export class PublicationService {
       (key) => (dto[key] === null || dto[key] === '') && delete dto[key]
     );
     dto = validate(dto, PublicationCreateDto);
+    const { title } = dto;
+    const isFound = await this.model.countDocuments({ title });
+    assert(
+      isFound === 0,
+      new BadRequestException(
+        `A publication with title ${title} already exists`
+      )
+    );
     return this.model.create(dto);
   }
 
@@ -78,9 +87,22 @@ export class PublicationService {
     dto = validate(dto, PublicationUpdateDto);
     const { id, ...needToUpdate } = dto;
 
+    if (dto.title) {
+      const isFound = await this.model.countDocuments({
+        _id: { $ne: id },
+        title: dto.title
+      });
+      assert(
+        isFound === 0,
+        new BadRequestException(
+          `A publication with title ${dto.title} already exists`
+        )
+      );
+    }
+
     const publicationObj = await this.model.findOneAndUpdate(
       { _id: id },
-      { $set: { ...needToUpdate } },
+      { $set: needToUpdate },
       { new: true }
     );
     return publicationObj;

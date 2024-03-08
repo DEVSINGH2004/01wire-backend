@@ -6,6 +6,8 @@ import { BundleType } from './type/bundle.type';
 import { PublicationType } from 'src/core/publication/graphql/type/publication.type';
 import { Bundle } from '../bundle.schema';
 import { PublicationService } from 'src/core/publication/services/publication.service';
+import { BundleCreateInput } from './input/bundle.create.input';
+import { BundleUpdateInput } from './input/bundle.update.input';
 
 @Resolver(() => BundleType)
 export class BundleResolver {
@@ -25,5 +27,15 @@ export class BundleResolver {
     @Args('paginationInput') paginationInputDto: PaginationInput
   ) {
     return this.bundleService.getFilteredPaginated(paginationInputDto);
+  }
+
+  @Query(() => BundleType)
+  async createBundle(@Args('params') params: BundleCreateInput) {
+    return this.bundleService.create(params);
+  }
+
+  @Query(() => BundleType)
+  async updateBundle(@Args('params') params: BundleUpdateInput) {
+    return this.bundleService.update(params);
   }
 }

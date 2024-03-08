@@ -25,7 +25,7 @@ export class PublicationType {
   linkType: PublicationLinkTypeEnum;
 
   @Field(() => String)
-  sampleUrl: string;
+  url: string;
 
   @Field(() => PublicationTimelineEnum)
   timeline: PublicationTimelineEnum;

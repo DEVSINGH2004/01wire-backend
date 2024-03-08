@@ -1,22 +1,22 @@
-import { Field, ID, ObjectType } from '@nestjs/graphql';
+import { Field, ObjectType } from '@nestjs/graphql';
 
 @ObjectType('ClientSocialType')
 export class ClientSocialType {
-  @Field(() => ID)
+  @Field(() => String, { nullable: true })
   facebook: string;
 
-  @Field(() => ID)
+  @Field(() => String, { nullable: true })
   instagram: string;
 
-  @Field(() => String)
+  @Field(() => String, { nullable: true })
   linkedIn: string;
 
-  @Field(() => String)
+  @Field(() => String, { nullable: true })
   twitter: string;
 
-  @Field(() => String)
+  @Field(() => String, { nullable: true })
   youtube: string;
 
-  @Field(() => String)
+  @Field(() => String, { nullable: true })
   others: string;
 }

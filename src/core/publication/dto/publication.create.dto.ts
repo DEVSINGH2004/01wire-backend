@@ -17,9 +17,9 @@ export const publicationCreateDto = z.object({
     })
     .nullish(),
   categories: z.array(nativeEnum(PublicationCategoryEnum)),
-  linkType: z.array(nativeEnum(PublicationLinkTypeEnum)),
-  sampleUrl: z.string().url().nullish(),
-  timeline: z.array(nativeEnum(PublicationTimelineEnum)),
+  linkType: nativeEnum(PublicationLinkTypeEnum),
+  url: z.string().url().nullish(),
+  timeline: nativeEnum(PublicationTimelineEnum),
   price: z.number().min(0)
 });
 

@@ -1,7 +1,13 @@
-import { Field, InputType } from '@nestjs/graphql';
+import { Field, InputType, OmitType } from '@nestjs/graphql';
+import { PublicationStatsInput } from './publication.stats.input';
+import { PublicationType } from '../type/publication.type';
 
 @InputType()
-export class PublicationCreateInput {
-  @Field(() => String)
-  title: string;
+export class PublicationCreateInput extends OmitType(
+  PublicationType,
+  ['id', 'stats', 'createdAt', 'updatedAt'] as const,
+  InputType
+) {
+  @Field(() => PublicationStatsInput, { nullable: true })
+  stats: PublicationStatsInput;
 }

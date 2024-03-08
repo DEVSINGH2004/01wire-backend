@@ -10,6 +10,12 @@ export class BundleType {
   @Field(() => [ID])
   publicationIds: string[];
 
+  @Field(() => String)
+  image: string;
+
+  @Field(() => String)
+  description: string;
+
   @Field(() => BundleTypeEnum)
   type: BundleTypeEnum;
 
@@ -21,9 +27,6 @@ export class BundleType {
 
   @Field(() => Int)
   price: number;
-
-  @Field(() => String)
-  notes: string;
 
   @Field(() => Date)
   createdAt: Date;
