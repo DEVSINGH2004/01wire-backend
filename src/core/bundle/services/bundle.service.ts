@@ -10,7 +10,7 @@ import { BundleCreateDto } from '../dto/bundle.create.dto';
 import { BundleUpdateDto } from '../dto/bundle.update.dto';
 import { IMe } from 'src/common/graphql/interface/context.interface';
 import { PublicationService } from 'src/core/publication/services/publication.service';
-import assert from 'assert';
+import * as assert from 'assert';
 
 @Injectable()
 export class BundleService {
@@ -65,7 +65,8 @@ export class BundleService {
       (key) => (dto[key] === null || dto[key] === '') && delete dto[key]
     );
     dto = validate(dto, BundleCreateDto);
-    const { publicationIds } = dto;
+    const { publicationIds, category, type } = dto;
+    let maxPrice = dto.price;
     const publicationList = await this.publicationService.loadMany(
       publicationIds
     );
@@ -75,8 +76,14 @@ export class BundleService {
       new BadRequestException('one or few of publication ids are invalid')
     );
 
+    const isFound = await this.model.countDocuments({ category, type });
+    assert(
+      isFound === 0,
+      new BadRequestException(`A ${category}:${type} bundle already exists`)
+    );
+
     //TODO: calculate maxPrice
-    return this.model.create(dto);
+    return this.model.create({ ...dto, maxPrice });
   }
 
   async update(dto: BundleUpdateDto): Promise<Bundle> {

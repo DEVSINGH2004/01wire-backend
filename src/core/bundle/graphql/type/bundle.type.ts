@@ -7,13 +7,13 @@ export class BundleType {
   @Field(() => ID)
   id: string;
 
-  @Field(() => [ID])
-  publicationIds: string[];
+  @Field(() => [ID], { nullable: false })
+  publicationIds: [string];
 
-  @Field(() => String)
+  @Field(() => String, { nullable: true })
   image: string;
 
-  @Field(() => String)
+  @Field(() => String, { nullable: true })
   description: string;
 
   @Field(() => BundleTypeEnum)
@@ -22,7 +22,7 @@ export class BundleType {
   @Field(() => BundleCategoryEnum)
   category: BundleCategoryEnum;
 
-  @Field(() => String)
+  @Field(() => String, { nullable: true })
   traffic: string;
 
   @Field(() => Int)

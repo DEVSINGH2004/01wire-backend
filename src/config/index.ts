@@ -59,7 +59,7 @@ const config = (config: Record<string, unknown>) => {
         key: `article_${NODE_ENV}`,
         ttl: 300
       },
-      product: {
+      publication: {
         key: `publication_${NODE_ENV}`,
         ttl: 300
       },

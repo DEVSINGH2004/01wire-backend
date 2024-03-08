@@ -4,10 +4,12 @@ import { BundleTypeEnum } from '../enum/bundle.type.enum';
 import { BundleCategoryEnum } from '../enum/bundle.category.enum';
 
 export const bundleCreateDto = z.object({
-  publicationIds: z.array(z.string().uuid()),
+  publicationIds: z
+    .array(z.string().uuid())
+    .nonempty('atleast 1 publicationId is required'),
   type: nativeEnum(BundleTypeEnum),
   category: nativeEnum(BundleCategoryEnum),
-  price: z.number(),
+  price: z.number().min(0, 'price cannot be 0'),
   description: z.string().nullish(),
   image: z.string().nullish()
 });

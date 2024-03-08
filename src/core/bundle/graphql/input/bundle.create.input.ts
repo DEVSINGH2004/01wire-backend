@@ -11,8 +11,5 @@ export class BundleCreateInput extends OmitType(
   image: string;
 
   @Field(() => String, { nullable: true })
-  traffic?: string;
-
-  @Field(() => String, { nullable: true })
   description: string;
 }

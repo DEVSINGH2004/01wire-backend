@@ -1,4 +1,4 @@
-import { Resolver, Query, Args, ResolveField, Parent } from '@nestjs/graphql';
+import { Resolver, Query, Args, ResolveField, Parent, Mutation } from '@nestjs/graphql';
 import { PaginationInput } from 'src/common/graphql/input/pagination.input';
 import { BundlePaginationType } from './type/bundle.pagination.type';
 import { BundleService } from '../services/bundle.service';
@@ -29,12 +29,12 @@ export class BundleResolver {
     return this.bundleService.getFilteredPaginated(paginationInputDto);
   }
 
-  @Query(() => BundleType)
+  @Mutation(() => BundleType)
   async createBundle(@Args('params') params: BundleCreateInput) {
     return this.bundleService.create(params);
   }
 
-  @Query(() => BundleType)
+  @Mutation(() => BundleType)
   async updateBundle(@Args('params') params: BundleUpdateInput) {
     return this.bundleService.update(params);
   }
