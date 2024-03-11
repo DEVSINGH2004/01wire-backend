@@ -126,6 +126,7 @@ export class ArticleService {
       { $set: { ...needToUpdate } },
       { new: true }
     );
+    await this.loaderService.cleanCacheById(id);
     return articleObj;
   }
 

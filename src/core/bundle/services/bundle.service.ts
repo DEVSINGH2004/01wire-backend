@@ -109,6 +109,7 @@ export class BundleService {
       { $set: { ...needToUpdate } },
       { new: true }
     );
+    await this.loaderService.cleanCacheById(id);
     return bundleObj;
   }
 
