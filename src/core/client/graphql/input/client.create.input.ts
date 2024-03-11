@@ -1,16 +1,13 @@
-import { Field, InputType, PickType } from '@nestjs/graphql';
+import { Field, InputType, OmitType, PickType } from '@nestjs/graphql';
 import { ClientSocialInput } from './client.social.input';
 import { ClientType } from '../type/client.type';
 
 @InputType()
-export class ClientCreateInput extends PickType(
+export class ClientCreateInput extends OmitType(
   ClientType,
-  ['title', 'type', 'category', 'email', 'website'] as const,
+  ['id', 'userId', 'social', 'createdAt', 'updatedAt'] as const,
   InputType
 ) {
-  @Field(() => String, { nullable: true })
-  ticker?: string;
-
   @Field(() => ClientSocialInput, { nullable: true })
   social?: ClientSocialInput;
 }
