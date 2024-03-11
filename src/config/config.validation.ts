@@ -12,6 +12,8 @@ export const ConfigValidationSchema = z.object({
   MONGO_URI: z.string(),
   MONGO_DB_NAME: z.string(),
 
+  UPLOAD_DIR: z.string(),
+
   //redis
   REDIS_URI: z.string(),
   REDIS_DB: z.coerce.number(),

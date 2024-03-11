@@ -15,6 +15,9 @@ const config = (config: Record<string, unknown>) => {
     events: {
       'slack.msg': NODE_ENV === 'local' ? false : true
     },
+    file: {
+      uploadDir: ENVS.UPLOAD_DIR
+    },
     slack: {
       webhookUrl: ENVS.SLACK_WEBHOOK_URL
     },

@@ -36,6 +36,7 @@ async function bootstrap() {
   app.useGlobalGuards(
     new JwtAuthGuard(app.get(Reflector), app.get(JwtService))
   );
+  
   await app.listen(cfg.app.port);
   logger.log(`${cfg.app.appName} listening on port : ${await app.getUrl()}`);
 }

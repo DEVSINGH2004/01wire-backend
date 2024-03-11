@@ -12,7 +12,6 @@ import { IGraphqlContext } from 'src/common/graphql/interface/context.interface'
 import { ArticleService } from '../services/article.service';
 import { ArticleType } from './type/article.type';
 import { ArticlePaginationType } from './type/article.pagination.type';
-import { ArticleFilterDto } from '../dto/article.filter.dto';
 import { ArticleCreateInput } from './input/article.create.input';
 import { ArticleUpdateInput } from './input/article.update.input';
 import { ArticleFilterInput } from './input/article.filter.input';
@@ -23,18 +22,18 @@ export class ArticleResolver {
 
   @Query(() => ArticlePaginationType)
   async filterArticlesPaginated(
-    @Args('paginationInput') paginationInputDto: PaginationInput,
-    @Args('filters') articleFilterDto: ArticleFilterInput,
+    @Args('paginationInput') paginationInput: PaginationInput,
+    @Args('filterInput') filterInput: ArticleFilterInput,
     @Context() { me }: IGraphqlContext
   ) {
     return this.articleService.getFilteredPaginated(
       me.userId,
-      paginationInputDto,
-      articleFilterDto
+      paginationInput,
+      filterInput
     );
   }
 
-  @Query(() => ArticleType)
+  @Query(() => ArticleType, { nullable: true })
   async getArticleById(
     @Args('id') id: string,
     @Context() { me }: IGraphqlContext

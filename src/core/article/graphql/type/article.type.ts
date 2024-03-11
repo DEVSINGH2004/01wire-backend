@@ -3,6 +3,7 @@ import { ArticleStatusEnum } from '../../enum/article.status.enum';
 import { ArticleCategoryEnum } from '../../enum/article.category.enum';
 import { ArticlePublishTypeEnum } from '../../enum/article.publish.type.enum';
 import { ArticleMediaContactType } from './article.media.contact.type';
+import { LanguageEnum } from 'src/common/enum/language.enum';
 
 @ObjectType('ArticleType')
 export class ArticleType {
@@ -16,51 +17,51 @@ export class ArticleType {
   clientId: string;
 
   @Field(() => String)
-  language: string;
-
-  @Field(() => String)
   title: string;
 
   @Field(() => String)
   content: string;
 
-  @Field(() => String)
+  @Field(() => LanguageEnum, { nullable: true })
+  language: LanguageEnum;
+
+  @Field(() => String, { nullable: true })
   summary: string;
 
-  @Field(() => String)
+  @Field(() => String, { nullable: true })
   featureImage: string;
 
-  @Field(() => String)
+  @Field(() => String, { nullable: true })
   featureImageDesc: string;
 
-  @Field(() => [String])
+  @Field(() => [String], { nullable: true })
   articleImages: string[];
 
-  @Field(() => ArticleStatusEnum)
+  @Field(() => ArticleStatusEnum, { nullable: true })
   status: ArticleStatusEnum;
 
-  @Field(() => ArticleCategoryEnum)
+  @Field(() => ArticleCategoryEnum, { nullable: true })
   category: ArticleCategoryEnum;
 
-  @Field(() => ArticlePublishTypeEnum)
+  @Field(() => ArticlePublishTypeEnum, { nullable: true })
   publishType: ArticlePublishTypeEnum;
 
-  @Field(() => String)
+  @Field(() => String, { nullable: true })
   timezone: string;
 
-  @Field(() => String)
+  @Field(() => String, { nullable: true })
   notes: string;
 
-  @Field(() => [String])
+  @Field(() => [String], { nullable: true })
   bundleIds: string[];
 
-  @Field(() => [String])
+  @Field(() => [String], { nullable: true })
   publicationIds: string[];
 
-  @Field(() => ArticleMediaContactType)
+  @Field(() => ArticleMediaContactType, { nullable: true })
   mediaContact: ArticleMediaContactType;
 
-  @Field(() => Date)
+  @Field(() => Date, { nullable: true })
   publishAt: Date;
 
   @Field(() => Date)

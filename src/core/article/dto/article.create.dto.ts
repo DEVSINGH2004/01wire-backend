@@ -36,7 +36,8 @@ export const articleCreateDto = z.object({
       youtube: z.string().nullish(),
       other: z.string().nullish()
     })
-    .nullish()
+    .nullish(),
+  publishAt: z.date().nullish()
 });
 
 export class ArticleCreateDto extends createZodDto(articleCreateDto) {}

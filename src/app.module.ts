@@ -21,6 +21,7 @@ import { ClientModule } from './core/client/client.module';
 import { TransactionModule } from './core/transaction/transaction.module';
 import { PublicationModule } from './core/publication/publication.module';
 import { CouponModule } from './core/coupon/coupon.module';
+import { UploadModule } from './core/upload/upload.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { CouponModule } from './core/coupon/coupon.module';
     ClientModule,
     TransactionModule,
     CouponModule,
+    UploadModule,
   ],
   controllers: [AppController],
   providers: [AppService, EmailService, JwtService, SlackService]

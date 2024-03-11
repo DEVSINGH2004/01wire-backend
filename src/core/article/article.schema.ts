@@ -27,8 +27,8 @@ class Article extends Document {
 
   @Prop({
     type: String,
-    enum: LanguageEnum,
-    required: true
+    enum: [...Object.values(LanguageEnum), null],
+    default: null
   })
   language: LanguageEnum;
 
@@ -77,15 +77,15 @@ class Article extends Document {
 
   @Prop({
     type: String,
-    enum: ArticleCategoryEnum,
-    required: true
+    enum: [...Object.values(ArticleCategoryEnum), null],
+    default: null
   })
   category: ArticleCategoryEnum;
 
   @Prop({
     type: String,
-    enum: ArticlePublishTypeEnum,
-    required: true
+    enum: [...Object.values(ArticlePublishTypeEnum), null],
+    default: null
   })
   publishType: ArticlePublishTypeEnum;
 
@@ -146,7 +146,7 @@ class Article extends Document {
     other: string;
   };
 
-  @Prop({ type: Date, required: true })
+  @Prop({ type: Date, default: null })
   publishAt: Date;
 
   @Prop()
