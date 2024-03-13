@@ -18,6 +18,7 @@ import { ConsoleTransport } from './common/logger/transports';
 import _config from './config';
 import { JwtAuthGuard } from './core/auth/guard/auth.guard';
 import { JwtService } from './core/services/jwt.service';
+import { RolesGuard } from './core/auth/guard/role.guard';
 
 async function bootstrap() {
   const cfg = _config(process.env);
@@ -36,7 +37,8 @@ async function bootstrap() {
   app.useGlobalGuards(
     new JwtAuthGuard(app.get(Reflector), app.get(JwtService))
   );
-  
+  app.useGlobalGuards(new RolesGuard(app.get(Reflector)));
+
   await app.listen(cfg.app.port);
   logger.log(`${cfg.app.appName} listening on port : ${await app.getUrl()}`);
 }

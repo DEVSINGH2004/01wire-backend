@@ -1,4 +1,11 @@
-import { Resolver, Query, Args, ResolveField, Parent, Mutation } from '@nestjs/graphql';
+import {
+  Resolver,
+  Query,
+  Args,
+  ResolveField,
+  Parent,
+  Mutation
+} from '@nestjs/graphql';
 import { PaginationInput } from 'src/common/graphql/input/pagination.input';
 import { BundlePaginationType } from './type/bundle.pagination.type';
 import { BundleService } from '../services/bundle.service';
@@ -8,6 +15,8 @@ import { Bundle } from '../bundle.schema';
 import { PublicationService } from 'src/core/publication/services/publication.service';
 import { BundleCreateInput } from './input/bundle.create.input';
 import { BundleUpdateInput } from './input/bundle.update.input';
+import { AllowedRoles } from 'src/core/auth/decorator/allowedroles.decorator';
+import { UserTypeEnum } from 'src/core/user/enum/user.type.enum';
 
 @Resolver(() => BundleType)
 export class BundleResolver {
@@ -30,11 +39,13 @@ export class BundleResolver {
   }
 
   @Mutation(() => BundleType)
+  @AllowedRoles([UserTypeEnum.ADMIN])
   async createBundle(@Args('params') params: BundleCreateInput) {
     return this.bundleService.create(params);
   }
 
   @Mutation(() => BundleType)
+  @AllowedRoles([UserTypeEnum.ADMIN])
   async updateBundle(@Args('params') params: BundleUpdateInput) {
     return this.bundleService.update(params);
   }

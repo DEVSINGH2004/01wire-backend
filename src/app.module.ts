@@ -49,7 +49,7 @@ import { UploadModule } from './core/upload/upload.module';
     ClientModule,
     TransactionModule,
     CouponModule,
-    UploadModule,
+    UploadModule
   ],
   controllers: [AppController],
   providers: [AppService, EmailService, JwtService, SlackService]

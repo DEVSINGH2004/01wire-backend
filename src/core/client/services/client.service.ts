@@ -37,7 +37,7 @@ export class ClientService {
     return loader.loadMany(ids);
   }
 
-  private async _validateOwnership(
+  async validateOwnership(
     _id: string,
     userId: string
   ): Promise<Client> {
@@ -111,7 +111,7 @@ export class ClientService {
     );
     dto = validate(dto, ClientUpdateDto);
     const { id, userId, ...needToUpdate } = dto;
-    await this._validateOwnership(id, userId);
+    await this.validateOwnership(id, userId);
     if (dto.title) {
       const isFound = await this.model.countDocuments({
         _id: { $ne: id },
@@ -135,7 +135,7 @@ export class ClientService {
   }
 
   async delete(_id: string, me: IMe) {
-    await this._validateOwnership(_id, me.userId);
+    await this.validateOwnership(_id, me.userId);
     const res = await this.model.softDelete({ _id });
     /* if (res.modifiedCount) {
       this.eventEmitter.emit(EventDomainEnum.KEYWORD, {

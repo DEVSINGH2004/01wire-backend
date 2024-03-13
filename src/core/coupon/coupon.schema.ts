@@ -65,7 +65,7 @@ class Coupon extends Document {
     type: Number,
     default: 0
   })
-  usage: number;
+  used: number;
 
   @Prop({ type: Date, default: null })
   expireAt: Date;

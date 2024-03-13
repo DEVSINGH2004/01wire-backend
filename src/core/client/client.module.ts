@@ -9,6 +9,7 @@ import { ClientService } from './services/client.service';
   imports: [
     MongooseModule.forFeature([{ name: Client.name, schema: ClientSchema }])
   ],
-  providers: [ClientService, ClientResolver, ClientLoaderService]
+  providers: [ClientService, ClientResolver, ClientLoaderService],
+  exports: [ClientService]
 })
 export class ClientModule {}

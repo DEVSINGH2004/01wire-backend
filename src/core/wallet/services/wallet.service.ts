@@ -25,7 +25,11 @@ export class WalletService {
     return loader.loadMany(ids);
   }
 
-  async createWallet(userId: string): Promise<Wallet> {
+  async getByUserId(userId: string) {
+    return this.model.findOne({ userId });
+  }
+
+  async create(userId: string): Promise<Wallet> {
     let walletObj = await this.model.findOne({ userId });
     if (walletObj) return walletObj;
     return this.model.create({ userId });

@@ -108,7 +108,7 @@ export class UserService {
     parsedDto.password = await bcryptjs.hash(password, 10);
 
     const userId = uuid.v4();
-    const walletObj = await this.walletService.createWallet(userId);
+    const walletObj = await this.walletService.create(userId);
     const user = new this.model({
       _id: userId,
       walletId: walletObj._id,

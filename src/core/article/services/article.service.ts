@@ -16,13 +16,15 @@ import { ArticleUpdateDto } from '../dto/article.update.dto';
 import assert from 'assert';
 import { IMe } from 'src/common/graphql/interface/context.interface';
 import { ArticleStatusEnum } from '../enum/article.status.enum';
+import { ClientService } from 'src/core/client/services/client.service';
 
 @Injectable()
 export class ArticleService {
   constructor(
     @InjectModel(Article.name)
     protected model: Model<Article>,
-    private loaderService: ArticleLoaderService
+    private loaderService: ArticleLoaderService,
+    private clientService: ClientService
   ) {}
 
   async load(_id: string): Promise<Article> {
@@ -70,7 +72,9 @@ export class ArticleService {
     const q = { userId };
 
     //generate query
+    if (filterDto.clientId) q['clientId'] = filterDto.clientId;
     if (filterDto.status) q['status'] = filterDto.status;
+    if (filterDto.categories) q['category'] = { $in: filterDto.categories };
     if (filterDto.startTime && filterDto.endTime) {
       q['createdAt'] = { $gte: filterDto.startTime, $lte: filterDto.endTime };
     } else if (filterDto.startTime) {
@@ -103,6 +107,8 @@ export class ArticleService {
       (key) => (dto[key] === null || dto[key] === '') && delete dto[key]
     );
     dto = validate(dto, ArticleCreateDto);
+    const { clientId, userId } = dto;
+    await this.clientService.validateOwnership(clientId, userId);
     return this.model.create(dto);
   }
 
@@ -113,6 +119,15 @@ export class ArticleService {
     dto = validate(dto, ArticleUpdateDto);
     const { id, userId, ...needToUpdate } = dto;
     let articleObj = await this._validateOwnership(id, userId);
+
+    //validate client ownership if changed
+    if (
+      needToUpdate.clientId &&
+      articleObj.clientId !== needToUpdate.clientId
+    ) {
+      await this.clientService.validateOwnership(needToUpdate.clientId, userId);
+    }
+
     assert(
       articleObj.status === ArticleStatusEnum.DRAFT ||
         articleObj.status === ArticleStatusEnum.REJECTED,
