@@ -14,7 +14,6 @@ import { SseModule } from './core/sse/sse.module';
 import { SlackService } from './core/services/slack.service';
 import { EventModule } from './core/events/event.module';
 import { ArticleModule } from './core/article/article.module';
-import { OrderModule } from './core/order/order.module';
 import { BundleModule } from './core/bundle/bundle.module';
 import { WalletModule } from './core/wallet/wallet.module';
 import { ClientModule } from './core/client/client.module';
@@ -42,7 +41,6 @@ import { UploadModule } from './core/upload/upload.module';
     SseModule,
     EventModule,
     ArticleModule,
-    OrderModule,
     PublicationModule,
     BundleModule,
     WalletModule,

@@ -1,4 +1,4 @@
-import { Field, InputType, OmitType, PickType } from '@nestjs/graphql';
+import { Field, InputType, OmitType } from '@nestjs/graphql';
 import { ArticleType } from '../type/article.type';
 import { ArticleMediaContactInput } from './article.media.contact.input';
 
