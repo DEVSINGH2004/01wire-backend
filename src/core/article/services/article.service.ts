@@ -4,7 +4,7 @@ import {
   NotFoundException
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Article, ArticleDocument } from '../article.schema';
+import { Article } from '../article.schema';
 import { Model } from 'mongoose';
 import { PaginationInputDto } from 'src/common/dto/pagination.input.dto';
 import { ArticleFilterDto } from '../dto/article.filter.dto';
