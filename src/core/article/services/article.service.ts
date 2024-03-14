@@ -109,7 +109,7 @@ export class ArticleService {
     dto = validate(dto, ArticleCreateDto);
     const { clientId, userId } = dto;
     await this.clientService.validateOwnership(clientId, userId);
-    return this.model.create(dto);
+    return this.model.create({ ...dto, status: ArticleStatusEnum.DRAFT });
   }
 
   async update(dto: ArticleUpdateDto): Promise<Article> {
