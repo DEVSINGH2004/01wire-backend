@@ -25,7 +25,7 @@ export class BundleResolver {
     private publicationService: PublicationService
   ) {}
 
-  @ResolveField(() => PublicationType)
+  @ResolveField(() => [PublicationType])
   async publicationInfo(@Parent() bundle: Bundle) {
     if (!bundle.publicationIds?.length) return [];
     return this.publicationService.loadMany(bundle.publicationIds);
