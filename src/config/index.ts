@@ -83,7 +83,15 @@ const config = (config: Record<string, unknown>) => {
       'signup',
       'getAuthStatus',
       'verifyOtp'
-    ] as string[]
+    ] as string[],
+
+    copperx: {
+      baseUrl: 'https://api.copperx.dev/api/v1',
+      successUrl: 'https://01wire.com', // TODO: Add urls
+      cancelUrl: 'https://01wire.com',
+      secretKey: ENVS.COPPERX_SECRET_KEY,
+      webhookSecretKey: ENVS.COPPERX_WEBHOOK_SECRET_KEY
+    }
   } as const;
 };
 
