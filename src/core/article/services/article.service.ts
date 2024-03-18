@@ -4,7 +4,7 @@ import {
   NotFoundException
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Article, ArticleDocument } from '../article.schema';
+import { Article } from '../article.schema';
 import { Model } from 'mongoose';
 import { PaginationInputDto } from 'src/common/dto/pagination.input.dto';
 import { ArticleFilterDto } from '../dto/article.filter.dto';
@@ -13,10 +13,10 @@ import { paginateResponse } from 'src/common/utils';
 import { ArticleLoaderService } from './article.loader.service';
 import { ArticleCreateDto } from '../dto/article.create.dto';
 import { ArticleUpdateDto } from '../dto/article.update.dto';
-import assert from 'assert';
 import { IMe } from 'src/common/graphql/interface/context.interface';
 import { ArticleStatusEnum } from '../enum/article.status.enum';
 import { ClientService } from 'src/core/client/services/client.service';
+import * as assert from 'assert';
 
 @Injectable()
 export class ArticleService {

@@ -163,4 +163,23 @@ export class UserService {
     await this.loaderService.cleanCacheById(userId);
     return;
   }
+
+  async addPgCustomerId(
+    userId: string,
+    customerId: string,
+    key: string
+  ): Promise<void> {
+    await this.model.updateOne(
+      { _id: userId },
+      {
+        $set: {
+          pgCustomerIds: {
+            [key]: customerId
+          }
+        }
+      }
+    );
+    await this.loaderService.cleanCacheById(userId);
+    return;
+  }
 }

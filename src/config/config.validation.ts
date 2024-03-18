@@ -23,5 +23,8 @@ export const ConfigValidationSchema = z.object({
   AWS_SES_SENDER_EMAIL: z.string(),
 
   //Slack
-  SLACK_WEBHOOK_URL: z.string().url()
+  SLACK_WEBHOOK_URL: z.string().url(),
+
+  COPPERX_SECRET_KEY: z.string(),
+  COPPERX_WEBHOOK_SECRET_KEY: z.string()
 });

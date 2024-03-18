@@ -76,6 +76,15 @@ class User extends Document {
   })
   roles: RoleEnum[];
 
+  @Prop(
+    raw({
+      copperx: { type: String, default: null }
+    })
+  )
+  pgCustomerIds: {
+    copperx: string;
+  };
+
   @Prop()
   createdAt: Date;
 
