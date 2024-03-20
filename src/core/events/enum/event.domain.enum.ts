@@ -1,5 +1,6 @@
 export enum EventDomainEnum {
   SLACK = 'slack',
+  WALLET = 'wallet',
   CLIENT = 'client',
   SSE = 'sse',
   POOL = 'pool',

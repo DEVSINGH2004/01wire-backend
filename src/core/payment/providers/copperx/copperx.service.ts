@@ -31,11 +31,13 @@ export class CopperxService {
   async createCheckoutSession({
     customerId,
     amount,
+    currency,
     dbTransactionId
   }: {
     userId: string;
     customerId: string;
     amount: number;
+    currency: string;
     dbTransactionId: string;
   }): Promise<{
     url: string;
@@ -57,7 +59,7 @@ export class CopperxService {
           {
             priceData: {
               // NOTE: this is hardcoded for now
-              currency: 'matic',
+              currency,
               // TODO: Fix this unit amount
               unitAmount: amount.toString(),
 

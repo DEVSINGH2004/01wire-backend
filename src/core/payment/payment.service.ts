@@ -9,10 +9,10 @@ export class PaymentService {
   private _logger = new Logger(PaymentService.name);
 
   constructor(
-    private _userService: UserService,
-    private _copperxService: CopperxService,
+    private userService: UserService,
+    private copperxService: CopperxService,
     @Inject(forwardRef(() => TransactionService))
-    private _transactionService: TransactionService
+    private transactionService: TransactionService,
   ) {}
 
   async createCheckoutSession({
@@ -26,23 +26,23 @@ export class PaymentService {
     // currency: string;
     dbTransactionId: string;
   }) {
-    const user = await this._userService.getUserById(userId);
+    const user = await this.userService.getUserById(userId);
     // TODO: update this when adding more payment providers
     let customerId = user.pgCustomerIds?.copperx;
 
     if (!customerId) {
-      const customer = await this._copperxService.createCustomer({
+      const customer = await this.copperxService.createCustomer({
         userId,
         email: user.email,
         username: user.email
       });
       customerId = customer.id;
-      await this._userService.addPgCustomerId(userId, customerId, 'copperx');
+      await this.userService.addPgCustomerId(userId, customerId, 'copperx');
     }
-    return this._copperxService.createCheckoutSession({
+    return this.copperxService.createCheckoutSession({
       userId,
       customerId,
-      // currency,
+      currency: 'usdt',
       amount,
       dbTransactionId
     });
@@ -50,7 +50,7 @@ export class PaymentService {
 
   async handleWebhook(data: ICopperxWebhookPayload, webhookToken: string) {
     const { transactionId, status } =
-      await this._copperxService.parseWebhookData(data, webhookToken);
+      await this.copperxService.parseWebhookData(data, webhookToken);
 
     this._logger.log('Transaction successful', {
       transactionId,
@@ -58,6 +58,6 @@ export class PaymentService {
     });
 
     // TODO: Add on transaction success in txn service
-    // await this._transactionService.onTransactionSuccess(transactionId);
+    await this.transactionService.onTransactionSuccess(transactionId);
   }
 }

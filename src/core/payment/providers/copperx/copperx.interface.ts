@@ -397,6 +397,7 @@ export interface ICheckoutCreateRequest {
 
 export interface ICheckoutCreateResponse {
   url: string;
+  id: string;
 }
 
 export interface IWebhookPayload {

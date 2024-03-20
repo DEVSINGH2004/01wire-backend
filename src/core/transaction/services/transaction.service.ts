@@ -15,6 +15,7 @@ import { WalletService } from 'src/core/wallet/services/wallet.service';
 import { PaginationInputDto } from 'src/common/dto/pagination.input.dto';
 import { TransactionFilterDto } from '../dto/transaction.filter.dto';
 import { paginateResponse } from 'src/common/utils';
+import * as assert from 'assert';
 
 @Injectable()
 export class TransactionService {
@@ -26,6 +27,27 @@ export class TransactionService {
     private couponService: CouponService,
     private walletService: WalletService
   ) {}
+
+  async onTransactionSuccess(transactionId) {
+    try {
+      const transactionObj = await this.model.findOne({ _id: transactionId });
+      assert(
+        transactionObj.status === TransactionStatusEnum.PENDING,
+        new BadRequestException('Transaction not in pending state')
+      );
+      transactionObj.status = TransactionStatusEnum.SUCCESS;
+      await transactionObj.save();
+      await this.walletService.creditBalance(
+        transactionObj.walletId,
+        transactionObj.amount
+      );
+    } catch (e) {
+      console.log(
+        `⚠ Error : onTransactionSuccess: ${transactionId} :`,
+        e.mesaage
+      );
+    }
+  }
 
   async getFilteredPaginated(
     userId: string,

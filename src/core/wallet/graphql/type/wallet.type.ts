@@ -1,4 +1,4 @@
-import { Field, Float, ID, ObjectType } from '@nestjs/graphql';
+import { Field, ID, Int, ObjectType } from '@nestjs/graphql';
 
 @ObjectType('WalletType')
 export class WalletType {
@@ -8,7 +8,7 @@ export class WalletType {
   @Field(() => ID)
   userId: string;
 
-  @Field(() => Float)
+  @Field(() => Int)
   balance: number;
 
   @Field(() => Date)
