@@ -1,4 +1,4 @@
-import { Args, Context, Mutation, Resolver } from '@nestjs/graphql';
+import { Args, Context, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { IGraphqlContext } from 'src/common/graphql/interface/context.interface';
 import { TransactionService } from '../services/transaction.service';
 import { TransactionCreateInput } from './input/transaction.create.input';
@@ -21,7 +21,7 @@ export class TransactionResolver {
     return this.transactionService.create(params, me);
   }
 
-  @Mutation(() => TransactionType)
+  @Query(() => TransactionType)
   async filterTransactionsPaginated(
     @Args('paginationInput') paginationInput: PaginationInput,
     @Args('filterInput') filterInput: TransactionFilterInput,
