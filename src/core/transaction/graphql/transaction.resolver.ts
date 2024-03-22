@@ -6,6 +6,7 @@ import { TransactionType } from './type/transaction.type';
 import { Logger } from '@nestjs/common';
 import { PaginationInput } from 'src/common/graphql/input/pagination.input';
 import { TransactionFilterInput } from './input/transaction.filter.input';
+import { TransactionFilterType } from './type/transaction.filter.type';
 
 @Resolver(() => TransactionType)
 export class TransactionResolver {
@@ -21,7 +22,7 @@ export class TransactionResolver {
     return this.transactionService.create(params, me);
   }
 
-  @Query(() => TransactionType)
+  @Query(() => TransactionFilterType)
   async filterTransactionsPaginated(
     @Args('paginationInput') paginationInput: PaginationInput,
     @Args('filterInput') filterInput: TransactionFilterInput,
