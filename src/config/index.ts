@@ -86,7 +86,10 @@ const config = (config: Record<string, unknown>) => {
     ] as string[],
 
     copperx: {
-      baseUrl: 'https://api.copperx.dev/api/v1',
+      baseUrl:
+        NODE_ENV !== 'production'
+          ? 'https://api.copperx.dev/api/v1'
+          : 'https://api.copperx.io/api/v1',
       successUrl: 'https://01wire.com', // TODO: Add urls
       cancelUrl: 'https://01wire.com',
       secretKey: ENVS.COPPERX_SECRET_KEY,

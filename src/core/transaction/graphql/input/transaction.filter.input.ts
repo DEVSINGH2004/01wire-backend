@@ -5,7 +5,6 @@ import { TransactionType } from '../type/transaction.type';
 export class TransactionFilterInput extends PartialType(
   PickType(TransactionType, [
     'type',
-    'status',
     'kind'
   ] as const),
   InputType

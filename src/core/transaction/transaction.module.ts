@@ -5,6 +5,8 @@ import { Transaction, TransactionSchema } from './transaction.schema';
 import { TransactionService } from './services/transaction.service';
 import { CouponModule } from '../coupon/coupon.module';
 import { WalletModule } from '../wallet/wallet.module';
+import { PaymentModule } from '../payment/payment.module';
+import { UserModule } from '../user/user.module';
 
 @Module({
   imports: [
@@ -12,7 +14,9 @@ import { WalletModule } from '../wallet/wallet.module';
       { name: Transaction.name, schema: TransactionSchema }
     ]),
     CouponModule,
-    WalletModule
+    WalletModule,
+    PaymentModule,
+    UserModule
   ],
   providers: [TransactionService, TransactionResolver],
   exports: [TransactionService]

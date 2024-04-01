@@ -14,7 +14,7 @@ export class TransactionResolver {
 
   constructor(private transactionService: TransactionService) {}
 
-  @Mutation(() => TransactionType)
+  @Mutation(() => String)
   async createTransaction(
     @Args('params') params: TransactionCreateInput,
     @Context() { me }: IGraphqlContext

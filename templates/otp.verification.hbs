@@ -1,819 +1,155 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional //EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html
-  xmlns="http://www.w3.org/1999/xhtml"
-  xmlns:v="urn:schemas-microsoft-com:vml"
-  xmlns:o="urn:schemas-microsoft-com:office:office"
->
+<html>
   <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="x-apple-disable-message-reformatting" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-
-    <title>Rizley</title>
-
-    <style type="text/css">
-      @media only screen and (min-width: 520px) {
-        .u-row {
-          width: 500px !important;
-        }
-        .u-row .u-col {
-          vertical-align: top;
-        }
-
-        .u-row .u-col-33p33 {
-          width: 166.65px !important;
-        }
-
-        .u-row .u-col-100 {
-          width: 500px !important;
-        }
-      }
-
-      @media (max-width: 520px) {
-        .u-row-container {
-          max-width: 100% !important;
-          padding-left: 0px !important;
-          padding-right: 0px !important;
-        }
-        .u-row .u-col {
-          min-width: 320px !important;
-          max-width: 100% !important;
-          display: block !important;
-        }
-        .u-row {
-          width: 100% !important;
-        }
-        .u-col {
-          width: 100% !important;
-        }
-        .u-col > div {
-          margin: 0 auto;
-        }
-      }
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+    />
+    <title>Verification OTP</title>
+    <style>
       body {
-        margin: 0;
-        padding: 0;
+        font-family: "Inter";
+      }
+      .container {
+        height: auto;
+        background-color: rgba(242, 245, 248, 1);
+        padding: 32px;
+      }
+      .verification {
+        height: auto;
+        padding: 32px;
+        background-color: rgba(255, 255, 255, 1);
+        border-radius: 4px 4px 0 0;
+      }
+      .verification span {
+        font-size: 16px;
+        font-weight: 400;
+        color: rgba(51, 51, 51, 1);
+        display: block;
+      }
+      .otpBox {
+        height: 67px;
+        padding: 8px, 16px, 8px, 16px;
+        border-radius: 4px;
+        background-color: rgba(240, 242, 245, 1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .footer {
+        height: 216px;
+        background-color: rgba(247, 249, 252, 1);
+        padding: 32px;
+        border-radius: 0 0 4px 4px;
+      }
+      .footer span {
+        font-size: 14px;
+        font-weight: 400;
+        display: block;
+        color: rgba(51, 51, 51, 1);
+      }
+      h6,
+      h5 {
+        margin: 0px !important;
+      }
+      .footer-content {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .logo img {
+        width: 100px;
+        height: auto;
+      }
+      .social-icons {
+        display: flex;
+      }
+      .social-icon {
+        margin-right: 10px;
       }
 
-      table,
-      tr,
-      td {
-        vertical-align: top;
-        border-collapse: collapse;
+      .social-icon img {
+        width: 30px;
+        height: auto;
       }
-
-      p {
-        margin: 0;
+      .header {
+        height: 117.37px;
+        padding: 24px 32px;
       }
-
-      .ie-container table,
-      .mso-container table {
-        table-layout: fixed;
-      }
-
-      * {
-        line-height: inherit;
-      }
-
-      a[x-apple-data-detectors="true"] {
-        color: inherit !important;
-        text-decoration: none !important;
-      }
-
-      table,
-      td {
-        color: #000000;
+      @media screen and (max-width: 768px) {
+        h1 {
+          font-size: 1.5rem;
+        }
+        .container,
+        .verification,
+        .footer {
+          padding: 10px;
+        }
+        .footer span {
+          font-size: 10px;
+        }
+        .verification span {
+          font-size: 14px;
+        }
       }
     </style>
-
-    <link
-      href="https://fonts.googleapis.com/css?family=Lato:400,700&display=swap"
-      rel="stylesheet"
-      type="text/css"
-    />
   </head>
-
-  <body
-    class="clean-body u_body"
-    style="
-      margin: 0;
-      padding: 0;
-      -webkit-text-size-adjust: 100%;
-      background-color: #e7e7e7;
-      color: #000000;
-    "
-  >
-    <table
-      style="
-        border-collapse: collapse;
-        table-layout: fixed;
-        border-spacing: 0;
-        vertical-align: top;
-        min-width: 320px;
-        margin: 0 auto;
-        background-color: #e7e7e7;
-        width: 100%;
-      "
-      cellpadding="0"
-      cellspacing="0"
-    >
-      <tbody>
-        <tr style="vertical-align: top">
-          <td
-            style="
-              word-break: break-word;
-              border-collapse: collapse !important;
-              vertical-align: top;
-            "
-          >
-            <div
-              class="u-row-container"
-              style="padding: 0px; background-color: transparent"
-            >
-              <div
-                class="u-row"
-                style="
-                  margin: 0 auto;
-                  min-width: 320px;
-                  max-width: 500px;
-                  overflow-wrap: break-word;
-                  word-wrap: break-word;
-                  word-break: break-word;
-                  background-color: transparent;
-                "
-              >
-                <div
-                  style="
-                    border-collapse: collapse;
-                    display: table;
-                    width: 100%;
-                    height: 100%;
-                    background-color: transparent;
-                  "
-                >
-                  <div
-                    class="u-col u-col-100"
-                    style="
-                      max-width: 320px;
-                      min-width: 500px;
-                      display: table-cell;
-                      vertical-align: top;
-                    "
-                  >
-                    <div
-                      style="
-                        height: 100%;
-                        width: 100% !important;
-                        border-radius: 0px;
-                        -webkit-border-radius: 0px;
-                        -moz-border-radius: 0px;
-                      "
-                    >
-                      <div
-                        style="
-                          box-sizing: border-box;
-                          height: 100%;
-                          padding: 0px;
-                          border-top: 0px solid transparent;
-                          border-left: 0px solid transparent;
-                          border-right: 0px solid transparent;
-                          border-bottom: 0px solid transparent;
-                          border-radius: 0px;
-                          -webkit-border-radius: 0px;
-                          -moz-border-radius: 0px;
-                        "
-                      >
-                        <table
-                          style="font-family: arial, helvetica, sans-serif"
-                          role="presentation"
-                          cellpadding="0"
-                          cellspacing="0"
-                          width="100%"
-                          border="0"
-                        >
-                          <tbody>
-                            <tr>
-                              <td
-                                style="
-                                  overflow-wrap: break-word;
-                                  word-break: break-word;
-                                  padding: 10px 10px 25px;
-                                  font-family: arial, helvetica, sans-serif;
-                                "
-                                align="left"
-                              >
-                                <table
-                                  width="100%"
-                                  cellpadding="0"
-                                  cellspacing="0"
-                                  border="0"
-                                >
-                                  <tr>
-                                    <td
-                                      style="
-                                        padding-right: 0px;
-                                        padding-left: 0px;
-                                      "
-                                      align="left"
-                                    >
-                                      <img
-                                        align="left"
-                                        border="0"
-                                        src="images/image-1.png"
-                                        alt=""
-                                        title=""
-                                        style="
-                                          outline: none;
-                                          text-decoration: none;
-                                          -ms-interpolation-mode: bicubic;
-                                          clear: both;
-                                          display: inline-block !important;
-                                          border: none;
-                                          height: auto;
-                                          float: none;
-                                          width: 100%;
-                                          max-width: 200px;
-                                        "
-                                        width="200"
-                                      />
-                                    </td>
-                                  </tr>
-                                </table>
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-
-                        <table
-                          style="font-family: arial, helvetica, sans-serif"
-                          role="presentation"
-                          cellpadding="0"
-                          cellspacing="0"
-                          width="100%"
-                          border="0"
-                        >
-                          <tbody>
-                            <tr>
-                              <td
-                                style="
-                                  overflow-wrap: break-word;
-                                  word-break: break-word;
-                                  padding: 10px;
-                                  font-family: arial, helvetica, sans-serif;
-                                "
-                                align="left"
-                              >
-                                <table
-                                  height="0px"
-                                  align="center"
-                                  border="0"
-                                  cellpadding="0"
-                                  cellspacing="0"
-                                  width="100%"
-                                  style="
-                                    border-collapse: collapse;
-                                    table-layout: fixed;
-                                    border-spacing: 0;
-                                    vertical-align: top;
-                                    border-top: 1px solid #bbbbbb;
-                                    -ms-text-size-adjust: 100%;
-                                    -webkit-text-size-adjust: 100%;
-                                  "
-                                >
-                                  <tbody>
-                                    <tr style="vertical-align: top">
-                                      <td
-                                        style="
-                                          word-break: break-word;
-                                          border-collapse: collapse !important;
-                                          vertical-align: top;
-                                          font-size: 0px;
-                                          line-height: 0px;
-                                          -ms-text-size-adjust: 100%;
-                                          -webkit-text-size-adjust: 100%;
-                                        "
-                                      >
-                                        <span>&#160;</span>
-                                      </td>
-                                    </tr>
-                                  </tbody>
-                                </table>
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-
-                        <table
-                          style="font-family: arial, helvetica, sans-serif"
-                          role="presentation"
-                          cellpadding="0"
-                          cellspacing="0"
-                          width="100%"
-                          border="0"
-                        >
-                          <tbody>
-                            <tr>
-                              <td
-                                style="
-                                  overflow-wrap: break-word;
-                                  word-break: break-word;
-                                  padding: 10px;
-                                  font-family: arial, helvetica, sans-serif;
-                                "
-                                align="left"
-                              >
-                                <h1
-                                  style="
-                                    margin: 0px;
-                                    line-height: 140%;
-                                    text-align: left;
-                                    word-wrap: break-word;
-                                    font-family: 'Lato', sans-serif;
-                                    font-size: 24px;
-                                    font-weight: 700;
-                                    color: #2554fc;
-                                  "
-                                >
-                                  Verification
-                                  <mark style="background: #f9e098 !important"
-                                    >OTP</mark
-                                  >
-                                  Code
-                                </h1>
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-
-                        <table
-                          style="font-family: arial, helvetica, sans-serif"
-                          role="presentation"
-                          cellpadding="0"
-                          cellspacing="0"
-                          width="100%"
-                          border="0"
-                        >
-                          <tbody>
-                            <tr>
-                              <td
-                                style="
-                                  overflow-wrap: break-word;
-                                  word-break: break-word;
-                                  padding: 10px;
-                                  font-family: arial, helvetica, sans-serif;
-                                "
-                                align="left"
-                              >
-                                <div
-                                  style="
-                                    font-family: 'Lato', sans-serif;
-                                    font-size: 16px;
-                                    line-height: 140%;
-                                    text-align: left;
-                                    word-wrap: break-word;
-                                  "
-                                >
-                                  <p style="line-height: 140%">Hi,</p>
-                                  <p style="line-height: 140%"> </p>
-                                  <p style="line-height: 140%">
-                                    Your 4-digit verification OTP associated with
-                                  </p>
-                                  <p style="line-height: 140%">{{email}} is</p>
-                                </div>
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div
-              class="u-row-container"
-              style="padding: 0px; background-color: transparent"
-            >
-              <div
-                class="u-row"
-                style="
-                  margin: 0 auto;
-                  min-width: 320px;
-                  max-width: 500px;
-                  overflow-wrap: break-word;
-                  word-wrap: break-word;
-                  word-break: break-word;
-                  background-color: transparent;
-                "
-              >
-                <div
-                  style="
-                    border-collapse: collapse;
-                    display: table;
-                    width: 100%;
-                    height: 100%;
-                    background-color: transparent;
-                  "
-                >
-                  <div
-                    class="u-col u-col-100"
-                    style="
-                      max-width: 320px;
-                      min-width: 500px;
-                      display: table-cell;
-                      vertical-align: top;
-                    "
-                  >
-                    <div
-                      style="
-                        height: 100%;
-                        width: 100% !important;
-                        border-radius: 0px;
-                        -webkit-border-radius: 0px;
-                        -moz-border-radius: 0px;
-                      "
-                    >
-                      <div
-                        style="
-                          box-sizing: border-box;
-                          height: 100%;
-                          padding: 0px;
-                          border-top: 0px solid transparent;
-                          border-left: 0px solid transparent;
-                          border-right: 0px solid transparent;
-                          border-bottom: 0px solid transparent;
-                          border-radius: 0px;
-                          -webkit-border-radius: 0px;
-                          -moz-border-radius: 0px;
-                        "
-                      >
-                        <table
-                          style="font-family: arial, helvetica, sans-serif"
-                          role="presentation"
-                          cellpadding="0"
-                          cellspacing="0"
-                          width="100%"
-                          border="0"
-                        >
-                          <tbody>
-                            <tr>
-                              <td
-                                style="
-                                  overflow-wrap: break-word;
-                                  word-break: break-word;
-                                  padding: 10px 0;
-                                  font-family: arial, helvetica, sans-serif;
-                                "
-                                align="left"
-                              >
-                                <div
-                                  style="
-                                    background-color: #cbcbcb;
-                                    border-radius: 10px;
-                                    padding: 10px 0;
-                                  "
-                                >
-                                  <h2
-                                    style="
-                                      margin: 0px;
-                                      line-height: 140%;
-                                      text-align: center;
-                                      word-wrap: break-word;
-                                      font-family: 'Lato', sans-serif;
-                                      font-size: 22px;
-                                      font-weight: 700;
-                                      letter-spacing: 4px;
-                                    "
-                                  >
-                                    {{otp}}
-                                  </h2>
-                                </div>
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-
-                        <table
-                          style="font-family: arial, helvetica, sans-serif"
-                          role="presentation"
-                          cellpadding="0"
-                          cellspacing="0"
-                          width="100%"
-                          border="0"
-                        >
-                          <tbody>
-                            <tr>
-                              <td
-                                style="
-                                  overflow-wrap: break-word;
-                                  word-break: break-word;
-                                  padding: 10px;
-                                  font-family: arial, helvetica, sans-serif;
-                                "
-                                align="left"
-                              >
-                                <div
-                                  style="
-                                    font-family: 'Lato', sans-serif;
-                                    font-size: 16px;
-                                    line-height: 140%;
-                                    text-align: left;
-                                    word-wrap: break-word;
-                                  "
-                                >
-                                  <p style="line-height: 140%">
-                                    This OTP code expires in 15 minutes ({{validity}}). If you
-                                    didn't request this, just ignore and delete
-                                    this message.
-                                  </p>
-                                  <p style="line-height: 140%"></p>
-                                  <p style="line-height: 140%">
-                                    To keep your account secure, please don't
-                                    forward this email to anyone.
-                                  </p>
-                                </div>
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-
-                        <table
-                          style="font-family: arial, helvetica, sans-serif"
-                          role="presentation"
-                          cellpadding="0"
-                          cellspacing="0"
-                          width="100%"
-                          border="0"
-                        >
-                          <tbody>
-                            <tr>
-                              <td
-                                style="
-                                  overflow-wrap: break-word;
-                                  word-break: break-word;
-                                  padding: 10px;
-                                  font-family: arial, helvetica, sans-serif;
-                                "
-                                align="left"
-                              >
-                                <table
-                                  height="0px"
-                                  align="center"
-                                  border="0"
-                                  cellpadding="0"
-                                  cellspacing="0"
-                                  width="100%"
-                                  style="
-                                    border-collapse: collapse;
-                                    table-layout: fixed;
-                                    border-spacing: 0;
-                                    vertical-align: top;
-                                    border-top: 1px solid #bbbbbb;
-                                    -ms-text-size-adjust: 100%;
-                                    -webkit-text-size-adjust: 100%;
-                                  "
-                                >
-                                  <tbody>
-                                    <tr style="vertical-align: top">
-                                      <td
-                                        style="
-                                          word-break: break-word;
-                                          border-collapse: collapse !important;
-                                          vertical-align: top;
-                                          font-size: 0px;
-                                          line-height: 0px;
-                                          -ms-text-size-adjust: 100%;
-                                          -webkit-text-size-adjust: 100%;
-                                        "
-                                      >
-                                        <span>&#160;</span>
-                                      </td>
-                                    </tr>
-                                  </tbody>
-                                </table>
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div
-              class="u-row-container"
-              style="padding: 0px; background-color: transparent"
-            >
-              <div
-                class="u-row"
-                style="
-                  margin: 0 auto;
-                  min-width: 320px;
-                  max-width: 500px;
-                  overflow-wrap: break-word;
-                  word-wrap: break-word;
-                  word-break: break-word;
-                  background-color: transparent;
-                "
-              >
-                <div
-                  style="
-                    border-collapse: collapse;
-                    display: table;
-                    width: 100%;
-                    height: 100%;
-                    background-color: transparent;
-                  "
-                >
-                  <div
-                    class="u-col u-col-33p33"
-                    style="
-                      max-width: 320px;
-                      min-width: 166.67px;
-                      display: table-cell;
-                      vertical-align: top;
-                    "
-                  >
-                    <div
-                      style="
-                        height: 100%;
-                        width: 100% !important;
-                        border-radius: 0px;
-                        -webkit-border-radius: 0px;
-                        -moz-border-radius: 0px;
-                      "
-                    >
-                      <div
-                        style="
-                          box-sizing: border-box;
-                          height: 100%;
-                          padding: 0px;
-                          border-top: 0px solid transparent;
-                          border-left: 0px solid transparent;
-                          border-right: 0px solid transparent;
-                          border-bottom: 0px solid transparent;
-                          border-radius: 0px;
-                          -webkit-border-radius: 0px;
-                          -moz-border-radius: 0px;
-                        "
-                      >
-                        <table
-                          style="font-family: arial, helvetica, sans-serif"
-                          role="presentation"
-                          cellpadding="0"
-                          cellspacing="0"
-                          width="100%"
-                          border="0"
-                        >
-                          <tbody>
-                            <tr>
-                              <td
-                                style="
-                                  overflow-wrap: break-word;
-                                  word-break: break-word;
-                                  padding: 10px;
-                                  font-family: arial, helvetica, sans-serif;
-                                "
-                                align="left"
-                              >
-                                <div
-                                  style="
-                                    font-family: 'Lato', sans-serif;
-                                    font-size: 14px;
-                                    line-height: 140%;
-                                    text-align: left;
-                                    word-wrap: break-word;
-                                  "
-                                >
-                                  <p style="line-height: 140%">@01wire</p>
-                                </div>
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div
-                    class="u-col u-col-33p33"
-                    style="
-                      max-width: 320px;
-                      min-width: 166.67px;
-                      display: table-cell;
-                      vertical-align: top;
-                    "
-                  >
-                    <div
-                      style="
-                        height: 100%;
-                        width: 100% !important;
-                        border-radius: 0px;
-                        -webkit-border-radius: 0px;
-                        -moz-border-radius: 0px;
-                      "
-                    >
-                      <div
-                        style="
-                          box-sizing: border-box;
-                          height: 100%;
-                          padding: 0px;
-                          border-top: 0px solid transparent;
-                          border-left: 0px solid transparent;
-                          border-right: 0px solid transparent;
-                          border-bottom: 0px solid transparent;
-                          border-radius: 0px;
-                          -webkit-border-radius: 0px;
-                          -moz-border-radius: 0px;
-                        "
-                      ></div>
-                    </div>
-                  </div>
-
-                  <div
-                    class="u-col u-col-33p33"
-                    style="
-                      max-width: 320px;
-                      min-width: 166.67px;
-                      display: table-cell;
-                      vertical-align: top;
-                    "
-                  >
-                    <div
-                      style="
-                        height: 100%;
-                        width: 100% !important;
-                        border-radius: 0px;
-                        -webkit-border-radius: 0px;
-                        -moz-border-radius: 0px;
-                      "
-                    >
-                      <div
-                        style="
-                          box-sizing: border-box;
-                          height: 100%;
-                          padding: 0px;
-                          border-top: 0px solid transparent;
-                          border-left: 0px solid transparent;
-                          border-right: 0px solid transparent;
-                          border-bottom: 0px solid transparent;
-                          border-radius: 0px;
-                          -webkit-border-radius: 0px;
-                          -moz-border-radius: 0px;
-                        "
-                      >
-                        <table
-                          style="font-family: arial, helvetica, sans-serif"
-                          role="presentation"
-                          cellpadding="0"
-                          cellspacing="0"
-                          width="100%"
-                          border="0"
-                        >
-                          <tbody>
-                            <tr>
-                              <td
-                                style="
-                                  overflow-wrap: break-word;
-                                  word-break: break-word;
-                                  padding: 10px;
-                                  font-family: arial, helvetica, sans-serif;
-                                "
-                                align="left"
-                              >
-                                <div
-                                  style="
-                                    font-family: 'Lato', sans-serif;
-                                    font-size: 14px;
-                                    line-height: 140%;
-                                    text-align: left;
-                                    word-wrap: break-word;
-                                  "
-                                >
-                                  <a
-                                    style="color: #2554fc !important"
-                                    href="mailto:support@01wire.com"
-                                  >
-                                    support@01wire.com
-                                  </a>
-                                </div>
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+  <body>
+    <div class="container">
+      <header class="header">
+        <img
+          height="69px"
+          width="139px"
+          src="data:image/png;base64,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"
+        />
+      </header>
+      <div class="verification">
+        <h1 style="color: rgba(249, 86, 92, 1)">Verification OTP Code</h1>
+        <div style="margin: 20px 0px">
+          <span>Hi,</span>
+          <span>Your 4-digit verification OTP associated with</span>
+          <span>{{email}}</span>
+        </div>
+        <div class="otpBox">
+          <h1>{{otp}}</h1>
+        </div>
+        <span style="margin-top: 20px !important">This OTP code expires at {{validity}}.</span>
+      </div>
+      <footer class="footer">
+        <span>If you didn't request this, just ignore and delete this message.</span>
+        <span>To keep your account secure, please don't forward this email to anyone.</span>
+        <span style="margin: 40px 0px !important; display: flex"
+          >Contact Support - &nbsp;<span style="color: rgba(249, 86, 92, 1)"
+            >contact@01wire.com</span
+          ></span
+        >
+        <div class="footer-content">
+          <div class="logo">
+            <img
+              src="data:image/png;base64,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"
+              alt="Website Logo"
+            />
+          </div>
+          <div class="social-icons">
+            <a href="https://www.facebook.com/" class="social-icon"
+              ><img
+                src="https://upload.wikimedia.org/wikipedia/commons/5/51/Facebook_f_logo_%282019%29.svg"
+                alt="Facebook"
+            /></a>
+            <a href="https://twitter.com/" class="social-icon"
+              ><img src="https://cdn-icons-png.flaticon.com/512/5968/5968830.png" alt="Twitter"
+            /></a>
+            <a href="https://www.linkedin.com/" class="social-icon"
+              ><img
+                src="https://upload.wikimedia.org/wikipedia/commons/c/ca/LinkedIn_logo_initials.png"
+                alt="LinkedIn"
+            /></a>
+          </div>
+        </div>
+      </footer>
+    </div>
   </body>
 </html>

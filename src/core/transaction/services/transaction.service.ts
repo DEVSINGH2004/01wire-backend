@@ -15,17 +15,32 @@ import { WalletService } from 'src/core/wallet/services/wallet.service';
 import { PaginationInputDto } from 'src/common/dto/pagination.input.dto';
 import { TransactionFilterDto } from '../dto/transaction.filter.dto';
 import { paginateResponse } from 'src/common/utils';
+import { UserService } from 'src/core/user/services/user.service';
+import { PaymentService } from 'src/core/payment/payment.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { EventDomainEnum } from 'src/core/events/enum/event.domain.enum';
+import { EventActionEnum } from 'src/core/events/enum/event.action.enum';
 import * as assert from 'assert';
 
 @Injectable()
 export class TransactionService {
   private _logger = new Logger(TransactionService.name);
+  private txnKindCreditMap: Record<TransactionKindEnum, number> = {
+    [TransactionKindEnum.WALLET]: null,
+    [TransactionKindEnum.CREDITS_100]: 100,
+    [TransactionKindEnum.CREDITS_500]: 500,
+    [TransactionKindEnum.CREDITS_1000]: 1000,
+    [TransactionKindEnum.CREDITS_5000]: 5000
+  };
   constructor(
     @InjectModel(Transaction.name)
     private model: Model<Transaction>,
     private configService: ConfigService<ConfigVariablesType>,
     private couponService: CouponService,
-    private walletService: WalletService
+    private userService: UserService,
+    private walletService: WalletService,
+    private paymentService: PaymentService,
+    private eventEmitter: EventEmitter2
   ) {}
 
   async onTransactionSuccess(transactionId) {
@@ -39,8 +54,13 @@ export class TransactionService {
       await transactionObj.save();
       await this.walletService.creditBalance(
         transactionObj.walletId,
-        transactionObj.amount
+        this.txnKindCreditMap[transactionObj.kind]
       );
+      const userObj = await this.userService.load(transactionObj.userId);
+      this.eventEmitter.emit(EventDomainEnum.SLACK, {
+        action: EventActionEnum.SEND,
+        data: `💰 Recharge ${transactionObj.amount} USDT : ${userObj.fullName} | ${userObj.email}`
+      });
     } catch (e) {
       console.log(
         `⚠ Error : onTransactionSuccess: ${transactionId} :`,
@@ -58,11 +78,11 @@ export class TransactionService {
     filterDto = validate(filterDto, TransactionFilterDto);
     let { currentPage, perPage } = paginationDto;
     perPage = perPage <= 50 ? perPage : 50;
-    const q = { userId };
+    const q = { userId, status: TransactionStatusEnum.SUCCESS };
 
     //generate query
     if (filterDto.type) q['type'] = filterDto.type;
-    if (filterDto.status) q['status'] = filterDto.status;
+    // if (filterDto.status) q['status'] = filterDto.status;
     if (filterDto.kind) q['kind'] = filterDto.kind;
     if (filterDto.startTime && filterDto.endTime) {
       q['createdAt'] = { $gte: filterDto.startTime, $lte: filterDto.endTime };
@@ -122,7 +142,15 @@ export class TransactionService {
       type: TransactionTypeEnum.CREDIT
     });
 
-    if (!!transactionObj) return transactionObj;
+    let paymentSessionObj = null;
+    if (!!transactionObj) {
+      paymentSessionObj = await this.paymentService.createCheckoutSession({
+        userId,
+        amount: amount * 100000000,
+        dbTransactionId: transactionObj._id
+      });
+      return paymentSessionObj.url;
+    }
     const walletObj = await this.walletService.getByUserId(userId);
     transactionObj = await this.model.create({
       userId,
@@ -132,6 +160,11 @@ export class TransactionService {
       kind,
       amount
     });
-    return transactionObj;
+    paymentSessionObj = await this.paymentService.createCheckoutSession({
+      userId,
+      amount: amount * 100000000,
+      dbTransactionId: transactionObj._id
+    });
+    return paymentSessionObj.url;
   }
 }
