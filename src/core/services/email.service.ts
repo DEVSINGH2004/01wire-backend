@@ -46,4 +46,35 @@ export class EmailService {
 
     await this.sesService.sendEmail([receiver], subject, body);
   }
+
+  async sendWelcomeEmail(params: { receiver: string }) {
+    const { receiver } = params;
+    let subject = null;
+    subject = `Welcome to ${this.configService.get('app.appName', {
+      infer: true
+    })}`;
+    const body = await this.compileTemplate('welcome.email', {
+      email: receiver
+    });
+
+    await this.sesService.sendEmail([receiver], subject, body);
+  }
+
+  async sendRechargeAkcnowledgement(params: {
+    receiver: string;
+    credits: number;
+    balance: number;
+  }) {
+    const { receiver, balance, credits } = params;
+    let subject = null;
+    subject = `${this.configService.get('app.appName', {
+      infer: true
+    })} - Recharge success for ${credits} credits`;
+    const body = await this.compileTemplate('recharge.acknowledgement', {
+      credits,
+      balance
+    });
+
+    await this.sesService.sendEmail([receiver], subject, body);
+  }
 }
