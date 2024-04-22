@@ -90,8 +90,8 @@ const config = (config: Record<string, unknown>) => {
         NODE_ENV !== 'production'
           ? 'https://api.copperx.dev/api/v1'
           : 'https://api.copperx.io/api/v1',
-      successUrl: 'https://01wire.com/payment-success', // TODO: Add urls
-      cancelUrl: 'https://01wire.com/payment-failed',
+      successUrl: 'https://app.01wire.com/payment-success', // TODO: Add urls
+      cancelUrl: 'https://app.01wire.com/payment-failed',
       secretKey: ENVS.COPPERX_SECRET_KEY,
       webhookSecretKey: ENVS.COPPERX_WEBHOOK_SECRET_KEY
     }
