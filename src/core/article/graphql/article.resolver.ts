@@ -15,6 +15,7 @@ import { ArticlePaginationType } from './type/article.pagination.type';
 import { ArticleCreateInput } from './input/article.create.input';
 import { ArticleUpdateInput } from './input/article.update.input';
 import { ArticleFilterInput } from './input/article.filter.input';
+import { ArticleStatsType } from './type/article.stats.type';
 
 @Resolver(() => ArticleType)
 export class ArticleResolver {
@@ -41,6 +42,11 @@ export class ArticleResolver {
     return this.articleService.getById(id, me.userId);
   }
 
+  @Query(() => [ArticleStatsType], { nullable: true })
+  async getArticleStats(@Context() { me }: IGraphqlContext) {
+    return this.articleService.getArticleStats(me.userId);
+  }
+
   @Mutation(() => ArticleType)
   async createArticle(
     @Args('params') params: ArticleCreateInput,
@@ -65,6 +71,5 @@ export class ArticleResolver {
     { me }: IGraphqlContext
   ): Promise<boolean> {
     return this.articleService.delete(id, me);
-    return;
   }
 }

@@ -53,6 +53,16 @@ export class ArticleService {
     return obj;
   }
 
+  async getArticleStats(userId): Promise<Record<string, number>[]> {
+    const stats = await this.model.aggregate([
+      { $match: { userId: userId } },
+      { $project: { status: true, _id: false } },
+      { $group: { _id: '$status', count: { $sum: 1 } } },
+      { $project: { status: '$_id', count: true, _id: false } }
+    ]);
+    return stats;
+  }
+
   async getById(id: string, userId?: string): Promise<Article> {
     const obj = await this.load(id);
     if (!obj) return null;
