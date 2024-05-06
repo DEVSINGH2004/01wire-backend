@@ -79,7 +79,10 @@ export class ArticleService {
     filterDto = validate(filterDto, ArticleFilterDto);
     let { currentPage, perPage } = paginationDto;
     perPage = perPage <= 50 ? perPage : 50;
-    const q = { userId };
+    const q = {};
+
+    //in case of ADMIN userId willl be null
+    if (userId !== null) q['userId'] = userId;
 
     //generate query
     if (filterDto.clientId) q['clientId'] = filterDto.clientId;

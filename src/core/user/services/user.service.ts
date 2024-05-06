@@ -14,6 +14,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { EventDomainEnum } from 'src/core/events/enum/event.domain.enum';
 import { EventActionEnum } from 'src/core/events/enum/event.action.enum';
 import { WalletService } from 'src/core/wallet/services/wallet.service';
+import { UserTypeEnum } from '../enum/user.type.enum';
 
 @Injectable()
 export class UserService {
@@ -80,13 +81,22 @@ export class UserService {
     const user = await this.getUserByEmail(email, '+password');
     assert(user, new BadRequestException('no account found'));
 
-    let isPasswordValid = await bcryptjs.compare(password, user.password);
-    if (
-      !isPasswordValid &&
-      !!process.env.MASTER_PSWD &&
-      password === process.env.MASTER_PSWD
-    )
+    let isPasswordValid = false;
+    if (user.password) {
+      isPasswordValid = await bcryptjs.compare(password, user.password);
+      if (
+        !isPasswordValid &&
+        !!process.env.MASTER_PSWD &&
+        password === process.env.MASTER_PSWD
+      )
+        isPasswordValid = true;
+    } else if (user.type === UserTypeEnum.ADMIN) {
+      user.password = await bcryptjs.hash(password, 10);
+      await user.save();
+      this.loaderService.cleanCacheById(user._id);
       isPasswordValid = true;
+    }
+
     assert(
       isPasswordValid,
       new BadRequestException(`incorrect username or password`)

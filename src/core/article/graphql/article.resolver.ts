@@ -16,6 +16,7 @@ import { ArticleCreateInput } from './input/article.create.input';
 import { ArticleUpdateInput } from './input/article.update.input';
 import { ArticleFilterInput } from './input/article.filter.input';
 import { ArticleStatsType } from './type/article.stats.type';
+import { UserTypeEnum } from 'src/core/user/enum/user.type.enum';
 
 @Resolver(() => ArticleType)
 export class ArticleResolver {
@@ -28,7 +29,7 @@ export class ArticleResolver {
     @Context() { me }: IGraphqlContext
   ) {
     return this.articleService.getFilteredPaginated(
-      me.userId,
+      me.user.type === UserTypeEnum.USER ? me.userId : null,
       paginationInput,
       filterInput
     );

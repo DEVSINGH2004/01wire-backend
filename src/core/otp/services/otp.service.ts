@@ -12,6 +12,8 @@ import { OtpTypeEnum } from '../enum/otp.type.enum';
 import { OtpStatusEnum } from '../enum/otp.status.enum';
 import { OtpVerifyDto } from '../dto/otp.verify.dto';
 import { validate } from 'nestjs-zod';
+import { UserTypeEnum } from 'src/core/user/enum/user.type.enum';
+import { AuthStatusEnum } from 'src/core/auth/enum/auth.status.enum';
 
 @Injectable()
 export class OtpService {
@@ -77,7 +79,10 @@ export class OtpService {
     return otpObj.toObject();
   }
 
-  async verifyOtp(dto: OtpVerifyDto): Promise<{ token: string }> {
+  async verifyOtp(dto: OtpVerifyDto): Promise<{
+    type: UserTypeEnum;
+    token: string;
+  }> {
     const { token: _id, otp } = validate(dto, OtpVerifyDto);
     const now = new Date();
     let otpObj = await this.model.findOne({
@@ -118,6 +123,6 @@ export class OtpService {
         userId: userObj._id
       });
     }
-    return { token };
+    return { type: userObj.type, token };
   }
 }

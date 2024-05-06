@@ -8,6 +8,7 @@ import { OtpService } from '../../otp/services/otp.service';
 import { JwtService } from '../../services/jwt.service';
 import { UserService } from '../../user/services/user.service';
 import { AuthStatusEnum } from '../enum/auth.status.enum';
+import { UserTypeEnum } from 'src/core/user/enum/user.type.enum';
 
 @Injectable()
 export class AuthService {
@@ -42,12 +43,15 @@ export class AuthService {
     } else {
       status = AuthStatusEnum.EMAIL_VERIFIED;
     }
-    return { status, token, expireAt };
+    return { type: user.type, status, token, expireAt };
   }
 
-  async login(
-    userLoginDto: UserLoginDto
-  ): Promise<{ status: AuthStatusEnum; token: string; expireAt: Date }> {
+  async login(userLoginDto: UserLoginDto): Promise<{
+    type: UserTypeEnum;
+    status: AuthStatusEnum;
+    token: string;
+    expireAt: Date;
+  }> {
     const user = await this.userService.validateCredentials(userLoginDto);
     let token: string = null;
     let expireAt: Date = null;
@@ -64,15 +68,17 @@ export class AuthService {
       });
       status = AuthStatusEnum.LOGGED_IN;
     }
-    return { status, token, expireAt };
+    return { type: user.type, status, token, expireAt };
   }
 
-  async loginViaOtp(email: string): Promise<{ token: string; expireAt: Date }> {
+  async loginViaOtp(
+    email: string
+  ): Promise<{ type: UserTypeEnum; token: string; expireAt: Date }> {
     const user = await this.userService.getUserByEmail(email);
     assert(user, new BadRequestException('user not found'));
     const otpObj = await this.otpService.sendVerificationOtp(user._id);
     const token = otpObj._id;
-    return { token, expireAt: otpObj.expireAt };
+    return { type: user.type, token, expireAt: otpObj.expireAt };
   }
 
   async signup(userSignupDto: UserSignupDto) {
@@ -80,6 +86,6 @@ export class AuthService {
     const otpObj = await this.otpService.sendVerificationOtp(user._id);
     const token = otpObj._id;
     const status = AuthStatusEnum.EMAIL_NOT_VERIFIED;
-    return { status, token };
+    return { type: user.type, status, token };
   }
 }
