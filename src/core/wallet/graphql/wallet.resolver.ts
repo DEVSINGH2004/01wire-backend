@@ -19,7 +19,7 @@ export class WalletResolver {
     return _id;
   }
 
-  @Query(() => WalletType)
+  @Query(() => WalletType, { nullable: true })
   async getUserWallet(@Context() { me }: IGraphqlContext) {
     return this.walletService.getByUserId(me.userId);
   }

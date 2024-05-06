@@ -29,9 +29,9 @@ export class ArticleResolver {
     @Context() { me }: IGraphqlContext
   ) {
     return this.articleService.getFilteredPaginated(
-      me.user.type === UserTypeEnum.USER ? me.userId : null,
       paginationInput,
-      filterInput
+      filterInput,
+      me
     );
   }
 

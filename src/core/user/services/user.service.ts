@@ -15,6 +15,9 @@ import { EventDomainEnum } from 'src/core/events/enum/event.domain.enum';
 import { EventActionEnum } from 'src/core/events/enum/event.action.enum';
 import { WalletService } from 'src/core/wallet/services/wallet.service';
 import { UserTypeEnum } from '../enum/user.type.enum';
+import { PaginationInputDto } from 'src/common/dto/pagination.input.dto';
+import { UserFilterDto } from '../dto/user.filter.dto';
+import { paginateResponse } from 'src/common/utils';
 
 @Injectable()
 export class UserService {
@@ -57,6 +60,46 @@ export class UserService {
       return result.select(projection);
     }
     return result;
+  }
+
+  async getFilteredPaginated(
+    paginationDto: PaginationInputDto,
+    filterDto: UserFilterDto
+  ) {
+    paginationDto = validate(paginationDto, PaginationInputDto);
+    filterDto = validate(filterDto, UserFilterDto);
+    let { currentPage, perPage } = paginationDto;
+    perPage = perPage <= 50 ? perPage : 50;
+    const q = {};
+
+    //generate query
+    if (filterDto.email) q['email'] = filterDto.email;
+    if (filterDto.fullName) q['fullName'] = new RegExp(filterDto.fullName, 'i');
+    if (filterDto.startTime && filterDto.endTime) {
+      q['createdAt'] = { $gte: filterDto.startTime, $lte: filterDto.endTime };
+    } else if (filterDto.startTime) {
+      q['createdAt'] = { $gte: filterDto.startTime };
+    } else if (filterDto.endTime) {
+      q['createdAt'] = { $lte: filterDto.endTime };
+    }
+
+    const [data, itemCount] = await Promise.all([
+      this.model
+        .find(q)
+        .limit(perPage)
+        .skip(currentPage * perPage),
+      this.model.countDocuments(q)
+    ]);
+    const { paginationInfo } = paginateResponse(
+      itemCount,
+      perPage,
+      currentPage
+    );
+
+    return {
+      data,
+      paginationInfo
+    };
   }
 
   async checkExists(email: string): Promise<boolean> {

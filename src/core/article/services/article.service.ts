@@ -16,6 +16,7 @@ import { ArticleUpdateDto } from '../dto/article.update.dto';
 import { IMe } from 'src/common/graphql/interface/context.interface';
 import { ArticleStatusEnum } from '../enum/article.status.enum';
 import { ClientService } from 'src/core/client/services/client.service';
+import { UserTypeEnum } from 'src/core/user/enum/user.type.enum';
 import * as assert from 'assert';
 
 @Injectable()
@@ -71,9 +72,9 @@ export class ArticleService {
   }
 
   async getFilteredPaginated(
-    userId: string,
     paginationDto: PaginationInputDto,
-    filterDto: ArticleFilterDto
+    filterDto: ArticleFilterDto,
+    me?: IMe
   ) {
     paginationDto = validate(paginationDto, PaginationInputDto);
     filterDto = validate(filterDto, ArticleFilterDto);
@@ -81,8 +82,17 @@ export class ArticleService {
     perPage = perPage <= 50 ? perPage : 50;
     const q = {};
 
-    //in case of ADMIN userId willl be null
-    if (userId !== null) q['userId'] = userId;
+    if (me.user.type === UserTypeEnum.ADMIN) {
+      q['status'] = {
+        $in: [
+          ArticleStatusEnum.IN_REVIEW,
+          ArticleStatusEnum.AWAITING_APPROVAL,
+          ArticleStatusEnum.SCHEDULED
+        ]
+      };
+    } else {
+      q['userId'] = me.userId;
+    }
 
     //generate query
     if (filterDto.clientId) q['clientId'] = filterDto.clientId;
