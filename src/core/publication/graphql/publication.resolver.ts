@@ -8,7 +8,6 @@ import { IGraphqlContext } from 'src/common/graphql/interface/context.interface'
 import { PublicationCreateInput } from './input/publication.create.input';
 import { PublicationUpdateInput } from './input/publication.update.input';
 import { AllowedRoles } from 'src/core/auth/decorator/allowedroles.decorator';
-import { RoleEnum } from 'src/core/user/enum/role.enum';
 import { UserTypeEnum } from 'src/core/user/enum/user.type.enum';
 
 @Resolver(() => PublicationType)

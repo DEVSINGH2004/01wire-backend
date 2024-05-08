@@ -1,9 +1,9 @@
 import { Prop, Schema, SchemaFactory, raw } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
-import * as uuid from 'uuid';
 import { PublicationCategoryEnum } from './enum/publication.category.enum';
 import { PublicationLinkTypeEnum } from './enum/publication.link.type.enum';
 import { PublicationTimelineEnum } from './enum/publication.timeline.enum';
+import * as uuid from 'uuid';
 
 type PublicationDocument = Publication & Document;
 

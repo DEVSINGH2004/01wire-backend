@@ -16,6 +16,8 @@ import { WalletType } from 'src/core/wallet/graphql/type/wallet.type';
 import { UserPaginationType } from './type/user.pagination.type';
 import { PaginationInput } from 'src/common/graphql/input/pagination.input';
 import { UserFilterInput } from './input/user.filter.input';
+import { AllowedRoles } from 'src/core/auth/decorator/allowedroles.decorator';
+import { UserTypeEnum } from '../enum/user.type.enum';
 
 @Resolver(() => UserType)
 export class UserResolver {
@@ -25,6 +27,7 @@ export class UserResolver {
   ) {}
 
   @Query(() => UserPaginationType)
+  @AllowedRoles([UserTypeEnum.ADMIN])
   async filterUsersPaginated(
     @Args('paginationInput') paginationInput: PaginationInput,
     @Args('filterInput') filterInput: UserFilterInput,
