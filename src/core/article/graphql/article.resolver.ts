@@ -16,11 +16,31 @@ import { ArticleCreateInput } from './input/article.create.input';
 import { ArticleUpdateInput } from './input/article.update.input';
 import { ArticleFilterInput } from './input/article.filter.input';
 import { ArticleStatsType } from './type/article.stats.type';
-import { UserTypeEnum } from 'src/core/user/enum/user.type.enum';
+import { PublicationType } from 'src/core/publication/graphql/type/publication.type';
+import { Article } from '../article.schema';
+import { PublicationService } from 'src/core/publication/services/publication.service';
+import { BundleType } from 'src/core/bundle/graphql/type/bundle.type';
+import { BundleService } from 'src/core/bundle/services/bundle.service';
 
 @Resolver(() => ArticleType)
 export class ArticleResolver {
-  constructor(private articleService: ArticleService) {}
+  constructor(
+    private articleService: ArticleService,
+    private publicationService: PublicationService,
+    private bundleService: BundleService
+  ) {}
+
+  @ResolveField(() => [BundleType])
+  async bundleInfo(@Parent() article: Article) {
+    if (!article.bundleIds?.length) return [];
+    return this.bundleService.loadMany(article.bundleIds);
+  }
+
+  @ResolveField(() => [PublicationType])
+  async publicationInfo(@Parent() article: Article) {
+    if (!article.publicationIds?.length) return [];
+    return this.publicationService.loadMany(article.publicationIds);
+  }
 
   @Query(() => ArticlePaginationType)
   async filterArticlesPaginated(

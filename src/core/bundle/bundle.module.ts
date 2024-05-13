@@ -11,6 +11,7 @@ import { PublicationModule } from '../publication/publication.module';
     MongooseModule.forFeature([{ name: Bundle.name, schema: BundleSchema }]),
     PublicationModule
   ],
-  providers: [BundleService, BundleLoaderService, BundleResolver]
+  providers: [BundleService, BundleLoaderService, BundleResolver],
+  exports:[BundleService]
 })
 export class BundleModule {}

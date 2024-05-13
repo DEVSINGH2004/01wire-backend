@@ -5,11 +5,15 @@ import { Article, ArticleSchema } from './article.schema';
 import { ArticleLoaderService } from './services/article.loader.service';
 import { ArticleResolver } from './graphql/article.resolver';
 import { ClientModule } from '../client/client.module';
+import { PublicationModule } from '../publication/publication.module';
+import { BundleModule } from '../bundle/bundle.module';
 
 @Module({
   imports: [
+    MongooseModule.forFeature([{ name: Article.name, schema: ArticleSchema }]),
     ClientModule,
-    MongooseModule.forFeature([{ name: Article.name, schema: ArticleSchema }])
+    BundleModule,
+    PublicationModule
   ],
   providers: [ArticleService, ArticleLoaderService, ArticleResolver]
 })
