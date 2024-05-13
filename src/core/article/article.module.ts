@@ -7,13 +7,15 @@ import { ArticleResolver } from './graphql/article.resolver';
 import { ClientModule } from '../client/client.module';
 import { PublicationModule } from '../publication/publication.module';
 import { BundleModule } from '../bundle/bundle.module';
+import { WalletModule } from '../wallet/wallet.module';
 
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: Article.name, schema: ArticleSchema }]),
     ClientModule,
     BundleModule,
-    PublicationModule
+    PublicationModule,
+    WalletModule
   ],
   providers: [ArticleService, ArticleLoaderService, ArticleResolver]
 })

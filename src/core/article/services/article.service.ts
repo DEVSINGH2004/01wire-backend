@@ -19,6 +19,9 @@ import { ClientService } from 'src/core/client/services/client.service';
 import { UserTypeEnum } from 'src/core/user/enum/user.type.enum';
 import * as assert from 'assert';
 import { ArticleUpdateStatusDto } from '../dto/article.update.status.dto';
+import { BundleService } from 'src/core/bundle/services/bundle.service';
+import { PublicationService } from 'src/core/publication/services/publication.service';
+import { WalletService } from 'src/core/wallet/services/wallet.service';
 
 @Injectable()
 export class ArticleService {
@@ -26,7 +29,10 @@ export class ArticleService {
     @InjectModel(Article.name)
     protected model: Model<Article>,
     private loaderService: ArticleLoaderService,
-    private clientService: ClientService
+    private clientService: ClientService,
+    private bundleService: BundleService,
+    private publicationService: PublicationService,
+    private walletService: WalletService
   ) {}
 
   async load(_id: string): Promise<Article> {
@@ -141,8 +147,31 @@ export class ArticleService {
       (key) => (dto[key] === null || dto[key] === '') && delete dto[key]
     );
     dto = validate(dto, ArticleUpdateDto);
-    const { id, userId, ...needToUpdate } = dto;
+    const { id, userId, bundleIds, publicationIds, ...needToUpdate } = dto;
     let articleObj = await this._validateOwnership(id, userId);
+    const [bundleList, publicationList] = await Promise.all([
+      this.bundleService.loadMany(bundleIds),
+      this.publicationService.loadMany(publicationIds)
+    ]);
+    assert(
+      bundleList.length === bundleIds.length,
+      new BadRequestException('Invalid bundle Ids')
+    );
+    assert(
+      publicationList.length === publicationIds.length,
+      new BadRequestException('Invalid publication Ids')
+    );
+
+    const maxIndex =
+      publicationList.length > bundleList.length
+        ? publicationList.length
+        : bundleList.length;
+
+    let totalCredits = 0;
+    for (let i = 0; i < maxIndex; i++) {
+      if (!!bundleList[i]) totalCredits += bundleList[i].price;
+      if (!!publicationList[i]) totalCredits += publicationList[i].price;
+    }
 
     //validate client ownership if changed
     if (
@@ -162,7 +191,7 @@ export class ArticleService {
 
     articleObj = await this.model.findOneAndUpdate(
       { _id: id, userId },
-      { $set: { ...needToUpdate } },
+      { $set: { bundleIds, publicationIds, totalCredits, ...needToUpdate } },
       { new: true }
     );
     await this.loaderService.cleanCacheById(id);
@@ -185,6 +214,15 @@ export class ArticleService {
           articleObj.status === ArticleStatusEnum.REJECTED,
         new BadRequestException(`PR already being processed`)
       );
+      const walletObj = await this.walletService.getByUserId(userId);
+      assert(
+        walletObj.balance >= articleObj.totalCredits,
+        new BadRequestException('Insufficient credits in wallet')
+      );
+      await this.walletService.debitBalanceByUserId(
+        userId,
+        articleObj.totalCredits
+      );
     } else {
       assert(
         status === ArticleStatusEnum.AWAITING_APPROVAL ||
@@ -202,17 +240,44 @@ export class ArticleService {
 
       switch (status) {
         case ArticleStatusEnum.AWAITING_APPROVAL: {
+          assert(
+            articleObj.status === ArticleStatusEnum.SUBMITTED,
+            new BadRequestException('PR not in SUBMIT state')
+          );
         }
         case ArticleStatusEnum.SCHEDULED: {
+          assert(
+            articleObj.status === ArticleStatusEnum.AWAITING_APPROVAL,
+            new BadRequestException('PR not in AWAITING APPROVAL state')
+          );
         }
         case ArticleStatusEnum.REJECTED: {
+          assert(
+            articleObj.status === ArticleStatusEnum.SUBMITTED ||
+              articleObj.status === ArticleStatusEnum.AWAITING_APPROVAL ||
+              articleObj.status === ArticleStatusEnum.SCHEDULED,
+            new BadRequestException(
+              `PR in ${articleObj.status} state cannot be rejected`
+            )
+          );
+          assert(
+            !!rejectionReason,
+            new BadRequestException('rejection reason is needed to reject PR')
+          );
         }
         case ArticleStatusEnum.PUBLISHED: {
+          assert(
+            articleObj.status === ArticleStatusEnum.SCHEDULED,
+            new BadRequestException('PR not in SCHEDULED state')
+          );
         }
         default:
+          throw new BadRequestException(
+            `status ${status} not handled for ADMIN`
+          );
       }
     }
-
+    await this.model.updateOne({ _id: id }, { $set: { status } });
     return true;
   }
 
