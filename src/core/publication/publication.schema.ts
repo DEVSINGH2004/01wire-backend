@@ -4,6 +4,7 @@ import { PublicationCategoryEnum } from './enum/publication.category.enum';
 import { PublicationLinkTypeEnum } from './enum/publication.link.type.enum';
 import { PublicationTimelineEnum } from './enum/publication.timeline.enum';
 import * as uuid from 'uuid';
+import { VisibilityEnum } from 'src/common/enum/visibility.enum';
 
 type PublicationDocument = Publication & Document;
 
@@ -47,6 +48,13 @@ class Publication extends Document {
     required: true
   })
   categories: PublicationCategoryEnum[];
+
+  @Prop({
+    type: String,
+    enum: VisibilityEnum,
+    default: VisibilityEnum.SUPPRESSED
+  })
+  visibility: VisibilityEnum;
 
   @Prop({
     type: String,

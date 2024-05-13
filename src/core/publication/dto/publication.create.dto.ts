@@ -3,6 +3,7 @@ import { nativeEnum, z } from 'nestjs-zod/z';
 import { PublicationCategoryEnum } from '../enum/publication.category.enum';
 import { PublicationLinkTypeEnum } from '../enum/publication.link.type.enum';
 import { PublicationTimelineEnum } from '../enum/publication.timeline.enum';
+import { VisibilityEnum } from 'src/common/enum/visibility.enum';
 
 export const publicationCreateDto = z.object({
   title: z.string(),
@@ -17,6 +18,7 @@ export const publicationCreateDto = z.object({
     })
     .nullish(),
   categories: z.array(nativeEnum(PublicationCategoryEnum)),
+  visibility: nativeEnum(VisibilityEnum).nullish(),
   linkType: nativeEnum(PublicationLinkTypeEnum),
   url: z.string().url().nullish(),
   timeline: nativeEnum(PublicationTimelineEnum),

@@ -2,7 +2,7 @@ import { registerEnumType } from '@nestjs/graphql';
 
 export enum ArticleStatusEnum {
   DRAFT = 'DRAFT',
-  IN_REVIEW = 'IN_REVIEW',
+  SUBMITTED = 'SUBMITTED',
   AWAITING_APPROVAL = 'AWAITING_APPROVAL',
   SCHEDULED = 'SCHEDULED',
   REJECTED = 'REJECTED',

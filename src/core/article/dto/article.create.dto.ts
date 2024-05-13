@@ -3,6 +3,7 @@ import { nativeEnum, z } from 'nestjs-zod/z';
 import { LanguageEnum } from 'src/common/enum/language.enum';
 import { ArticleCategoryEnum } from '../enum/article.category.enum';
 import { ArticlePublishTypeEnum } from '../enum/article.publish.type.enum';
+import { ArticleStatusEnum } from '../enum/article.status.enum';
 
 export const articleCreateDto = z.object({
   userId: z.string().uuid(),
@@ -18,6 +19,7 @@ export const articleCreateDto = z.object({
   publishType: nativeEnum(ArticlePublishTypeEnum).nullish(),
   timezone: z.string().nullish(),
   notes: z.string().nullish(),
+  status: nativeEnum(ArticleStatusEnum),
   bundleIds: z.array(z.string().uuid()).nullish(),
   publicationIds: z.array(z.string().uuid()).nullish(),
   mediaContact: z

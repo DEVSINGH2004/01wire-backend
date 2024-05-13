@@ -76,6 +76,12 @@ class Article extends Document {
   status: ArticleStatusEnum;
 
   @Prop({
+    type: Number,
+    default: 0
+  })
+  totalCredits: number;
+
+  @Prop({
     type: String,
     enum: [...Object.values(ArticleCategoryEnum), null],
     default: null
@@ -100,6 +106,12 @@ class Article extends Document {
     default: null
   })
   notes: string;
+
+  @Prop({
+    type: String,
+    default: null
+  })
+  rejectionReason: string;
 
   @Prop({
     type: [String],

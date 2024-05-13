@@ -21,6 +21,7 @@ import { Article } from '../article.schema';
 import { PublicationService } from 'src/core/publication/services/publication.service';
 import { BundleType } from 'src/core/bundle/graphql/type/bundle.type';
 import { BundleService } from 'src/core/bundle/services/bundle.service';
+import { ArticleUpdateStateInput } from './input/article.update.state.input';
 
 @Resolver(() => ArticleType)
 export class ArticleResolver {
@@ -82,6 +83,14 @@ export class ArticleResolver {
     @Context() { me }: IGraphqlContext
   ) {
     return this.articleService.update({ userId: me.userId, ...params });
+  }
+
+  @Mutation(() => Boolean)
+  async updateArticleStatus(
+    @Args('params') params: ArticleUpdateStateInput,
+    @Context() { me }: IGraphqlContext
+  ) {
+    return this.articleService.updateStatus(params, me);
   }
 
   @Mutation(() => Boolean)

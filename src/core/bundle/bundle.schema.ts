@@ -1,8 +1,9 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
-import * as uuid from 'uuid';
 import { BundleTypeEnum } from './enum/bundle.type.enum';
 import { BundleCategoryEnum } from './enum/bundle.category.enum';
+import { VisibilityEnum } from 'src/common/enum/visibility.enum';
+import * as uuid from 'uuid';
 
 type BundleDocument = Bundle & Document;
 
@@ -30,6 +31,13 @@ class Bundle extends Document {
     required: true
   })
   category: BundleCategoryEnum;
+
+  @Prop({
+    type: String,
+    enum: VisibilityEnum,
+    default: VisibilityEnum.SUPPRESSED
+  })
+  visibility: VisibilityEnum;
 
   @Prop({
     type: String,

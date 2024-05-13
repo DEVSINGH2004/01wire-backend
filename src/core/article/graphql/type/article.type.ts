@@ -1,4 +1,4 @@
-import { Field, ID, ObjectType } from '@nestjs/graphql';
+import { Field, ID, Int, ObjectType } from '@nestjs/graphql';
 import { ArticleStatusEnum } from '../../enum/article.status.enum';
 import { ArticleCategoryEnum } from '../../enum/article.category.enum';
 import { ArticlePublishTypeEnum } from '../../enum/article.publish.type.enum';
@@ -52,6 +52,9 @@ export class ArticleType {
   @Field(() => String, { nullable: true })
   notes: string;
 
+  @Field(() => String, { nullable: true })
+  rejectionReason: string;
+
   @Field(() => [String], { nullable: true })
   bundleIds: string[];
 
@@ -60,6 +63,9 @@ export class ArticleType {
 
   @Field(() => ArticleMediaContactType, { nullable: true })
   mediaContact: ArticleMediaContactType;
+
+  @Field(() => Int)
+  totalCredits: Number;
 
   @Field(() => Date, { nullable: true })
   publishAt: Date;

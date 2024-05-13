@@ -18,6 +18,7 @@ import { ArticleStatusEnum } from '../enum/article.status.enum';
 import { ClientService } from 'src/core/client/services/client.service';
 import { UserTypeEnum } from 'src/core/user/enum/user.type.enum';
 import * as assert from 'assert';
+import { ArticleUpdateStatusDto } from '../dto/article.update.status.dto';
 
 @Injectable()
 export class ArticleService {
@@ -85,7 +86,7 @@ export class ArticleService {
     if (me.user.type === UserTypeEnum.ADMIN) {
       q['status'] = {
         $in: [
-          ArticleStatusEnum.IN_REVIEW,
+          ArticleStatusEnum.SUBMITTED,
           ArticleStatusEnum.AWAITING_APPROVAL,
           ArticleStatusEnum.SCHEDULED
         ]
@@ -155,7 +156,7 @@ export class ArticleService {
       articleObj.status === ArticleStatusEnum.DRAFT ||
         articleObj.status === ArticleStatusEnum.REJECTED,
       new BadRequestException(
-        `article in ${articleObj.status} state cannot be edited`
+        `PR in ${articleObj.status} state cannot be edited`
       )
     );
 
@@ -166,6 +167,53 @@ export class ArticleService {
     );
     await this.loaderService.cleanCacheById(id);
     return articleObj;
+  }
+
+  async updateStatus(dto: ArticleUpdateStatusDto, me: IMe): Promise<boolean> {
+    dto = validate(dto, ArticleUpdateStatusDto);
+    const { id, status, rejectionReason } = dto;
+    const { userId, tokenType } = me;
+    const articleObj = await this._validateOwnership(id, userId);
+
+    if (tokenType === UserTypeEnum.USER) {
+      assert(
+        status !== ArticleStatusEnum.SUBMITTED,
+        new BadRequestException('You can only submit PR')
+      );
+      assert(
+        articleObj.status === ArticleStatusEnum.DRAFT ||
+          articleObj.status === ArticleStatusEnum.REJECTED,
+        new BadRequestException(`PR already being processed`)
+      );
+    } else {
+      assert(
+        status === ArticleStatusEnum.AWAITING_APPROVAL ||
+          status === ArticleStatusEnum.SCHEDULED ||
+          status === ArticleStatusEnum.REJECTED ||
+          status === ArticleStatusEnum.PUBLISHED,
+        new BadRequestException(`This action is only for user`)
+      );
+      assert(
+        articleObj.status === ArticleStatusEnum.SUBMITTED ||
+          articleObj.status === ArticleStatusEnum.AWAITING_APPROVAL ||
+          articleObj.status === ArticleStatusEnum.SCHEDULED,
+        new BadRequestException(`PR is in ${articleObj.status} state`)
+      );
+
+      switch (status) {
+        case ArticleStatusEnum.AWAITING_APPROVAL: {
+        }
+        case ArticleStatusEnum.SCHEDULED: {
+        }
+        case ArticleStatusEnum.REJECTED: {
+        }
+        case ArticleStatusEnum.PUBLISHED: {
+        }
+        default:
+      }
+    }
+
+    return true;
   }
 
   async delete(_id: string, me: IMe) {
