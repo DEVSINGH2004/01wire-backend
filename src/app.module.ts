@@ -22,6 +22,7 @@ import { PublicationModule } from './core/publication/publication.module';
 import { CouponModule } from './core/coupon/coupon.module';
 import { UploadModule } from './core/upload/upload.module';
 import { PaymentModule } from './core/payment/payment.module';
+import { PrModule } from './core/pr/pr.module';
 
 @Module({
   imports: [
@@ -49,7 +50,8 @@ import { PaymentModule } from './core/payment/payment.module';
     TransactionModule,
     CouponModule,
     UploadModule,
-    PaymentModule
+    PaymentModule,
+    PrModule
   ],
   controllers: [AppController],
   providers: [AppService, EmailService, JwtService, SlackService]

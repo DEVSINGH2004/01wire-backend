@@ -17,6 +17,7 @@ import { WalletModule } from '../wallet/wallet.module';
     PublicationModule,
     WalletModule
   ],
-  providers: [ArticleService, ArticleLoaderService, ArticleResolver]
+  providers: [ArticleService, ArticleLoaderService, ArticleResolver],
+  exports: [ArticleService]
 })
 export class ArticleModule {}
