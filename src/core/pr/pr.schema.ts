@@ -41,6 +41,12 @@ class Pr extends Document {
   })
   rejectionReason: string;
 
+  @Prop({
+    type: String,
+    default: null
+  })
+  url: string;
+
   @Prop({ type: Date, default: null })
   publishAt: Date;
 

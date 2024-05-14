@@ -92,7 +92,7 @@ export class PrService {
 
   async updateStatus(dto: PrUpdateStatusDto): Promise<boolean> {
     dto = validate(dto, PrUpdateStatusDto);
-    const { id, status, rejectionReason } = dto;
+    const { id, status, rejectionReason, url } = dto;
     const prObj = await this.load(id);
     const updateObj = {};
     assert(!!prObj, new BadRequestException('invalid pr id'));
@@ -131,6 +131,11 @@ export class PrService {
           prObj.status === PrStatusEnum.SCHEDULED,
           new BadRequestException('PR not in SCHEDULED state')
         );
+        assert(
+          !!url,
+          new BadRequestException('url is needed to mark PR as publish')
+        );
+        updateObj['url'] = url;
         break;
       }
       default:

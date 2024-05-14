@@ -2,22 +2,14 @@ import { createZodDto } from 'nestjs-zod';
 import { nativeEnum, z } from 'nestjs-zod/z';
 import { PrStatusEnum } from '../enum/pr.status.enum';
 
-export const prDto = z.object({
-  userId: z.string().uuid(),
-  articleId: z.string().uuid(),
-  publicationId: z.string().uuid(),
+const filterDto = z.object({
+  userId: z.string().uuid().nullish(),
+  articleId: z.string().uuid().nullish(),
+  publicationId: z.string().uuid().nullish(),
   status: nativeEnum(PrStatusEnum).nullish(),
-  rejectionReason: z.string().nullish()
+  rejectionReason: z.string().nullish(),
+  startTime: z.date().nullish(),
+  endTime: z.date().nullish()
 });
-
-const filterDto = prDto
-  .omit({
-    rejectionReason: true
-  })
-  .extend({
-    startTime: z.date().nullish(),
-    endTime: z.date().nullish()
-  })
-  .partial();
 
 export class PrFilterDto extends createZodDto(filterDto) {}

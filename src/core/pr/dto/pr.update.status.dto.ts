@@ -1,15 +1,12 @@
 import { createZodDto } from 'nestjs-zod';
-import { z } from 'nestjs-zod/z';
-import { prDto } from './pr.filter.dto';
+import { nativeEnum, z } from 'nestjs-zod/z';
+import { PrStatusEnum } from '../enum/pr.status.enum';
 
-const prUpdateStatusDto = prDto
-  .partial()
-  .pick({
-    status: true
-  })
-  .extend({
-    id: z.string().uuid(),
-    rejectionReason: z.string().nullish()
-  });
+const prUpdateStatusDto = z.object({
+  id: z.string().uuid(),
+  status: nativeEnum(PrStatusEnum).nullish(),
+  rejectionReason: z.string().nullish(),
+  url: z.string().url().nullish()
+});
 
 export class PrUpdateStatusDto extends createZodDto(prUpdateStatusDto) {}
