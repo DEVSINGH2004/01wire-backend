@@ -20,15 +20,17 @@ export class PublicationService {
     private loaderService: PublicationLoaderService
   ) {}
 
-  async load(_id: string): Promise<Publication> {
+  async load(id: string): Promise<Publication> {
+    if(!id) return null;
     const loader = await this.loaderService.init();
-    return loader.load(_id);
+    return loader.load(id);
   }
 
   async loadMany(
     ids: string[],
     q: Record<string, any> = null
   ): Promise<Publication[]> {
+    if(!ids || ids.length) return [];
     const loader = await this.loaderService.init(q);
     return loader.loadMany(ids);
   }
