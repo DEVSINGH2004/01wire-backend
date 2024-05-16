@@ -62,6 +62,10 @@ const config = (config: Record<string, unknown>) => {
         key: `article_${NODE_ENV}`,
         ttl: 300
       },
+      pr: {
+        key: `pr_${NODE_ENV}`,
+        ttl: 300
+      },
       publication: {
         key: `publication_${NODE_ENV}`,
         ttl: 300

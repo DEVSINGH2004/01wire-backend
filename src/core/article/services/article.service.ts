@@ -17,11 +17,11 @@ import { IMe } from 'src/common/graphql/interface/context.interface';
 import { ArticleStatusEnum } from '../enum/article.status.enum';
 import { ClientService } from 'src/core/client/services/client.service';
 import { UserTypeEnum } from 'src/core/user/enum/user.type.enum';
-import * as assert from 'assert';
 import { ArticleUpdateStatusDto } from '../dto/article.update.status.dto';
 import { BundleService } from 'src/core/bundle/services/bundle.service';
 import { PublicationService } from 'src/core/publication/services/publication.service';
 import { WalletService } from 'src/core/wallet/services/wallet.service';
+import * as assert from 'assert';
 
 @Injectable()
 export class ArticleService {
@@ -203,6 +203,7 @@ export class ArticleService {
     const { id, status, rejectionReason } = dto;
     const { userId, tokenType } = me;
     const articleObj = await this._validateOwnership(id, userId);
+    const updateObj = {};
 
     if (tokenType === UserTypeEnum.USER) {
       assert(
@@ -219,6 +220,18 @@ export class ArticleService {
         walletObj.balance >= articleObj.totalCredits,
         new BadRequestException('Insufficient credits in wallet')
       );
+      let finalPublicationIds = articleObj.publicationIds;
+
+      if (articleObj.bundleIds.length) {
+        const bundleObjs = await this.bundleService.loadMany(
+          articleObj.bundleIds
+        );
+        bundleObjs.forEach((e) => {
+          finalPublicationIds = [...finalPublicationIds, ...e.publicationIds];
+        });
+      }
+      finalPublicationIds = [...new Set(finalPublicationIds)];
+
       await this.walletService.debitBalanceByUserId(
         userId,
         articleObj.totalCredits
@@ -264,6 +277,7 @@ export class ArticleService {
             !!rejectionReason,
             new BadRequestException('rejection reason is needed to reject PR')
           );
+          updateObj['rejectionReason'] = rejectionReason;
         }
         case ArticleStatusEnum.PUBLISHED: {
           assert(
@@ -277,7 +291,8 @@ export class ArticleService {
           );
       }
     }
-    await this.model.updateOne({ _id: id }, { $set: { status } });
+    updateObj['status'] = status;
+    await this.model.updateOne({ _id: id }, { $set: { ...updateObj } });
     return true;
   }
 
