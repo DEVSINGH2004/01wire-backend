@@ -9,7 +9,7 @@ export const clientCreateDto = z.object({
   type: z.nativeEnum(ClientTypeEnum),
   category: z.nativeEnum(ClientCategoryEnum),
   email: z.string().email(),
-  website: z.string().url(),
+  website: z.string(),
   logo: z.string().nullish(),
   social: z
     .object({
