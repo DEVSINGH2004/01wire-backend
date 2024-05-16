@@ -85,7 +85,7 @@ export class ArticleResolver {
     return this.articleService.update({ userId: me.userId, ...params });
   }
 
-  @Mutation(() => Boolean)
+  @Mutation(() => ArticleType)
   async updateArticleStatus(
     @Args('params') params: ArticleUpdateStateInput,
     @Context() { me }: IGraphqlContext

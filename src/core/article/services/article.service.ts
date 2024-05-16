@@ -223,7 +223,7 @@ export class ArticleService {
     return articleObj;
   }
 
-  async updateStatus(dto: ArticleUpdateStatusDto, me: IMe): Promise<boolean> {
+  async updateStatus(dto: ArticleUpdateStatusDto, me: IMe): Promise<Article> {
     dto = validate(dto, ArticleUpdateStatusDto);
     const { id, status, rejectionReason } = dto;
     const { userId, tokenType } = me;
@@ -317,8 +317,11 @@ export class ArticleService {
       }
     }
     updateObj['status'] = status;
-    await this.model.updateOne({ _id: id }, { $set: { ...updateObj } });
-    return true;
+    return this.model.findOneAndUpdate(
+      { _id: id },
+      { $set: { ...updateObj } },
+      { new: true }
+    );
   }
 
   async delete(_id: string, me: IMe) {
