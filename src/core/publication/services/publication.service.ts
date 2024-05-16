@@ -30,7 +30,7 @@ export class PublicationService {
     ids: string[],
     q: Record<string, any> = null
   ): Promise<Publication[]> {
-    if(!ids || ids.length) return [];
+    if(!ids || !ids.length) return [];
     const loader = await this.loaderService.init(q);
     return loader.loadMany(ids);
   }

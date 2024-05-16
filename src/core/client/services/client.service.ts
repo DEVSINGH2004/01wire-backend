@@ -24,15 +24,17 @@ export class ClientService {
     private loaderService: ClientLoaderService
   ) {}
 
-  async load(_id: string): Promise<Client> {
+  async load(id: string): Promise<Client> {
+    if(!id) return null;
     const loader = await this.loaderService.init();
-    return loader.load(_id);
+    return loader.load(id);
   }
 
   async loadMany(
     ids: string[],
     q: Record<string, any> = null
   ): Promise<Client[]> {
+    if(!ids || !ids.length) return [];
     const loader = await this.loaderService.init(q);
     return loader.loadMany(ids);
   }
