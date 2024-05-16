@@ -21,15 +21,17 @@ export class BundleService {
     private publicationService: PublicationService
   ) {}
 
-  async load(_id: string): Promise<Bundle> {
+  async load(id: string): Promise<Bundle> {
+    if(!id) return null;
     const loader = await this.loaderService.init();
-    return loader.load(_id);
+    return loader.load(id);
   }
 
   async loadMany(
     ids: string[],
     q: Record<string, any> = null
   ): Promise<Bundle[]> {
+    if(!ids || ids.length) return [];
     const loader = await this.loaderService.init(q);
     return loader.loadMany(ids);
   }
