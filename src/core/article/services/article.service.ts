@@ -232,7 +232,7 @@ export class ArticleService {
 
     if (tokenType === UserTypeEnum.USER) {
       assert(
-        status !== ArticleStatusEnum.SUBMITTED,
+        status === ArticleStatusEnum.SUBMITTED,
         new BadRequestException('You can only submit PR')
       );
       assert(
