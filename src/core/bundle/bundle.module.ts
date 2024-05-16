@@ -12,6 +12,6 @@ import { PublicationModule } from '../publication/publication.module';
     PublicationModule
   ],
   providers: [BundleService, BundleLoaderService, BundleResolver],
-  exports:[BundleService]
+  exports: [BundleService]
 })
 export class BundleModule {}

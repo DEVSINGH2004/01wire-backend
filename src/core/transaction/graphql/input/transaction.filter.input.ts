@@ -3,10 +3,7 @@ import { TransactionType } from '../type/transaction.type';
 
 @InputType()
 export class TransactionFilterInput extends PartialType(
-  PickType(TransactionType, [
-    'type',
-    'kind'
-  ] as const),
+  PickType(TransactionType, ['type', 'kind'] as const),
   InputType
 ) {
   @Field(() => Date, { nullable: true })

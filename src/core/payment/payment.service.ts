@@ -12,7 +12,7 @@ export class PaymentService {
     private userService: UserService,
     private copperxService: CopperxService,
     @Inject(forwardRef(() => TransactionService))
-    private transactionService: TransactionService,
+    private transactionService: TransactionService
   ) {}
 
   async createCheckoutSession({

@@ -6,7 +6,6 @@ export class UserFilterInput extends PartialType(
   PickType(UserType, ['email', 'fullName'] as const),
   InputType
 ) {
-
   @Field(() => Date, { nullable: true })
   startTime: Date;
 

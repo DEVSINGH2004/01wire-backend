@@ -1,4 +1,4 @@
-import { registerEnumType } from "@nestjs/graphql";
+import { registerEnumType } from '@nestjs/graphql';
 
 export enum VisibilityEnum {
   SUPPRESSED = 'SUPPRESSED',
@@ -6,4 +6,3 @@ export enum VisibilityEnum {
 }
 
 registerEnumType(VisibilityEnum, { name: 'VisibilityEnum' });
-

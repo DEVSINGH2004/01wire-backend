@@ -36,7 +36,7 @@ export class ArticleService {
   ) {}
 
   async load(id: string): Promise<Article> {
-    if(!id) return null;
+    if (!id) return null;
     const loader = await this.loaderService.init();
     return loader.load(id);
   }
@@ -45,7 +45,7 @@ export class ArticleService {
     ids: string[],
     q: Record<string, any> = null
   ): Promise<Article[]> {
-    if(!ids || !ids.length) return [];
+    if (!ids || !ids.length) return [];
     const loader = await this.loaderService.init(q);
     return loader.loadMany(ids);
   }
@@ -151,28 +151,51 @@ export class ArticleService {
     dto = validate(dto, ArticleUpdateDto);
     const { id, userId, bundleIds, publicationIds, ...needToUpdate } = dto;
     let articleObj = await this._validateOwnership(id, userId);
-    const [bundleList, publicationList] = await Promise.all([
-      this.bundleService.loadMany(bundleIds),
-      this.publicationService.loadMany(publicationIds)
-    ]);
-    assert(
-      bundleList.length === bundleIds.length,
-      new BadRequestException('Invalid bundle Ids')
-    );
-    assert(
-      publicationList.length === publicationIds.length,
-      new BadRequestException('Invalid publication Ids')
-    );
 
-    const maxIndex =
-      publicationList.length > bundleList.length
-        ? publicationList.length
-        : bundleList.length;
+    //check if bundleId or publicationId is provided
+    if (
+      (bundleIds && bundleIds.length) ||
+      (publicationIds && publicationIds.length)
+    ) {
+      const [bundleList, publicationList] = await Promise.all([
+        this.bundleService.loadMany(bundleIds),
+        this.publicationService.loadMany(publicationIds)
+      ]);
 
-    let totalCredits = 0;
-    for (let i = 0; i < maxIndex; i++) {
-      if (!!bundleList[i]) totalCredits += bundleList[i].price;
-      if (!!publicationList[i]) totalCredits += publicationList[i].price;
+      if (bundleIds && bundleIds.length) {
+        assert(
+          bundleList.length === bundleIds.length,
+          new BadRequestException('Invalid bundle Ids')
+        );
+      }
+
+      if (publicationList && publicationList.length) {
+        assert(
+          publicationList.length === publicationIds.length,
+          new BadRequestException('Invalid publication Ids')
+        );
+      }
+
+      let maxIndex = null;
+
+      if (bundleList.length && publicationList.length) {
+        maxIndex =
+          publicationList.length > bundleList.length
+            ? publicationList.length
+            : bundleList.length;
+      } else if (bundleList.length) {
+        maxIndex = bundleList.length;
+      } else {
+        maxIndex = publicationList.length;
+      }
+
+      let totalCredits = 0;
+      for (let i = 0; i < maxIndex; i++) {
+        if (!!bundleList[i]) totalCredits += bundleList[i].price;
+        if (!!publicationList[i]) totalCredits += publicationList[i].price;
+      }
+
+      needToUpdate['totalCredits'] = totalCredits;
     }
 
     //validate client ownership if changed
@@ -193,7 +216,7 @@ export class ArticleService {
 
     articleObj = await this.model.findOneAndUpdate(
       { _id: id, userId },
-      { $set: { bundleIds, publicationIds, totalCredits, ...needToUpdate } },
+      { $set: { bundleIds, publicationIds, ...needToUpdate } },
       { new: true }
     );
     await this.loaderService.cleanCacheById(id);

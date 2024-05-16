@@ -30,12 +30,9 @@ export class UserResolver {
   @AllowedRoles([UserTypeEnum.ADMIN])
   async filterUsersPaginated(
     @Args('paginationInput') paginationInput: PaginationInput,
-    @Args('filterInput') filterInput: UserFilterInput,
+    @Args('filterInput') filterInput: UserFilterInput
   ) {
-    return this.userService.getFilteredPaginated(
-      paginationInput,
-      filterInput,
-    );
+    return this.userService.getFilteredPaginated(paginationInput, filterInput);
   }
 
   @ResolveField(() => WalletType, { nullable: true })

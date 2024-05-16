@@ -18,7 +18,7 @@ export class WalletService {
   ) {}
 
   async load(id: string, q: Record<string, any> = null): Promise<Wallet> {
-    if(!id) return null;
+    if (!id) return null;
     const loader = await this.loaderService.init(q);
     return loader.load(id);
   }
@@ -27,7 +27,7 @@ export class WalletService {
     ids: string[],
     q: Record<string, any> = null
   ): Promise<Wallet[]> {
-    if(!ids || !ids.length) return [];
+    if (!ids || !ids.length) return [];
     const loader = await this.loaderService.init(q);
     return loader.loadMany(ids);
   }
