@@ -19,7 +19,7 @@ export const articleCreateDto = z.object({
   publishType: nativeEnum(ArticlePublishTypeEnum).nullish(),
   timezone: z.string().nullish(),
   notes: z.string().nullish(),
-  status: nativeEnum(ArticleStatusEnum),
+  status: nativeEnum(ArticleStatusEnum).nullish(),
   bundleIds: z.array(z.string().uuid()).nullish(),
   publicationIds: z.array(z.string().uuid()).nullish(),
   mediaContact: z
