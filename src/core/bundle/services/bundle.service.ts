@@ -88,6 +88,12 @@ export class BundleService {
     return this.model.create({ ...dto, maxPrice });
   }
 
+  async getById(id: string): Promise<Bundle> {
+    const obj = await this.load(id);
+    if (!obj) return null;
+    return obj;
+  }
+
   async update(dto: BundleUpdateDto): Promise<Bundle> {
     Object.keys(dto).forEach(
       (key) => (dto[key] === null || dto[key] === '') && delete dto[key]

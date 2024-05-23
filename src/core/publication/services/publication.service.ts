@@ -35,6 +35,12 @@ export class PublicationService {
     return loader.loadMany(ids);
   }
 
+  async getById(id: string): Promise<Publication> {
+    const obj = await this.load(id);
+    if (!obj) return null;
+    return obj;
+  }
+
   async getFilteredPaginated(
     paginationDto: PaginationInputDto,
     filterDto: PublicationFilterDto

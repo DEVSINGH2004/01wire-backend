@@ -49,4 +49,11 @@ export class BundleResolver {
   async updateBundle(@Args('params') params: BundleUpdateInput) {
     return this.bundleService.update(params);
   }
+
+  @Query(() => BundleType, { nullable: true })
+  async getBundleById(
+    @Args('id') id: string,
+  ) {
+    return this.bundleService.getById(id);
+  }
 }
