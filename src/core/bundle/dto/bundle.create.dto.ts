@@ -10,7 +10,7 @@ export const bundleCreateDto = z.object({
     .nonempty('atleast 1 publicationId is required'),
   type: nativeEnum(BundleTypeEnum),
   category: nativeEnum(BundleCategoryEnum),
-  visibility: nativeEnum(VisibilityEnum),
+  visibility: nativeEnum(VisibilityEnum).nullish(),
   price: z.number().min(0, 'price cannot be 0'),
   description: z.string().nullish(),
   image: z.string().nullish()
