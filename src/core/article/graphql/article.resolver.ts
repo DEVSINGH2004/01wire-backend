@@ -61,7 +61,7 @@ export class ArticleResolver {
     @Args('id') id: string,
     @Context() { me }: IGraphqlContext
   ) {
-    return this.articleService.getById(id, me.userId);
+    return this.articleService.getById(id, me);
   }
 
   @Query(() => [ArticleStatsType], { nullable: true })

@@ -73,10 +73,11 @@ export class ArticleService {
     return stats;
   }
 
-  async getById(id: string, userId?: string): Promise<Article> {
+  async getById(id: string, me: IMe): Promise<Article> {
     const obj = await this.load(id);
     if (!obj) return null;
-    if (obj.userId !== userId) return null;
+    if (me.user.type === UserTypeEnum.USER && obj.userId !== me.userId)
+      return null;
     return obj;
   }
 
