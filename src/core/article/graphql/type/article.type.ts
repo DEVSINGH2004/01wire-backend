@@ -64,7 +64,7 @@ export class ArticleType {
   @Field(() => ArticleMediaContactType, { nullable: true })
   mediaContact: ArticleMediaContactType;
 
-  @Field(() => Int, {nullable:true})
+  @Field(() => Int, { nullable: true })
   totalCredits: Number;
 
   @Field(() => Date, { nullable: true })

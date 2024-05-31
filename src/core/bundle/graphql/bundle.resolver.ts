@@ -51,9 +51,7 @@ export class BundleResolver {
   }
 
   @Query(() => BundleType, { nullable: true })
-  async getBundleById(
-    @Args('id') id: string,
-  ) {
+  async getBundleById(@Args('id') id: string) {
     return this.bundleService.getById(id);
   }
 }

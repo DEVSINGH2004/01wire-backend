@@ -227,14 +227,14 @@ export class ArticleService {
   async updateStatus(dto: ArticleUpdateStatusDto, me: IMe): Promise<Article> {
     dto = validate(dto, ArticleUpdateStatusDto);
     const { id, status, rejectionReason } = dto;
-    const { userId, tokenType } = me;
+    const { userId, type } = me;
     const articleObj =
-      tokenType === UserTypeEnum.ADMIN
+      type === UserTypeEnum.ADMIN
         ? await this.load(id)
         : await this._validateOwnership(id, userId);
     const updateObj = {};
 
-    if (tokenType === UserTypeEnum.USER) {
+    if (type === UserTypeEnum.USER) {
       assert(
         status === ArticleStatusEnum.SUBMITTED,
         new BadRequestException('You can only submit PR')

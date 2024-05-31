@@ -44,9 +44,7 @@ export class PublicationResolver {
   }
 
   @Query(() => PublicationType, { nullable: true })
-  async getPublicationById(
-    @Args('id') id: string,
-  ) {
+  async getPublicationById(@Args('id') id: string) {
     return this.publicationService.getById(id);
   }
 
