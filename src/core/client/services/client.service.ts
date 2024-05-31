@@ -15,6 +15,7 @@ import { ClientCreateDto } from '../dto/client.create.dto';
 import { ClientUpdateDto } from '../dto/client.update.dto';
 import { Client } from '../client.schema';
 import * as assert from 'assert';
+import { UserTypeEnum } from 'src/core/user/enum/user.type.enum';
 
 @Injectable()
 export class ClientService {
@@ -57,7 +58,7 @@ export class ClientService {
   }
 
   async getFilteredPaginated(
-    userId: string,
+    me: IMe,
     paginationDto: PaginationInputDto,
     filterDto: ClientFilterDto
   ) {
@@ -65,7 +66,7 @@ export class ClientService {
     filterDto = validate(filterDto, ClientFilterDto);
     let { currentPage, perPage } = paginationDto;
     perPage = perPage <= 50 ? perPage : 50;
-    const q = { userId };
+    const q = me.user.type === UserTypeEnum.ADMIN ? {} : { userId: me.userId };
 
     //generate query
     if (filterDto.type) q['type'] = filterDto.type;

@@ -19,7 +19,7 @@ export class ClientResolver {
     @Context() { me }: IGraphqlContext
   ) {
     return this.clientService.getFilteredPaginated(
-      me.userId,
+      me,
       paginationInput,
       filterInput
     );
