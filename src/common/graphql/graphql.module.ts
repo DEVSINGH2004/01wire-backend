@@ -63,11 +63,11 @@ const genCtx = async (
     const token = getToken(headers.authorization);
     const decoded: any = decodeToken(token, configService);
 
-    const type: UserTypeEnum = decoded.type || UserTypeEnum.USER;
+    const userType: UserTypeEnum = decoded.userType || UserTypeEnum.USER;
 
     const userObj = await userService.load(decoded.userId);
     if (
-      type === UserTypeEnum.USER &&
+      userType === UserTypeEnum.USER &&
       (!userObj?.email || !userObj.isEmailVerified) &&
       !UNVERIFIED_EMAIL_ALLOWED_OPERATIONS.includes(operationName)
     ) {
@@ -76,7 +76,7 @@ const genCtx = async (
 
     const ctx: IGraphqlContext = {
       me: {
-        type,
+        userType,
         token: headers.authorization,
         userId: decoded.userId,
         user: userObj

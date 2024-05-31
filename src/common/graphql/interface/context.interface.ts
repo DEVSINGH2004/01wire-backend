@@ -13,6 +13,6 @@ export interface IGraphqlContext {
 export interface IMe {
   userId: string;
   token: string;
-  type: UserTypeEnum;
+  userType: UserTypeEnum;
   user: UserTypeWithoutDocument;
 }
