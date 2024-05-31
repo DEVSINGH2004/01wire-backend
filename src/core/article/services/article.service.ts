@@ -229,7 +229,7 @@ export class ArticleService {
     const { id, status, rejectionReason } = dto;
     const { userId, userType } = me;
     const articleObj =
-    userType === UserTypeEnum.ADMIN
+      userType === UserTypeEnum.ADMIN
         ? await this.load(id)
         : await this._validateOwnership(id, userId);
     const updateObj = {};
@@ -274,6 +274,7 @@ export class ArticleService {
         new BadRequestException(`This action is only for user`)
       );
       assert(
+        articleObj.status === ArticleStatusEnum.REVIEW ||
         articleObj.status === ArticleStatusEnum.SUBMITTED ||
           articleObj.status === ArticleStatusEnum.AWAITING_APPROVAL ||
           articleObj.status === ArticleStatusEnum.SCHEDULED,
@@ -283,8 +284,9 @@ export class ArticleService {
       switch (status) {
         case ArticleStatusEnum.AWAITING_APPROVAL: {
           assert(
-            articleObj.status === ArticleStatusEnum.SUBMITTED,
-            new BadRequestException('PR not in SUBMIT state')
+            articleObj.status === ArticleStatusEnum.SUBMITTED ||
+              articleObj.status === ArticleStatusEnum.REVIEW,
+            new BadRequestException('PR not in SUBMIT/REVIEW state')
           );
         }
         case ArticleStatusEnum.SCHEDULED: {
