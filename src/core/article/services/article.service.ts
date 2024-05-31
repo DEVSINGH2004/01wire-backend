@@ -228,7 +228,10 @@ export class ArticleService {
     dto = validate(dto, ArticleUpdateStatusDto);
     const { id, status, rejectionReason } = dto;
     const { userId, tokenType } = me;
-    const articleObj = await this._validateOwnership(id, userId);
+    const articleObj =
+      tokenType === UserTypeEnum.ADMIN
+        ? await this.load(id)
+        : await this._validateOwnership(id, userId);
     const updateObj = {};
 
     if (tokenType === UserTypeEnum.USER) {
