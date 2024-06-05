@@ -75,7 +75,7 @@ export class EventService {
         );
     }
   }
-
+  // TODO: Handle failure
   @OnEvent(EventDomainEnum.ORDER)
   async _handleOrder(e: IEvent) {
     console.log('EVENT: ', EventDomainEnum.ORDER, JSON.stringify(e, null, 2));

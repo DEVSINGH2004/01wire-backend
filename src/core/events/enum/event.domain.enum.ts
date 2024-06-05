@@ -10,5 +10,5 @@ export enum EventDomainEnum {
   MSG = 'msg',
   SENDER = 'sender',
   SUPERGROUP = 'supergroup',
-  ORDER = 'order' // TODO: Check the name with DK
+  ORDER = 'order'
 }

@@ -148,9 +148,6 @@ export class OrderService {
   async createBulk(dto: OrderCreateBulkDto): Promise<boolean> {
     dto = validate(dto, OrderCreateBulkDto);
     const bundleObjs = await this.bundleService.loadMany(dto.bundleIds);
-    // NOTE: Confirm that bundlePubIds and publicationIds should not contain any same id
-
-    // const bundlePubIds = bundleObjs.map((e) => e.publicationIds).flat();
     const bundlePubIds = [];
     const pubIdTobundleIdMap = new Map<string, string>();
 
@@ -167,26 +164,26 @@ export class OrderService {
     ]);
     const orderBulkPayload: OrderDocument[] = [];
     publicationObjs.forEach((e) => {
-      const publishBy = new Date();
+      const publishByDate = new Date();
       switch (e.timeline) {
         case PublicationTimelineEnum.D1: {
-          publishBy.setDate(publishBy.getDate() + 1);
+          publishByDate.setDate(publishByDate.getDate() + 1);
           break;
         }
         case PublicationTimelineEnum.D2: {
-          publishBy.setDate(publishBy.getDate() + 2);
+          publishByDate.setDate(publishByDate.getDate() + 2);
           break;
         }
         case PublicationTimelineEnum.D5: {
-          publishBy.setDate(publishBy.getDate() + 5);
+          publishByDate.setDate(publishByDate.getDate() + 5);
           break;
         }
         case PublicationTimelineEnum.W1: {
-          publishBy.setDate(publishBy.getDate() + 7);
+          publishByDate.setDate(publishByDate.getDate() + 7);
           break;
         }
         case PublicationTimelineEnum.W2: {
-          publishBy.setDate(publishBy.getDate() + 14);
+          publishByDate.setDate(publishByDate.getDate() + 14);
           break;
         }
       }
@@ -197,9 +194,8 @@ export class OrderService {
           articleId: dto.articleId,
           publicationId: e._id,
           status: OrderStatusEnum.PENDING,
-          publishBy,
+          publishByDate,
           bundleId
-          // publishAt: articleObj.publishAt //TODO: Check if `publishAt` required
         })
       );
     });
