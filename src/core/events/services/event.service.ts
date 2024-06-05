@@ -6,6 +6,7 @@ import { EventDomainEnum } from '../enum/event.domain.enum';
 import { IEvent } from '../interface/event.interface';
 import { SseService } from 'src/core/sse/sse.service';
 import { EventActionEnum } from '../enum/event.action.enum';
+import { OrderService } from 'src/core/order/services/order.service';
 
 @Injectable()
 export class EventService {
@@ -14,7 +15,8 @@ export class EventService {
   constructor(
     private configService: ConfigService,
     private slackService: SlackService,
-    private sseService: SseService
+    private sseService: SseService,
+    private orderService: OrderService
   ) {
     this._eventsCfg = this.configService.get('events', { infer: true });
   }
@@ -70,6 +72,21 @@ export class EventService {
       default:
         console.error(
           `EVENT: ${EventDomainEnum.KEYWORD}.${ev.action} not handled`
+        );
+    }
+  }
+
+  @OnEvent(EventDomainEnum.ORDER)
+  async _handleOrder(e: IEvent) {
+    console.log('EVENT: ', EventDomainEnum.ORDER, JSON.stringify(e, null, 2));
+    switch (e.action) {
+      case EventActionEnum.CREATE: {
+        await this.orderService.createBulk(e.data);
+        break;
+      }
+      default:
+        console.error(
+          `EVENT: ${EventDomainEnum.ORDER}.${e.action} not handled`
         );
     }
   }

@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Order } from '../order.schema';
+import { Order, OrderDocument } from '../order.schema';
 import { OrderLoaderService } from './order.loader.service';
 import { Model } from 'mongoose';
 import { paginateResponse } from 'src/common/utils';
@@ -16,6 +16,8 @@ import { ArticleService } from 'src/core/article/services/article.service';
 import { PublicationService } from 'src/core/publication/services/publication.service';
 import { PublicationTimelineEnum } from 'src/core/publication/enum/publication.timeline.enum';
 import * as assert from 'assert';
+import { OnEvent } from '@nestjs/event-emitter';
+import { BundleService } from 'src/core/bundle/services/bundle.service';
 
 @Injectable()
 export class OrderService {
@@ -24,7 +26,8 @@ export class OrderService {
     protected model: Model<Order>,
     private loaderService: OrderLoaderService,
     private articleService: ArticleService,
-    private publicationService: PublicationService
+    private publicationService: PublicationService,
+    private bundleService: BundleService
   ) {}
 
   async load(id: string): Promise<Order> {
@@ -144,14 +147,27 @@ export class OrderService {
 
   async createBulk(dto: OrderCreateBulkDto): Promise<boolean> {
     dto = validate(dto, OrderCreateBulkDto);
-    const { articleId, publicationIds } = dto;
-    const [articleObj, publicationObjs] = await Promise.all([
-      this.articleService.load(articleId),
-      this.publicationService.loadMany(publicationIds)
+    const bundleObjs = await this.bundleService.loadMany(dto.bundleIds);
+    // NOTE: Confirm that bundlePubIds and publicationIds should not contain any same id
+
+    // const bundlePubIds = bundleObjs.map((e) => e.publicationIds).flat();
+    const bundlePubIds = [];
+    const pubIdTobundleIdMap = new Map<string, string>();
+
+    bundleObjs.forEach((bundle) => {
+      bundle.publicationIds.forEach((pubId) => {
+        pubIdTobundleIdMap.set(pubId, bundle._id);
+      });
+      bundlePubIds.push(...bundle.publicationIds);
+    });
+
+    const publicationObjs = await this.publicationService.loadMany([
+      ...dto.publicationIds,
+      ...bundlePubIds
     ]);
-    const prBulkPayload = [];
+    const orderBulkPayload: OrderDocument[] = [];
     publicationObjs.forEach((e) => {
-      let publishBy = new Date();
+      const publishBy = new Date();
       switch (e.timeline) {
         case PublicationTimelineEnum.D1: {
           publishBy.setDate(publishBy.getDate() + 1);
@@ -174,17 +190,21 @@ export class OrderService {
           break;
         }
       }
-      prBulkPayload.push({
-        userId: articleObj.userId,
-        articleId: articleObj._id,
-        publicationId: e._id,
-        status: OrderStatusEnum.PENDING,
-        publishBy,
-        publishAt: articleObj.publishAt
-      });
+      const bundleId = pubIdTobundleIdMap.get(e._id);
+      orderBulkPayload.push(
+        new this.model({
+          userId: dto.userId,
+          articleId: dto.articleId,
+          publicationId: e._id,
+          status: OrderStatusEnum.PENDING,
+          publishBy,
+          bundleId
+          // publishAt: articleObj.publishAt //TODO: Check if `publishAt` required
+        })
+      );
     });
 
-    await this.model.insertMany(prBulkPayload);
+    await this.model.insertMany(orderBulkPayload);
     return true;
   }
 }

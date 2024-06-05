@@ -24,6 +24,10 @@ import { WalletService } from 'src/core/wallet/services/wallet.service';
 import * as assert from 'assert';
 import { SequenceService } from 'src/core/sequence/sequence.service';
 import { OrderStatusEnum } from 'src/core/order/enum/order.status.enum';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { EventDomainEnum } from 'src/core/events/enum/event.domain.enum';
+import { EventActionEnum } from 'src/core/events/enum/event.action.enum';
+import { ArticleCreateInput } from '../graphql/input/article.create.input';
 
 @Injectable()
 export class ArticleService {
@@ -35,7 +39,8 @@ export class ArticleService {
     private bundleService: BundleService,
     private publicationService: PublicationService,
     private walletService: WalletService,
-    private sequenceService: SequenceService
+    private sequenceService: SequenceService,
+    private eventEmitter: EventEmitter2
   ) {}
 
   async load(id: string): Promise<Article> {
@@ -270,43 +275,53 @@ export class ArticleService {
         walletObj.balance >= articleObj.totalCredits,
         new BadRequestException('Insufficient credits in wallet')
       );
-      const maxCounter =
-        articleObj.publicationIds > articleObj.bundleIds
-          ? articleObj.publicationIds.length
-          : articleObj.bundleIds.length;
-
-      const orderList = [];
-
-      for (let i = 0; i < maxCounter; i++) {}
-
-      if (articleObj.bundleIds.length) {
-        const bundleList = await this.bundleService.loadMany(
-          articleObj.bundleIds
-        );
-
-        bundleList.forEach((bundle) => {
-          bundle.publicationIds.forEach((pubId) =>
-            orderList.push({
-              userId: articleObj.userId,
-              articleId: articleObj._id,
-              prId: articleObj.prId,
-              publicationId: pubId,
-              bundleId: bundle._id,
-              status: OrderStatusEnum.PENDING
-            })
-          );
-        });
-      }
-
-      articleObj.publicationIds.forEach((pubId) =>
-        orderList.push({
-          userId: articleObj.userId,
+      // const maxCounter =
+      //   articleObj.publicationIds > articleObj.bundleIds
+      //     ? articleObj.publicationIds.length
+      //     : articleObj.bundleIds.length;
+      //
+      // const orderList = [];
+      //
+      // for (let i = 0; i < maxCounter; i++) {}
+      //
+      // if (articleObj.bundleIds.length) {
+      //   const bundleList = await this.bundleService.loadMany(
+      //     articleObj.bundleIds
+      //   );
+      //
+      //   bundleList.forEach((bundle) => {
+      //     bundle.publicationIds.forEach((pubId) =>
+      //       orderList.push({
+      //         userId: articleObj.userId,
+      //         articleId: articleObj._id,
+      //         prId: articleObj.prId,
+      //         publicationId: pubId,
+      //         bundleId: bundle._id,
+      //         status: OrderStatusEnum.PENDING,
+      //         publishAt: articleObj.publishAt
+      //       })
+      //     );
+      //   });
+      // }
+      //
+      // articleObj.publicationIds.forEach((pubId) =>
+      //   orderList.push({
+      //     userId: articleObj.userId,
+      //     articleId: articleObj._id,
+      //     prId: articleObj.prId,
+      //     publicationId: pubId,
+      //     status: OrderStatusEnum.PENDING
+      //   })
+      // );
+      //
+      this.eventEmitter.emit(EventDomainEnum.ORDER, {
+        action: EventActionEnum.CREATE,
+        data: {
+          ...articleObj.toObject(),
           articleId: articleObj._id,
-          prId: articleObj.prId,
-          publicationId: pubId,
-          status: OrderStatusEnum.PENDING
-        })
-      );
+          _id: undefined
+        }
+      });
 
       await this.walletService.debitBalanceByUserId(
         userId,
