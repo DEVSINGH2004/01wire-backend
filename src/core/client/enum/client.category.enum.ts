@@ -7,7 +7,9 @@ export enum ClientCategoryEnum {
   EDUCATION = 'EDUCATION',
   MANUFACTURING = 'MANUFACTURING',
   RETAIL = 'RETAIL',
-  MARKETING = 'MARKETING'
+  MARKETING = 'MARKETING',
+  GAMING = 'GAMING',
+  CASINO = 'CASINO'
 }
 
 registerEnumType(ClientCategoryEnum, { name: 'ClientCategoryEnum' });
