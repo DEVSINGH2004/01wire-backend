@@ -10,5 +10,8 @@ export class ArticleUpdateStateInput {
   status: ArticleStatusEnum;
 
   @Field(() => String, { nullable: true })
-  rejectionReason: string;
+  notes: string;
+
+  @Field(() => String, { nullable: true })
+  url: string;
 }

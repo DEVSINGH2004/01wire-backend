@@ -1,8 +1,8 @@
-import { Field, ID, Int, ObjectType } from '@nestjs/graphql';
-import { PrStatusEnum } from '../../enum/pr.status.enum';
+import { Field, ID, ObjectType } from '@nestjs/graphql';
+import { OrderStatusEnum } from '../../enum/order.status.enum';
 
-@ObjectType('PrType')
-export class PrType {
+@ObjectType('OrderType')
+export class OrderType {
   @Field(() => ID)
   id: string;
 
@@ -18,11 +18,11 @@ export class PrType {
   @Field(() => ID)
   bundleId: string;
 
-  @Field(() => PrStatusEnum)
-  status: PrStatusEnum;
+  @Field(() => OrderStatusEnum)
+  status: OrderStatusEnum;
 
   @Field(() => String, { nullable: true })
-  rejectionReason: string;
+  notes: string;
 
   @Field(() => Date, { nullable: true })
   publishAt: Date;

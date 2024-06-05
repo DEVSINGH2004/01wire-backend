@@ -1,39 +1,42 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Pr } from '../pr.schema';
-import { PrLoaderService } from './pr.loader.service';
+import { Order } from '../order.schema';
+import { OrderLoaderService } from './order.loader.service';
 import { Model } from 'mongoose';
 import { paginateResponse } from 'src/common/utils';
 import { UserTypeEnum } from 'src/core/user/enum/user.type.enum';
 import { PaginationInputDto } from 'src/common/dto/pagination.input.dto';
-import { PrFilterDto } from '../dto/pr.filter.dto';
+import { OrderFilterDto } from '../dto/order.filter.dto';
 import { validate } from 'nestjs-zod';
 import { IMe } from 'src/common/graphql/interface/context.interface';
-import * as assert from 'assert';
-import { PrUpdateStatusDto } from '../dto/pr.update.status.dto';
-import { PrStatusEnum } from '../enum/pr.status.enum';
-import { PrCreateBulkDto } from '../dto/pr.create.bulk.dto';
+import { OrderUpdateStatusDto } from '../dto/order.update.status.dto';
+import { OrderStatusEnum } from '../enum/order.status.enum';
+import { OrderCreateBulkDto } from '../dto/order.create.bulk.dto';
 import { ArticleService } from 'src/core/article/services/article.service';
 import { PublicationService } from 'src/core/publication/services/publication.service';
 import { PublicationTimelineEnum } from 'src/core/publication/enum/publication.timeline.enum';
+import * as assert from 'assert';
 
 @Injectable()
-export class PrService {
+export class OrderService {
   constructor(
-    @InjectModel(Pr.name)
-    protected model: Model<Pr>,
-    private loaderService: PrLoaderService,
+    @InjectModel(Order.name)
+    protected model: Model<Order>,
+    private loaderService: OrderLoaderService,
     private articleService: ArticleService,
     private publicationService: PublicationService
   ) {}
 
-  async load(id: string): Promise<Pr> {
+  async load(id: string): Promise<Order> {
     if (!id) return null;
     const loader = await this.loaderService.init();
     return loader.load(id);
   }
 
-  async loadMany(ids: string[], q: Record<string, any> = null): Promise<Pr[]> {
+  async loadMany(
+    ids: string[],
+    q: Record<string, any> = null
+  ): Promise<Order[]> {
     if (!ids || !ids.length) return [];
     const loader = await this.loaderService.init(q);
     return loader.loadMany(ids);
@@ -41,14 +44,14 @@ export class PrService {
 
   async getFilteredPaginated(
     paginationDto: PaginationInputDto,
-    filterDto: PrFilterDto,
+    filterDto: OrderFilterDto,
     me?: IMe
   ) {
     paginationDto = validate(paginationDto, PaginationInputDto);
-    filterDto = validate(filterDto, PrFilterDto);
+    filterDto = validate(OrderUpdateStatusDto, OrderFilterDto);
     let { currentPage, perPage } = paginationDto;
     perPage = perPage <= 50 ? perPage : 50;
-    const q = {};
+    const q = OrderUpdateStatusDto;
 
     if (me.user.type === UserTypeEnum.USER) {
       assert(
@@ -61,7 +64,7 @@ export class PrService {
       //generate query
       if (filterDto.userId) q['userId'] = filterDto.userId;
       if (filterDto.articleId) q['articleId'] = filterDto.articleId;
-      if (filterDto.publicationId) q['publicationId'] = filterDto.publicationId;
+      if (filterDto.prId) q['publicationId'] = filterDto.prId;
       if (filterDto.status) q['status'] = filterDto.status;
       if (filterDto.startTime && filterDto.endTime) {
         q['createdAt'] = { $gte: filterDto.startTime, $lte: filterDto.endTime };
@@ -92,46 +95,37 @@ export class PrService {
     };
   }
 
-  async updateStatus(dto: PrUpdateStatusDto): Promise<boolean> {
-    dto = validate(dto, PrUpdateStatusDto);
-    const { id, status, rejectionReason, url } = dto;
+  async updateStatus(dto: OrderUpdateStatusDto): Promise<boolean> {
+    dto = validate(dto, OrderUpdateStatusDto);
+    const { id, status, notes, url } = dto;
     const prObj = await this.load(id);
     const updateObj = {};
     assert(!!prObj, new BadRequestException('invalid pr id'));
 
     assert(
-      prObj.status === PrStatusEnum.PENDING ||
-        prObj.status === PrStatusEnum.SCHEDULED,
-      new BadRequestException(`PR is in ${prObj.status} state`)
+      prObj.status === OrderStatusEnum.PENDING,
+      new BadRequestException(`Order is in ${prObj.status} state`)
     );
 
     switch (status) {
-      case PrStatusEnum.SCHEDULED: {
+      case OrderStatusEnum.REJECTED: {
         assert(
-          prObj.status === PrStatusEnum.PENDING,
-          new BadRequestException('PR not in PENDING state')
-        );
-        break;
-      }
-      case PrStatusEnum.REJECTED: {
-        assert(
-          prObj.status === PrStatusEnum.PENDING ||
-            prObj.status === PrStatusEnum.SCHEDULED,
+          prObj.status === OrderStatusEnum.PENDING,
           new BadRequestException(
             `PR in ${prObj.status} state cannot be rejected`
           )
         );
         assert(
-          !!rejectionReason,
+          !!notes,
           new BadRequestException('rejection reason is needed to reject PR')
         );
-        updateObj['rejectionReason'] = rejectionReason;
+        updateObj['notes'] = notes;
         break;
       }
-      case PrStatusEnum.PUBLISHED: {
+      case OrderStatusEnum.PUBLISHED: {
         assert(
-          prObj.status === PrStatusEnum.SCHEDULED,
-          new BadRequestException('PR not in SCHEDULED state')
+          prObj.status === OrderStatusEnum.PENDING,
+          new BadRequestException('PR not in PENDING state')
         );
         assert(
           !!url,
@@ -144,12 +138,12 @@ export class PrService {
         throw new BadRequestException(`status ${status} not handled for ADMIN`);
     }
     updateObj['status'] = status;
-    await this.model.updateOne({ _id: id }, { $set: { ...updateObj } });
+    await this.model.updateOne({ _id: id }, { $set: updateObj });
     return true;
   }
 
-  async createBulk(dto: PrCreateBulkDto): Promise<boolean> {
-    dto = validate(dto, PrCreateBulkDto);
+  async createBulk(dto: OrderCreateBulkDto): Promise<boolean> {
+    dto = validate(dto, OrderCreateBulkDto);
     const { articleId, publicationIds } = dto;
     const [articleObj, publicationObjs] = await Promise.all([
       this.articleService.load(articleId),
@@ -184,7 +178,7 @@ export class PrService {
         userId: articleObj.userId,
         articleId: articleObj._id,
         publicationId: e._id,
-        status: PrStatusEnum.PENDING,
+        status: OrderStatusEnum.PENDING,
         publishBy,
         publishAt: articleObj.publishAt
       });

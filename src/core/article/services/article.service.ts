@@ -22,6 +22,8 @@ import { BundleService } from 'src/core/bundle/services/bundle.service';
 import { PublicationService } from 'src/core/publication/services/publication.service';
 import { WalletService } from 'src/core/wallet/services/wallet.service';
 import * as assert from 'assert';
+import { SequenceService } from 'src/core/sequence/sequence.service';
+import { OrderStatusEnum } from 'src/core/order/enum/order.status.enum';
 
 @Injectable()
 export class ArticleService {
@@ -32,7 +34,8 @@ export class ArticleService {
     private clientService: ClientService,
     private bundleService: BundleService,
     private publicationService: PublicationService,
-    private walletService: WalletService
+    private walletService: WalletService,
+    private sequenceService: SequenceService
   ) {}
 
   async load(id: string): Promise<Article> {
@@ -78,6 +81,16 @@ export class ArticleService {
     if (!obj) return null;
     if (me.user.type === UserTypeEnum.USER && obj.userId !== me.userId)
       return null;
+    if (
+      me.user.type === UserTypeEnum.ADMIN &&
+      obj.status === ArticleStatusEnum.SUBMITTED
+    ) {
+      await this.model.updateOne(
+        { _id: id },
+        { $set: { status: ArticleStatusEnum.REVIEW } }
+      );
+      //TODO: send notification to user thaht article status has been changed to REVIEW
+    }
     return obj;
   }
 
@@ -142,7 +155,8 @@ export class ArticleService {
     dto = validate(dto, ArticleCreateDto);
     const { clientId, userId } = dto;
     await this.clientService.validateOwnership(clientId, userId);
-    return this.model.create({ ...dto, status: ArticleStatusEnum.DRAFT });
+    const prId = await this.sequenceService.getNextSequence('article');
+    return this.model.create({ ...dto, prId, status: ArticleStatusEnum.DRAFT });
   }
 
   async update(dto: ArticleUpdateDto): Promise<Article> {
@@ -150,7 +164,7 @@ export class ArticleService {
       (key) => (dto[key] === null || dto[key] === '') && delete dto[key]
     );
     dto = validate(dto, ArticleUpdateDto);
-    const { id, userId, bundleIds, publicationIds, ...needToUpdate } = dto;
+    let { id, userId, bundleIds, publicationIds, ...needToUpdate } = dto;
     let articleObj = await this._validateOwnership(id, userId);
 
     //check if bundleId or publicationId is provided
@@ -167,6 +181,13 @@ export class ArticleService {
         assert(
           bundleList.length === bundleIds.length,
           new BadRequestException('Invalid bundle Ids')
+        );
+        let bundlePublicationIds = [];
+        bundleList.forEach((e) => {
+          bundlePublicationIds = [...bundlePublicationIds, ...e.publicationIds];
+        });
+        publicationIds = publicationIds.filter(
+          (item) => !bundlePublicationIds.includes(item)
         );
       }
 
@@ -226,7 +247,7 @@ export class ArticleService {
 
   async updateStatus(dto: ArticleUpdateStatusDto, me: IMe): Promise<Article> {
     dto = validate(dto, ArticleUpdateStatusDto);
-    const { id, status, rejectionReason } = dto;
+    const { id, status, notes } = dto;
     const { userId, userType } = me;
     const articleObj =
       userType === UserTypeEnum.ADMIN
@@ -249,17 +270,43 @@ export class ArticleService {
         walletObj.balance >= articleObj.totalCredits,
         new BadRequestException('Insufficient credits in wallet')
       );
-      let finalPublicationIds = articleObj.publicationIds;
+      const maxCounter =
+        articleObj.publicationIds > articleObj.bundleIds
+          ? articleObj.publicationIds.length
+          : articleObj.bundleIds.length;
+
+      const orderList = [];
+
+      for (let i = 0; i < maxCounter; i++) {}
 
       if (articleObj.bundleIds.length) {
-        const bundleObjs = await this.bundleService.loadMany(
+        const bundleList = await this.bundleService.loadMany(
           articleObj.bundleIds
         );
-        bundleObjs.forEach((e) => {
-          finalPublicationIds = [...finalPublicationIds, ...e.publicationIds];
+
+        bundleList.forEach((bundle) => {
+          bundle.publicationIds.forEach((pubId) =>
+            orderList.push({
+              userId: articleObj.userId,
+              articleId: articleObj._id,
+              prId: articleObj.prId,
+              publicationId: pubId,
+              bundleId: bundle._id,
+              status: OrderStatusEnum.PENDING
+            })
+          );
         });
       }
-      finalPublicationIds = [...new Set(finalPublicationIds)];
+
+      articleObj.publicationIds.forEach((pubId) =>
+        orderList.push({
+          userId: articleObj.userId,
+          articleId: articleObj._id,
+          prId: articleObj.prId,
+          publicationId: pubId,
+          status: OrderStatusEnum.PENDING
+        })
+      );
 
       await this.walletService.debitBalanceByUserId(
         userId,
@@ -275,7 +322,7 @@ export class ArticleService {
       );
       assert(
         articleObj.status === ArticleStatusEnum.REVIEW ||
-        articleObj.status === ArticleStatusEnum.SUBMITTED ||
+          articleObj.status === ArticleStatusEnum.SUBMITTED ||
           articleObj.status === ArticleStatusEnum.AWAITING_APPROVAL ||
           articleObj.status === ArticleStatusEnum.SCHEDULED,
         new BadRequestException(`PR is in ${articleObj.status} state`)
@@ -305,10 +352,10 @@ export class ArticleService {
             )
           );
           assert(
-            !!rejectionReason,
-            new BadRequestException('rejection reason is needed to reject PR')
+            !!notes,
+            new BadRequestException('notes is needed to reject PR')
           );
-          updateObj['rejectionReason'] = rejectionReason;
+          updateObj['notes'] = notes;
         }
         case ArticleStatusEnum.PUBLISHED: {
           assert(

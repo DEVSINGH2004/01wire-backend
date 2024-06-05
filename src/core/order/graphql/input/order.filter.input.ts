@@ -1,10 +1,10 @@
 import { Field, InputType, OmitType, PartialType } from '@nestjs/graphql';
-import { PrType } from '../type/pr.type';
+import { OrderType } from '../type/order.type';
 
 @InputType()
-export class PrFilterInput extends PartialType(
-  OmitType(PrType, [
-    'rejectionReason',
+export class OrderFilterInput extends PartialType(
+  OmitType(OrderType, [
+    'notes',
     'createdAt',
     'updatedAt',
     'publishAt',

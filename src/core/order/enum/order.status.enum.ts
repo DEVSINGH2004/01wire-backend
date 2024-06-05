@@ -1,10 +1,9 @@
 import { registerEnumType } from '@nestjs/graphql';
 
-export enum PrStatusEnum {
+export enum OrderStatusEnum {
   PENDING = 'PENDING',
-  SCHEDULED = 'SCHEDULED',
   REJECTED = 'REJECTED',
   PUBLISHED = 'PUBLISHED'
 }
 
-registerEnumType(PrStatusEnum, { name: 'PrStatusEnum' });
+registerEnumType(OrderStatusEnum, { name: 'OrderStatusEnum' });

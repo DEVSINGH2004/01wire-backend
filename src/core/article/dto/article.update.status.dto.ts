@@ -9,7 +9,7 @@ const articleUpdateStatusDto = articleCreateDto
   })
   .extend({
     id: z.string().uuid(),
-    rejectionReason: z.string().nullish()
+    notes: z.string().nullish()
   });
 
 export class ArticleUpdateStatusDto extends createZodDto(

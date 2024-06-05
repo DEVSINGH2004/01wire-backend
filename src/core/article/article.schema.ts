@@ -1,10 +1,10 @@
 import { Prop, Schema, SchemaFactory, raw } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
-import * as uuid from 'uuid';
 import { ArticleStatusEnum } from './enum/article.status.enum';
 import { LanguageEnum } from 'src/common/enum/language.enum';
 import { ArticleCategoryEnum } from './enum/article.category.enum';
 import { ArticlePublishTypeEnum } from './enum/article.publish.type.enum';
+import * as uuid from 'uuid';
 
 type ArticleDocument = Article & Document;
 
@@ -18,6 +18,13 @@ class Article extends Document {
     required: true
   })
   userId: string;
+
+  @Prop({
+    type: String,
+    required: true,
+    unique: true
+  })
+  prId: string;
 
   @Prop({
     type: String,
@@ -105,13 +112,13 @@ class Article extends Document {
     type: String,
     default: null
   })
-  notes: string;
+  instructions: string;
 
   @Prop({
     type: String,
     default: null
   })
-  rejectionReason: string;
+  notes: string;
 
   @Prop({
     type: [String],

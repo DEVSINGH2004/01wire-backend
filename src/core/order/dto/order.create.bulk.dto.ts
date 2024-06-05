@@ -1,9 +1,9 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'nestjs-zod/z';
 
-const prCreateBulkDto = z.object({
+const orderCreateBulkDto = z.object({
   articleId: z.string().uuid(),
   publicationIds: z.array(z.string().uuid())
 });
 
-export class PrCreateBulkDto extends createZodDto(prCreateBulkDto) {}
+export class OrderCreateBulkDto extends createZodDto(orderCreateBulkDto) {}

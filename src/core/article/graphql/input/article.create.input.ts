@@ -5,7 +5,15 @@ import { ArticleMediaContactInput } from './article.media.contact.input';
 @InputType()
 export class ArticleCreateInput extends OmitType(
   ArticleType,
-  ['id', 'userId', 'status', 'mediaContact', 'createdAt', 'updatedAt'] as const,
+  [
+    'id',
+    'prId',
+    'userId',
+    'status',
+    'mediaContact',
+    'createdAt',
+    'updatedAt'
+  ] as const,
   InputType
 ) {
   @Field(() => ArticleMediaContactInput, { nullable: true })

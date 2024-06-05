@@ -22,7 +22,9 @@ import { PublicationModule } from './core/publication/publication.module';
 import { CouponModule } from './core/coupon/coupon.module';
 import { UploadModule } from './core/upload/upload.module';
 import { PaymentModule } from './core/payment/payment.module';
-import { PrModule } from './core/pr/pr.module';
+import { OrderModule } from './core/order/order.module';
+import { SequenceModule } from './core/sequence/sequence.module';
+import { EstimateModule } from './core/estimate/estimate.module';
 
 @Module({
   imports: [
@@ -51,7 +53,9 @@ import { PrModule } from './core/pr/pr.module';
     CouponModule,
     UploadModule,
     PaymentModule,
-    PrModule
+    OrderModule,
+    SequenceModule,
+    EstimateModule
   ],
   controllers: [AppController],
   providers: [AppService, EmailService, JwtService, SlackService]

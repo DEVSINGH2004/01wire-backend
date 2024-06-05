@@ -1,26 +1,35 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
-import { PrStatusEnum } from './enum/pr.status.enum';
+import { OrderStatusEnum } from './enum/order.status.enum';
 import * as uuid from 'uuid';
 
-type PrDocument = Pr & Document;
+type OrderDocument = Order & Document;
 
 @Schema({ timestamps: true })
-class Pr extends Document {
+class Order extends Document {
   @Prop({ type: String, default: () => uuid.v4() })
   _id: string;
 
   @Prop({
     type: String,
+    index: true,
     required: true
   })
   userId: string;
 
   @Prop({
     type: String,
+    index: true,
     required: true
   })
   articleId: string;
+
+  @Prop({
+    type: String,
+    index: true,
+    required: true
+  })
+  prId: string;
 
   @Prop({
     type: String,
@@ -30,16 +39,22 @@ class Pr extends Document {
 
   @Prop({
     type: String,
-    enum: PrStatusEnum,
-    default: PrStatusEnum.PENDING
+    default: null
   })
-  status: PrStatusEnum;
+  bundleId: string;
+
+  @Prop({
+    type: String,
+    enum: OrderStatusEnum,
+    default: OrderStatusEnum.PENDING
+  })
+  status: OrderStatusEnum;
 
   @Prop({
     type: String,
     default: null
   })
-  rejectionReason: string;
+  notes: string;
 
   @Prop({
     type: String,
@@ -60,10 +75,10 @@ class Pr extends Document {
   updatedAt: Date;
 }
 
-const PrSchema = SchemaFactory.createForClass(Pr);
+const OrderSchema = SchemaFactory.createForClass(Order);
 
-type PrTypeWithoutDocument = Omit<Pr, keyof Document> & {
+type OrderTypeWithoutDocument = Omit<Order, keyof Document> & {
   _id: string;
 };
 
-export { Pr, PrDocument, PrSchema, PrTypeWithoutDocument };
+export { Order, OrderDocument, OrderSchema, OrderTypeWithoutDocument };

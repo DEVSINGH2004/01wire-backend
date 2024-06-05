@@ -19,7 +19,7 @@ import * as path from 'path';
           }
         }),
         limits: {
-          fileSize: 2 * 1024 * 1024 // 2MB
+          fileSize: 1024 * 1024 // 1MB
         },
         fileFilter: (req, file, cb) => {
           if (file.mimetype.match(/\/(jpg|jpeg|png)$/)) {

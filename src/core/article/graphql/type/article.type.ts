@@ -16,6 +16,9 @@ export class ArticleType {
   @Field(() => ID)
   clientId: string;
 
+  @Field(() => Int)
+  prId: number;
+
   @Field(() => String)
   title: string;
 
@@ -50,10 +53,10 @@ export class ArticleType {
   timezone: string;
 
   @Field(() => String, { nullable: true })
-  notes: string;
+  instructions: string;
 
   @Field(() => String, { nullable: true })
-  rejectionReason: string;
+  notes: string;
 
   @Field(() => [String], { nullable: true })
   bundleIds: string[];

@@ -8,6 +8,7 @@ import { ClientModule } from '../client/client.module';
 import { PublicationModule } from '../publication/publication.module';
 import { BundleModule } from '../bundle/bundle.module';
 import { WalletModule } from '../wallet/wallet.module';
+import { SequenceModule } from '../sequence/sequence.module';
 
 @Module({
   imports: [
@@ -15,7 +16,8 @@ import { WalletModule } from '../wallet/wallet.module';
     ClientModule,
     BundleModule,
     PublicationModule,
-    WalletModule
+    WalletModule,
+    SequenceModule
   ],
   providers: [ArticleService, ArticleLoaderService, ArticleResolver],
   exports: [ArticleService]

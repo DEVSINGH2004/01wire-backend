@@ -1,8 +1,8 @@
 import { Prop, Schema, SchemaFactory, raw } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
-import * as uuid from 'uuid';
 import { RoleEnum } from './enum/role.enum';
 import { UserTypeEnum } from './enum/user.type.enum';
+import * as uuid from 'uuid';
 
 type UserDocument = User & Document;
 
