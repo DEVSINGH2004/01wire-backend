@@ -1,6 +1,10 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Order, OrderDocument } from '../order.schema';
+import {
+  Order,
+  OrderDocument,
+  OrderTypeWithoutDocument
+} from '../order.schema';
 import { OrderLoaderService } from './order.loader.service';
 import { Model } from 'mongoose';
 import { paginateResponse } from 'src/common/utils';
@@ -16,8 +20,10 @@ import { ArticleService } from 'src/core/article/services/article.service';
 import { PublicationService } from 'src/core/publication/services/publication.service';
 import { PublicationTimelineEnum } from 'src/core/publication/enum/publication.timeline.enum';
 import * as assert from 'assert';
-import { OnEvent } from '@nestjs/event-emitter';
 import { BundleService } from 'src/core/bundle/services/bundle.service';
+import { Workbook as ExcelWorkbook } from 'exceljs';
+import { PublicationTypeWithoutDocument } from 'src/core/publication/publication.schema';
+import { Response } from 'express';
 
 @Injectable()
 export class OrderService {
@@ -202,5 +208,71 @@ export class OrderService {
 
     await this.model.insertMany(orderBulkPayload);
     return true;
+  }
+
+  async getTemplate(articleId: string, res: Response) {
+    // const orders = await this.model.find({ articleId }).lean();
+    const orders = await this.model.aggregate<
+      OrderTypeWithoutDocument & {
+        publication: PublicationTypeWithoutDocument;
+      }
+    >([
+      {
+        $match: {
+          articleId
+        }
+      },
+      {
+        $lookup: {
+          from: 'publications',
+          localField: 'publicationId',
+          foreignField: '_id',
+          as: 'publication'
+        }
+      },
+      {
+        $unwind: '$publication'
+      }
+    ]);
+
+    const workbook = new ExcelWorkbook();
+    const worksheet = workbook.addWorksheet('Sheet1');
+    worksheet.columns = [
+      { header: 'Order-Id', key: 'orderId', width: 40 },
+      { header: 'Title', key: 'title', width: 15 },
+      { header: 'Website', key: 'website', width: 40 },
+      { header: 'Status', key: 'status', width: 15 },
+      { header: 'Url', key: 'url', width: 40 },
+      { header: 'Notes', key: 'notes', width: 40 }
+    ];
+
+    const rows = orders.map((o) => {
+      return {
+        title: o.publication.title,
+        orderId: o._id,
+        website: o.publication.url,
+        status: o.status,
+        url: o.url,
+        notes: ''
+      };
+    });
+    worksheet.addRows(rows);
+
+    worksheet
+      .getColumn('status')
+      .eachCell({ includeEmpty: false }, function (cell) {
+        cell.dataValidation = {
+          type: 'list',
+          allowBlank: false,
+          formulae: ['"PENDING,REJECTED,PUBLISHED"'],
+          showErrorMessage: true,
+          errorStyle: 'error',
+          error: 'The value Valid'
+        };
+      });
+
+    // set file name
+    res.set('Content-Disposition', `attachment; filename="orders.xlsx"`);
+    await workbook.xlsx.write(res);
   }
 }

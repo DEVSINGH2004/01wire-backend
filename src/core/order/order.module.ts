@@ -15,6 +15,7 @@ import { BundleModule } from '../bundle/bundle.module';
     BundleModule,
     ArticleModule
   ],
-  providers: [OrderService, OrderLoaderService, OrderResolver]
+  providers: [OrderService, OrderLoaderService, OrderResolver],
+  exports: [OrderService]
 })
 export class OrderModule {}
