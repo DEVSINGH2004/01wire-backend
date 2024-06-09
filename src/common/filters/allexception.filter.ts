@@ -27,12 +27,11 @@ export class AllExceptionsFilter extends BaseExceptionFilter {
     }
 
     const statusCode = 400;
-    const errorMessage = 'validation error';
-    const errors = exception.errors.map((error) => error.message);
+    const errorMessage = 'Validation error';
     const errorResponse = {
       statusCode,
       message: errorMessage,
-      errors
+      errors: exception.issues
     };
     throw new BadRequestException(errorResponse);
   }

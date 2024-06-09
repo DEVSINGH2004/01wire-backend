@@ -23,7 +23,8 @@ import * as assert from 'assert';
 import { BundleService } from 'src/core/bundle/services/bundle.service';
 import { Workbook as ExcelWorkbook } from 'exceljs';
 import { PublicationTypeWithoutDocument } from 'src/core/publication/publication.schema';
-import { Response } from 'express';
+import { Request, Response } from 'express';
+import { orderBulkUpdateSchema } from '../dto/order.bulk.update.dto';
 
 @Injectable()
 export class OrderService {
@@ -274,5 +275,73 @@ export class OrderService {
     // set file name
     res.set('Content-Disposition', `attachment; filename="orders.xlsx"`);
     await workbook.xlsx.write(res);
+  }
+
+  async uploadOrders(req: Request) {
+    const workbook = new ExcelWorkbook();
+    await workbook.xlsx.read(req);
+
+    const worksheet = workbook.getWorksheet();
+
+    // const header = ['Order-Id', 'Title', 'Website', 'Status', 'Url', 'Notes'];
+
+    const data: {
+      orderId: string;
+      title: string;
+      website: string;
+      status: string;
+      url: string;
+      notes: string;
+    }[] = [];
+    worksheet.eachRow((row, rowNumber) => {
+      // ignore header
+      if (rowNumber === 1) {
+        return;
+      }
+      const [, orderId, title, website, status, url, notes] =
+        row.values as string[];
+      data.push({
+        orderId,
+        title,
+        website,
+        status,
+        url,
+        notes
+      });
+    });
+
+    const parsed = await orderBulkUpdateSchema.parseAsync(data);
+    let needToUpdate = parsed.filter(
+      (d) => d.status !== OrderStatusEnum.PENDING
+    );
+
+    const orderIds = needToUpdate.map((d) => d.orderId);
+    const pendingOrdersInDb = await this.model.find({
+      _id: { $in: orderIds },
+      status: OrderStatusEnum.PENDING
+    });
+
+    needToUpdate = needToUpdate.filter((o) => {
+      return pendingOrdersInDb.some((p) => p._id === o.orderId);
+    });
+
+    //NOTE: bulkWrite itself is not atomic, use it with a transaction
+
+    const session = await this.model.startSession();
+    await session.withTransaction(async (session) => {
+      await this.model.bulkWrite(
+        needToUpdate.map((o) => {
+          return {
+            updateOne: {
+              filter: { _id: o.orderId },
+              update: o
+            }
+          };
+        }),
+        {
+          session
+        }
+      );
+    });
   }
 }
