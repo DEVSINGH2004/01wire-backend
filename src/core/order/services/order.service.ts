@@ -6,7 +6,7 @@ import {
   OrderTypeWithoutDocument
 } from '../order.schema';
 import { OrderLoaderService } from './order.loader.service';
-import { Model } from 'mongoose';
+import { FilterQuery, Model } from 'mongoose';
 import { paginateResponse } from 'src/common/utils';
 import { UserTypeEnum } from 'src/core/user/enum/user.type.enum';
 import { PaginationInputDto } from 'src/common/dto/pagination.input.dto';
@@ -58,10 +58,10 @@ export class OrderService {
     me?: IMe
   ) {
     paginationDto = validate(paginationDto, PaginationInputDto);
-    filterDto = validate(OrderUpdateStatusDto, OrderFilterDto);
+    filterDto = validate(filterDto, OrderFilterDto);
     let { currentPage, perPage } = paginationDto;
     perPage = perPage <= 50 ? perPage : 50;
-    const q = OrderUpdateStatusDto;
+    const q: FilterQuery<OrderTypeWithoutDocument> = {};
 
     if (me.user.type === UserTypeEnum.USER) {
       assert(
