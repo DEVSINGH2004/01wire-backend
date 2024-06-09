@@ -4,12 +4,12 @@ import { userSignupDto } from './user.signup.dto';
 
 const filterDto = userSignupDto
   .pick({
-    email: true,
     fullName: true
   })
   .extend({
     startTime: z.date().nullish(),
-    endTime: z.date().nullish()
+    endTime: z.date().nullish(),
+    email: z.string().max(254) // adding email as string so we can do regex search
   })
   .partial();
 
