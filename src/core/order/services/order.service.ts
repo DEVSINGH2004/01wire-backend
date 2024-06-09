@@ -211,8 +211,7 @@ export class OrderService {
     return true;
   }
 
-  async getTemplate(articleId: string, res: Response) {
-    // const orders = await this.model.find({ articleId }).lean();
+  async getPendingTemplate(articleId: string, response: Response) {
     const orders = await this.model.aggregate<
       OrderTypeWithoutDocument & {
         publication: PublicationTypeWithoutDocument;
@@ -220,7 +219,8 @@ export class OrderService {
     >([
       {
         $match: {
-          articleId
+          articleId,
+          status: OrderStatusEnum.PENDING
         }
       },
       {
@@ -273,11 +273,11 @@ export class OrderService {
       });
 
     // set file name
-    res.set('Content-Disposition', `attachment; filename="orders.xlsx"`);
-    await workbook.xlsx.write(res);
+    response.set('Content-Disposition', `attachment; filename="orders.xlsx"`);
+    await workbook.xlsx.write(response);
   }
 
-  async uploadOrders(req: Request) {
+  async uploadUpdate(req: Request) {
     const workbook = new ExcelWorkbook();
     await workbook.xlsx.read(req);
 

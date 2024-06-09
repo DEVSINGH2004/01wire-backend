@@ -7,6 +7,7 @@ import { ArticleModule } from '../article/article.module';
 import { OrderResolver } from './graphql/order.resolver';
 import { Order, OrderSchema } from './order.schema';
 import { BundleModule } from '../bundle/bundle.module';
+import { OrderController } from './order.controller';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { BundleModule } from '../bundle/bundle.module';
     ArticleModule
   ],
   providers: [OrderService, OrderLoaderService, OrderResolver],
-  exports: [OrderService]
+  exports: [OrderService],
+  controllers: [OrderController]
 })
 export class OrderModule {}
