@@ -20,11 +20,11 @@ class Article extends Document {
   userId: string;
 
   @Prop({
-    type: String,
+    type: Number,
     required: true,
     unique: true
   })
-  prId: string;
+  prId: number;
 
   @Prop({
     type: String,
