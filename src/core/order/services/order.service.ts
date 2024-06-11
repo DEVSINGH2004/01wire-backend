@@ -25,6 +25,7 @@ import { Workbook as ExcelWorkbook } from 'exceljs';
 import { PublicationTypeWithoutDocument } from 'src/core/publication/publication.schema';
 import { Request, Response } from 'express';
 import { orderBulkUpdateSchema } from '../dto/order.bulk.update.dto';
+import { ArticleStatusEnum } from 'src/core/article/enum/article.status.enum';
 
 @Injectable()
 export class OrderService {
@@ -321,9 +322,29 @@ export class OrderService {
       status: OrderStatusEnum.PENDING
     });
 
+    if (pendingOrdersInDb.length === 0) {
+      throw new BadRequestException('All orders are published');
+    }
+
+    const articleId = pendingOrdersInDb[0].articleId;
+    const article = await this.articleService.load(articleId);
+
+    if (
+      article.status === ArticleStatusEnum.PUBLISHED ||
+      article.status === ArticleStatusEnum.REJECTED
+    ) {
+      throw new BadRequestException(`article ${article.status}`);
+    }
+
     needToUpdate = needToUpdate.filter((o) => {
       return pendingOrdersInDb.some((p) => p._id === o.orderId);
     });
+
+    let publishArticleNeeded = false;
+    // means we are updating all pending orders
+    if (needToUpdate.length === pendingOrdersInDb.length) {
+      publishArticleNeeded = true;
+    }
 
     //NOTE: bulkWrite itself is not atomic, use it with a transaction
 
@@ -342,6 +363,9 @@ export class OrderService {
           session
         }
       );
+      if (publishArticleNeeded) {
+        // TODO: Update the article based on publishArticleNeeded
+      }
     });
   }
 }
