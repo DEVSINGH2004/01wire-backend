@@ -21,6 +21,10 @@ import { PublicationService } from 'src/core/publication/services/publication.se
 import { PublicationTimelineEnum } from 'src/core/publication/enum/publication.timeline.enum';
 import * as assert from 'assert';
 import { BundleService } from 'src/core/bundle/services/bundle.service';
+import { Workbook as ExcelWorkbook } from 'exceljs';
+import { PublicationTypeWithoutDocument } from 'src/core/publication/publication.schema';
+import { Request, Response } from 'express';
+import { orderBulkUpdateSchema } from '../dto/order.bulk.update.dto';
 
 @Injectable()
 export class OrderService {
@@ -205,5 +209,139 @@ export class OrderService {
 
     await this.model.insertMany(orderBulkPayload);
     return true;
+  }
+
+  async getPendingTemplate(articleId: string, response: Response) {
+    const orders = await this.model.aggregate<
+      OrderTypeWithoutDocument & {
+        publication: PublicationTypeWithoutDocument;
+      }
+    >([
+      {
+        $match: {
+          articleId,
+          status: OrderStatusEnum.PENDING
+        }
+      },
+      {
+        $lookup: {
+          from: 'publications',
+          localField: 'publicationId',
+          foreignField: '_id',
+          as: 'publication'
+        }
+      },
+      {
+        $unwind: '$publication'
+      }
+    ]);
+
+    const workbook = new ExcelWorkbook();
+    const worksheet = workbook.addWorksheet('Sheet1');
+    worksheet.columns = [
+      { header: 'Order-Id', key: 'orderId', width: 40 },
+      { header: 'Title', key: 'title', width: 15 },
+      { header: 'Website', key: 'website', width: 40 },
+      { header: 'Status', key: 'status', width: 15 },
+      { header: 'Url', key: 'url', width: 40 },
+      { header: 'Notes', key: 'notes', width: 40 }
+    ];
+
+    const rows = orders.map((o) => {
+      return {
+        title: o.publication.title,
+        orderId: o._id,
+        website: o.publication.url,
+        status: o.status,
+        url: o.url,
+        notes: ''
+      };
+    });
+    worksheet.addRows(rows);
+
+    worksheet
+      .getColumn('status')
+      .eachCell({ includeEmpty: false }, function (cell) {
+        cell.dataValidation = {
+          type: 'list',
+          allowBlank: false,
+          formulae: ['"PENDING,REJECTED,PUBLISHED"'],
+          showErrorMessage: true,
+          errorStyle: 'error',
+          error: 'The value Valid'
+        };
+      });
+
+    // set file name
+    response.set('Content-Disposition', `attachment; filename="orders.xlsx"`);
+    await workbook.xlsx.write(response);
+  }
+
+  async uploadUpdate(req: Request) {
+    const workbook = new ExcelWorkbook();
+    await workbook.xlsx.read(req);
+
+    const worksheet = workbook.getWorksheet();
+
+    // const header = ['Order-Id', 'Title', 'Website', 'Status', 'Url', 'Notes'];
+
+    const data: {
+      orderId: string;
+      title: string;
+      website: string;
+      status: string;
+      url: string;
+      notes: string;
+    }[] = [];
+    worksheet.eachRow((row, rowNumber) => {
+      // ignore header
+      if (rowNumber === 1) {
+        return;
+      }
+      const [, orderId, title, website, status, url, notes] =
+        row.values as string[];
+      data.push({
+        orderId,
+        title,
+        website,
+        status,
+        url,
+        notes
+      });
+    });
+
+    const parsed = await orderBulkUpdateSchema.parseAsync(data);
+    let needToUpdate = parsed.filter(
+      (d) => d.status !== OrderStatusEnum.PENDING
+    );
+
+    const orderIds = needToUpdate.map((d) => d.orderId);
+    const pendingOrdersInDb = await this.model.find({
+      _id: { $in: orderIds },
+      status: OrderStatusEnum.PENDING
+    });
+
+    needToUpdate = needToUpdate.filter((o) => {
+      return pendingOrdersInDb.some((p) => p._id === o.orderId);
+    });
+
+    //NOTE: bulkWrite itself is not atomic, use it with a transaction
+
+    const session = await this.model.startSession();
+    await session.withTransaction(async (session) => {
+      await this.model.bulkWrite(
+        needToUpdate.map((o) => {
+          return {
+            updateOne: {
+              filter: { _id: o.orderId },
+              update: o
+            }
+          };
+        }),
+        {
+          session
+        }
+      );
+    });
   }
 }

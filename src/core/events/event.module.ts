@@ -5,7 +5,7 @@ import { SseModule } from '../sse/sse.module';
 import { OrderModule } from '../order/order.module';
 
 @Module({
-  imports: [SseModule,OrderModule],
+  imports: [SseModule, OrderModule],
   providers: [EventService, SlackService]
 })
 export class EventModule {}
