@@ -25,11 +25,10 @@ class Order extends Document {
   articleId: string;
 
   @Prop({
-    type: String,
-    index: true,
+    type: Number,
     required: true
   })
-  prId: string;
+  prId: number;
 
   @Prop({
     type: String,

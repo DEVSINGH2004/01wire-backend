@@ -1,4 +1,4 @@
-import { Field, InputType, PartialType, PickType } from '@nestjs/graphql';
+import { Field, InputType, Int, PartialType, PickType } from '@nestjs/graphql';
 import { ArticleType } from '../type/article.type';
 import { ArticleCategoryEnum } from '../../enum/article.category.enum';
 
@@ -15,4 +15,7 @@ export class ArticleFilterInput extends PartialType(
 
   @Field(() => Date, { nullable: true })
   endTime: Date;
+
+  @Field(() => Int, { nullable: true })
+  prId: number;
 }

@@ -40,10 +40,10 @@ class Bundle extends Document {
   visibility: VisibilityEnum;
 
   @Prop({
-    type: String,
-    default: null
+    type: Number,
+    default: 0
   })
-  traffic: string;
+  traffic: number;
 
   @Prop({
     type: Number,
@@ -68,6 +68,11 @@ class Bundle extends Document {
     default: null
   })
   image: string;
+
+  @Prop({
+    type: [String]
+  })
+  notes: string[];
 
   @Prop()
   createdAt: Date;

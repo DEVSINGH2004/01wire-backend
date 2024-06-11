@@ -5,7 +5,7 @@ import { OrderStatusEnum } from '../enum/order.status.enum';
 const filterDto = z.object({
   userId: z.string().uuid().nullish(),
   articleId: z.string().uuid().nullish(),
-  prId: z.string().uuid().nullish(),
+  prId: z.number().nullish(),
   status: nativeEnum(OrderStatusEnum).nullish(),
   notes: z.string().nullish(),
   startTime: z.date().nullish(),

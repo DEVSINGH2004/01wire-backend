@@ -15,7 +15,8 @@ const filterDto = articleCreateDto
     startTime: z.date().nullish(),
     endTime: z.date().nullish(),
     status: nativeEnum(ArticleStatusEnum).nullish(),
-    categories: z.array(nativeEnum(ArticleCategoryEnum)).nullish()
+    categories: z.array(nativeEnum(ArticleCategoryEnum)).nullish(),
+    prId: z.number().nullish()
   })
   .partial();
 

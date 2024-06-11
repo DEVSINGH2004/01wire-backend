@@ -20,7 +20,6 @@ import { ArticleService } from 'src/core/article/services/article.service';
 import { PublicationService } from 'src/core/publication/services/publication.service';
 import { PublicationTimelineEnum } from 'src/core/publication/enum/publication.timeline.enum';
 import * as assert from 'assert';
-import { OnEvent } from '@nestjs/event-emitter';
 import { BundleService } from 'src/core/bundle/services/bundle.service';
 
 @Injectable()

@@ -1,34 +1,37 @@
 import {
-  Resolver,
-  Query,
-  Mutation,
   Args,
   Context,
+  Mutation,
+  Parent,
+  Query,
   ResolveField,
-  Parent
+  Resolver
 } from '@nestjs/graphql';
 import { PaginationInput } from 'src/common/graphql/input/pagination.input';
 import { IGraphqlContext } from 'src/common/graphql/interface/context.interface';
-import { ArticleService } from '../services/article.service';
-import { ArticleType } from './type/article.type';
-import { ArticlePaginationType } from './type/article.pagination.type';
-import { ArticleCreateInput } from './input/article.create.input';
-import { ArticleUpdateInput } from './input/article.update.input';
-import { ArticleFilterInput } from './input/article.filter.input';
-import { ArticleStatsType } from './type/article.stats.type';
-import { PublicationType } from 'src/core/publication/graphql/type/publication.type';
-import { Article } from '../article.schema';
-import { PublicationService } from 'src/core/publication/services/publication.service';
 import { BundleType } from 'src/core/bundle/graphql/type/bundle.type';
 import { BundleService } from 'src/core/bundle/services/bundle.service';
+import { PublicationType } from 'src/core/publication/graphql/type/publication.type';
+import { PublicationService } from 'src/core/publication/services/publication.service';
+import { UserType } from 'src/core/user/graphql/type/user.type';
+import { UserService } from 'src/core/user/services/user.service';
+import { Article } from '../article.schema';
+import { ArticleService } from '../services/article.service';
+import { ArticleCreateInput } from './input/article.create.input';
+import { ArticleFilterInput } from './input/article.filter.input';
+import { ArticleUpdateInput } from './input/article.update.input';
 import { ArticleUpdateStateInput } from './input/article.update.state.input';
+import { ArticlePaginationType } from './type/article.pagination.type';
+import { ArticleStatsType } from './type/article.stats.type';
+import { ArticleType } from './type/article.type';
 
 @Resolver(() => ArticleType)
 export class ArticleResolver {
   constructor(
     private articleService: ArticleService,
     private publicationService: PublicationService,
-    private bundleService: BundleService
+    private bundleService: BundleService,
+    private userService: UserService
   ) {}
 
   @ResolveField(() => [BundleType])
@@ -67,6 +70,11 @@ export class ArticleResolver {
   @Query(() => [ArticleStatsType], { nullable: true })
   async getArticleStats(@Context() { me }: IGraphqlContext) {
     return this.articleService.getArticleStats(me.userId);
+  }
+
+  @ResolveField(() => UserType)
+  async user(@Parent() article: Article) {
+    return this.userService.load(article.userId);
   }
 
   @Mutation(() => ArticleType)

@@ -23,6 +23,8 @@ import { ArticleService } from 'src/core/article/services/article.service';
 import { ArticleType } from 'src/core/article/graphql/type/article.type';
 import { BundleType } from 'src/core/bundle/graphql/type/bundle.type';
 import { BundleService } from 'src/core/bundle/services/bundle.service';
+import { UserType } from 'src/core/user/graphql/type/user.type';
+import { UserService } from 'src/core/user/services/user.service';
 
 @Resolver(() => OrderType)
 export class OrderResolver {
@@ -30,7 +32,8 @@ export class OrderResolver {
     private orderService: OrderService,
     private publicationService: PublicationService,
     private articleService: ArticleService,
-    private bundleService: BundleService
+    private bundleService: BundleService,
+    private userService: UserService
   ) {}
 
   @ResolveField(() => ArticleType)
@@ -59,6 +62,11 @@ export class OrderResolver {
       filterInput,
       me
     );
+  }
+
+  @ResolveField(() => UserType)
+  async user(@Parent() order: Order) {
+    return this.userService.load(order.userId);
   }
 
   @Query(() => OrderType, { nullable: true })

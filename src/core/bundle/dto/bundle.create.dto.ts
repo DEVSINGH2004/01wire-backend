@@ -13,7 +13,8 @@ export const bundleCreateDto = z.object({
   visibility: nativeEnum(VisibilityEnum).nullish(),
   price: z.number().min(0, 'price cannot be 0'),
   description: z.string().nullish(),
-  image: z.string().nullish()
+  image: z.string().nullish(),
+  notes: z.array(z.string())
 });
 
 export class BundleCreateDto extends createZodDto(bundleCreateDto) {}

@@ -11,6 +11,7 @@ import { BundleUpdateDto } from '../dto/bundle.update.dto';
 import { IMe } from 'src/common/graphql/interface/context.interface';
 import { PublicationService } from 'src/core/publication/services/publication.service';
 import * as assert from 'assert';
+import { VisibilityEnum } from 'src/common/enum/visibility.enum';
 
 @Injectable()
 export class BundleService {
@@ -68,7 +69,6 @@ export class BundleService {
     );
     dto = validate(dto, BundleCreateDto);
     const { publicationIds, category, type } = dto;
-    let maxPrice = dto.price;
     const publicationList = await this.publicationService.loadMany(
       publicationIds
     );
@@ -84,8 +84,15 @@ export class BundleService {
       new BadRequestException(`A ${category}:${type} bundle already exists`)
     );
 
-    //TODO: calculate maxPrice
-    return this.model.create({ ...dto, maxPrice });
+    let traffic = 0;
+    let maxPrice = 0;
+
+    publicationList.forEach((p) => {
+      traffic += p.stats.traffic;
+      maxPrice += p.price;
+    });
+
+    return this.model.create({ ...dto, maxPrice, traffic });
   }
 
   async getById(id: string): Promise<Bundle> {
@@ -110,6 +117,11 @@ export class BundleService {
         new BadRequestException('one or few of publication ids are invalid')
       );
     }
+
+    assert(
+      dto.visibility !== VisibilityEnum.PRIVATE,
+      new BadRequestException('visibility cannot be PRIVATE')
+    );
 
     //TODO: calculate maxPrice
     const bundleObj = await this.model.findOneAndUpdate(

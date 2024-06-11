@@ -9,6 +9,7 @@ import { PublicationCreateInput } from './input/publication.create.input';
 import { PublicationUpdateInput } from './input/publication.update.input';
 import { AllowedRoles } from 'src/core/auth/decorator/allowedroles.decorator';
 import { UserTypeEnum } from 'src/core/user/enum/user.type.enum';
+import { VisibilityEnum } from 'src/common/enum/visibility.enum';
 
 @Resolver(() => PublicationType)
 export class PublicationResolver {
@@ -23,6 +24,11 @@ export class PublicationResolver {
       paginationInput,
       filterInput
     );
+  }
+
+  @Query(() => PublicationType, { nullable: true })
+  async getPublicationById(@Args('id') id: string) {
+    return this.publicationService.getById(id);
   }
 
   @Mutation(() => PublicationType)
@@ -43,9 +49,17 @@ export class PublicationResolver {
     return this.publicationService.update(params);
   }
 
-  @Query(() => PublicationType, { nullable: true })
-  async getPublicationById(@Args('id') id: string) {
-    return this.publicationService.getById(id);
+  @Mutation(() => PublicationType)
+  @AllowedRoles([UserTypeEnum.ADMIN])
+  async updatePublicationVisibility(
+    @Args('id') id: string,
+    @Args('visibility', { type: () => VisibilityEnum })
+    visibility: VisibilityEnum
+  ) {
+    return this.publicationService.update({
+      id,
+      visibility
+    });
   }
 
   /* @Mutation(() => Boolean)

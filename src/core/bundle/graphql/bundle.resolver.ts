@@ -17,6 +17,7 @@ import { BundleCreateInput } from './input/bundle.create.input';
 import { BundleUpdateInput } from './input/bundle.update.input';
 import { AllowedRoles } from 'src/core/auth/decorator/allowedroles.decorator';
 import { UserTypeEnum } from 'src/core/user/enum/user.type.enum';
+import { VisibilityEnum } from 'src/common/enum/visibility.enum';
 
 @Resolver(() => BundleType)
 export class BundleResolver {
@@ -53,5 +54,18 @@ export class BundleResolver {
   @Query(() => BundleType, { nullable: true })
   async getBundleById(@Args('id') id: string) {
     return this.bundleService.getById(id);
+  }
+
+  @Mutation(() => BundleType)
+  @AllowedRoles([UserTypeEnum.ADMIN])
+  async updateBundleVisibility(
+    @Args('id') id: string,
+    @Args('visibility', { type: () => VisibilityEnum })
+    visibility: VisibilityEnum
+  ) {
+    return this.bundleService.update({
+      id,
+      visibility
+    });
   }
 }

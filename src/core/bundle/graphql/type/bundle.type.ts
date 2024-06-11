@@ -8,7 +8,7 @@ export class BundleType {
   id: string;
 
   @Field(() => [ID], { nullable: false })
-  publicationIds: [string];
+  publicationIds: [string, ...string[]]; // a non empty string
 
   @Field(() => String, { nullable: true })
   image: string;
@@ -27,6 +27,9 @@ export class BundleType {
 
   @Field(() => Int)
   price: number;
+
+  @Field(() => [String])
+  notes: string[];
 
   @Field(() => Date)
   createdAt: Date;
