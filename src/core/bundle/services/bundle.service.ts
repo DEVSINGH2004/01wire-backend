@@ -133,8 +133,8 @@ export class BundleService {
     return bundleObj;
   }
 
-  async delete(_id: string) {
-    const res = await this.model.softDelete({ _id });
+  async delete(id: string) {
+    await this.model.softDelete({ _id: id });
     /* if (res.modifiedCount) {
       this.eventEmitter.emit(EventDomainEnum.KEYWORD, {
         action: EventActionEnum.DELETE,

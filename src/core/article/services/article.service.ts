@@ -391,9 +391,10 @@ export class ArticleService {
   }
 
   async delete(_id: string, me: IMe) {
-    let articleObj = await this._validateOwnership(_id, me.userId);
+    const articleObj = await this._validateOwnership(_id, me.userId);
     assert(
-      articleObj.status === ArticleStatusEnum.DRAFT,
+      articleObj.status === ArticleStatusEnum.DRAFT ||
+        articleObj.status === ArticleStatusEnum.REJECTED,
       new BadRequestException(
         `article in ${articleObj.status} state cannot be deleted`
       )
