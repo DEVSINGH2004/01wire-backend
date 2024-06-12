@@ -32,6 +32,9 @@ export class ClientType {
   @Field(() => String, { nullable: true })
   logo: string;
 
+  @Field(() => String, { nullable: true })
+  notes: string;
+
   @Field(() => ClientSocialType, { nullable: true })
   social: ClientSocialType;
 

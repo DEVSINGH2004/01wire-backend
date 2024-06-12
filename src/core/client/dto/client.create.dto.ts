@@ -11,6 +11,7 @@ export const clientCreateDto = z.object({
   email: z.string().email(),
   website: z.string(),
   logo: z.string().nullish(),
+  notes: z.string().nullish(),
   social: z
     .object({
       facebook: z.string().url().nullish(),

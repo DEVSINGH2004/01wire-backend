@@ -62,6 +62,12 @@ class Client extends Document {
     type: String,
     default: null
   })
+  notes: string;
+
+  @Prop({
+    type: String,
+    default: null
+  })
   logo: string;
 
   @Prop(
