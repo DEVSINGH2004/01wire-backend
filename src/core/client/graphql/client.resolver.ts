@@ -49,7 +49,7 @@ export class ClientResolver {
     return this.clientService.update({ userId: me.userId, ...params });
   }
 
-  /* @Mutation(() => Boolean)
+  @Mutation(() => Boolean)
   async deleteClient(
     @Args('id')
     id: string,
@@ -57,5 +57,5 @@ export class ClientResolver {
     { me }: IGraphqlContext
   ): Promise<boolean> {
     return this.clientService.delete(id, me);
-  } */
+  }
 }
