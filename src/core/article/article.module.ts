@@ -9,6 +9,7 @@ import { PublicationModule } from '../publication/publication.module';
 import { BundleModule } from '../bundle/bundle.module';
 import { WalletModule } from '../wallet/wallet.module';
 import { SequenceModule } from '../sequence/sequence.module';
+import { UserModule } from '../user/user.module';
 
 @Module({
   imports: [
@@ -17,7 +18,8 @@ import { SequenceModule } from '../sequence/sequence.module';
     BundleModule,
     PublicationModule,
     WalletModule,
-    SequenceModule
+    SequenceModule,
+    UserModule
   ],
   providers: [ArticleService, ArticleLoaderService, ArticleResolver],
   exports: [ArticleService]

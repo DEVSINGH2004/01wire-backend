@@ -8,13 +8,15 @@ import { OrderResolver } from './graphql/order.resolver';
 import { Order, OrderSchema } from './order.schema';
 import { BundleModule } from '../bundle/bundle.module';
 import { OrderController } from './order.controller';
+import { UserModule } from '../user/user.module';
 
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: Order.name, schema: OrderSchema }]),
     PublicationModule,
     BundleModule,
-    ArticleModule
+    ArticleModule,
+    UserModule
   ],
   providers: [OrderService, OrderLoaderService, OrderResolver],
   exports: [OrderService],

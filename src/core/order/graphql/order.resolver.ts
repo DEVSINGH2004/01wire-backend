@@ -36,6 +36,11 @@ export class OrderResolver {
     private userService: UserService
   ) {}
 
+  @ResolveField(() => UserType)
+  async user(@Parent() order: Order) {
+    return this.userService.load(order.userId);
+  }
+
   @ResolveField(() => ArticleType)
   async articleInfo(@Parent() order: Order) {
     return this.articleService.load(order.articleId);
@@ -62,11 +67,6 @@ export class OrderResolver {
       filterInput,
       me
     );
-  }
-
-  @ResolveField(() => UserType)
-  async user(@Parent() order: Order) {
-    return this.userService.load(order.userId);
   }
 
   @Query(() => OrderType, { nullable: true })
