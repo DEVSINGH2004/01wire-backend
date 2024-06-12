@@ -62,13 +62,12 @@ export class PublicationResolver {
     });
   }
 
-  /* @Mutation(() => Boolean)
+  @Mutation(() => Boolean)
+  @AllowedRoles([UserTypeEnum.ADMIN])
   async deletePublication(
     @Args('id')
-    id: string,
-    @Context()
-    { me }: IGraphqlContext
+    id: string
   ): Promise<boolean> {
-    return this.publicationService.delete(id, me);
-  } */
+    return this.publicationService.delete(id);
+  }
 }

@@ -5,5 +5,4 @@ import { EstimateType } from '../type/estimate.type';
 export class EstimateCreateInput extends PartialType(
   PickType(EstimateType, ['publicationIds', 'bundleIds'] as const),
   InputType
-) {
-}
+) {}

@@ -117,7 +117,7 @@ export class PublicationService {
     return publicationObj;
   }
 
-  async delete(_id: string, me: IMe) {
+  async delete(_id: string) {
     const res = await this.model.softDelete({ _id });
     /* if (res.modifiedCount) {
       this.eventEmitter.emit(EventDomainEnum.KEYWORD, {

@@ -23,11 +23,9 @@ import { PublicationService } from 'src/core/publication/services/publication.se
 import { WalletService } from 'src/core/wallet/services/wallet.service';
 import * as assert from 'assert';
 import { SequenceService } from 'src/core/sequence/sequence.service';
-import { OrderStatusEnum } from 'src/core/order/enum/order.status.enum';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { EventDomainEnum } from 'src/core/events/enum/event.domain.enum';
 import { EventActionEnum } from 'src/core/events/enum/event.action.enum';
-import { ArticleCreateInput } from '../graphql/input/article.create.input';
 
 @Injectable()
 export class ArticleService {
