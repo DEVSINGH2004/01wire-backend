@@ -75,7 +75,7 @@ export class UserService {
     const q = {};
 
     //generate query
-    if (filterDto.email) q['email'] = new RegExp(filterDto.email);
+    if (filterDto.email) q['email'] = new RegExp(filterDto.email, 'i');
     if (filterDto.fullName) q['fullName'] = new RegExp(filterDto.fullName, 'i');
     if (filterDto.startTime && filterDto.endTime) {
       q['createdAt'] = { $gte: filterDto.startTime, $lte: filterDto.endTime };
