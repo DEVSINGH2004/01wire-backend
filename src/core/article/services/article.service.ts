@@ -109,18 +109,20 @@ export class ArticleService {
     const q = {};
 
     if (me.user.type === UserTypeEnum.ADMIN) {
-      q['status'] = {
+      /* q['status'] = {
         $in: [
           ArticleStatusEnum.SUBMITTED,
           ArticleStatusEnum.AWAITING_APPROVAL,
           ArticleStatusEnum.SCHEDULED
         ]
-      };
+      }; */
+      if (filterDto.userId) q['userId'] = filterDto.userId;
     } else {
       q['userId'] = me.userId;
     }
 
     //generate query
+    if (filterDto.prId) q['userId'] = filterDto.prId;
     if (filterDto.clientId) q['clientId'] = filterDto.clientId;
     if (filterDto.status) q['status'] = filterDto.status;
     if (filterDto.categories) q['category'] = { $in: filterDto.categories };
@@ -346,18 +348,20 @@ export class ArticleService {
           assert(
             articleObj.status === ArticleStatusEnum.SUBMITTED ||
               articleObj.status === ArticleStatusEnum.REVIEW,
-            new BadRequestException('PR not in SUBMIT/REVIEW state')
+            new BadRequestException('PR not in SUBMITTED/REVIEW state')
           );
         }
         case ArticleStatusEnum.SCHEDULED: {
           assert(
-            articleObj.status === ArticleStatusEnum.AWAITING_APPROVAL,
-            new BadRequestException('PR not in AWAITING APPROVAL state')
+            articleObj.status === ArticleStatusEnum.SUBMITTED ||
+            articleObj.status === ArticleStatusEnum.REVIEW,
+            new BadRequestException('PR not in SUBMITTED/REVIEW state')
           );
         }
         case ArticleStatusEnum.REJECTED: {
           assert(
             articleObj.status === ArticleStatusEnum.SUBMITTED ||
+            articleObj.status === ArticleStatusEnum.REVIEW ||
               articleObj.status === ArticleStatusEnum.AWAITING_APPROVAL ||
               articleObj.status === ArticleStatusEnum.SCHEDULED,
             new BadRequestException(
