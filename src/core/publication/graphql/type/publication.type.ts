@@ -3,6 +3,7 @@ import { PublicationStatsType } from './publication.stats.type';
 import { PublicationCategoryEnum } from '../../enum/publication.category.enum';
 import { PublicationLinkTypeEnum } from '../../enum/publication.link.type.enum';
 import { PublicationTimelineEnum } from '../../enum/publication.timeline.enum';
+import { VisibilityEnum } from 'src/common/enum/visibility.enum';
 
 @ObjectType('PublicationType')
 export class PublicationType {
@@ -29,6 +30,9 @@ export class PublicationType {
 
   @Field(() => PublicationTimelineEnum)
   timeline: PublicationTimelineEnum;
+
+  @Field(()=>VisibilityEnum)
+  visibility: VisibilityEnum
 
   @Field(() => Int)
   price: number;
