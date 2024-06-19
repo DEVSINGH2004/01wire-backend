@@ -161,6 +161,7 @@ export class BundleService {
         data: { keywordId: _id }
       });
     } */
+    await this.loaderService.cleanCacheById(id);
     return true;
   }
 }

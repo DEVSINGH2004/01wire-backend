@@ -150,6 +150,7 @@ export class OrderService {
     }
     updateObj['status'] = status;
     await this.model.updateOne({ _id: id }, { $set: updateObj });
+    await this.loaderService.cleanCacheById(id);
     return true;
   }
 

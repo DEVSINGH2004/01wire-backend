@@ -403,11 +403,13 @@ export class ArticleService {
       }
     }
     updateObj['status'] = status;
-    return this.model.findOneAndUpdate(
+    const res = await this.model.findOneAndUpdate(
       { _id: id },
       { $set: { ...updateObj } },
       { new: true }
     );
+    await this.loaderService.cleanCacheById(id);
+    return res;
   }
 
   async delete(_id: string, me: IMe) {
@@ -426,6 +428,7 @@ export class ArticleService {
         data: { keywordId: _id }
       });
     } */
+    await this.loaderService.cleanCacheById(_id);
     return true;
   }
 }

@@ -157,6 +157,7 @@ export class EstimateService {
   async delete(_id: string, me: IMe): Promise<boolean> {
     let articleObj = await this._validateOwnership(_id, me.userId);
     const res = await this.model.softDelete({ _id });
+    await this.loaderService.cleanCacheById(_id);
     return true;
   }
 }

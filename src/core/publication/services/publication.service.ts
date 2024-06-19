@@ -125,6 +125,7 @@ export class PublicationService {
         data: { keywordId: _id }
       });
     } */
+    await this.loaderService.cleanCacheById(_id);
     return true;
   }
 }
