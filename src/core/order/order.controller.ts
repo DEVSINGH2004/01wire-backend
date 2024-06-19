@@ -7,18 +7,17 @@ import {
   Req,
   Res
 } from '@nestjs/common';
-import { OrderService } from './services/order.service';
 import { Request, Response } from 'express';
 import { Auth } from '../auth/decorator/auth.decorator';
-import { AuthTypeEnum } from 'src/common/enum/auth.enum';
+import { UserTypeEnum } from '../user/enum/user.type.enum';
+import { OrderService } from './services/order.service';
 
 @Controller('/order')
 export class OrderController {
   constructor(private orderService: OrderService) {}
 
   @Get('/pending')
-  // @Auth(AuthTypeEnum.ADMIN)
-  // TODO: Auth decorator only accepts private auth type, discuss to add admin there
+  @Auth(UserTypeEnum.ADMIN)
   async getPendingTemplate(
     @Query('articleId', new ParseUUIDPipe())
     articleId: string,
@@ -29,7 +28,7 @@ export class OrderController {
   }
 
   @Post('/upload-update')
-  // @Auth(AuthTypeEnum.ADMIN)
+  @Auth(UserTypeEnum.ADMIN)
   async uploadUpdate(
     @Req()
     request: Request

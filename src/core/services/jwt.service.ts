@@ -1,6 +1,12 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as jwt from 'jsonwebtoken';
+import type { UserTypeEnum } from '../user/enum/user.type.enum';
+
+interface ITokenPayload {
+  userType: UserTypeEnum;
+  userId: string;
+}
 
 @Injectable()
 export class JwtService {
@@ -10,7 +16,7 @@ export class JwtService {
     this._authSecret = this.configService.get<string>('auth.jwtSecret');
   }
 
-  signToken(payload: Record<any, any>): string {
+  signToken(payload: ITokenPayload): string {
     try {
       return jwt.sign(payload, this._authSecret, {
         expiresIn: '30d'
@@ -22,7 +28,7 @@ export class JwtService {
 
   async verifyToken(token: string) {
     const secret = this._authSecret;
-    return new Promise((resolve, reject) => {
+    return new Promise<ITokenPayload>((resolve, reject) => {
       return jwt.verify(token, secret, function (err, payload: any) {
         if (err?.name === 'TokenExpiredError')
           return reject(new BadRequestException('token expired'));
@@ -43,7 +49,7 @@ export class JwtService {
         if (!payload || typeof payload === 'string')
           return reject(new BadRequestException('unexpected payload'));
 
-        const newToken = await this.signToken({
+        const newToken = this.signToken({
           userId: payload.userId,
           userType: payload.userType
         });

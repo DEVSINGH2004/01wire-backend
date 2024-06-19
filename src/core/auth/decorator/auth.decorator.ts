@@ -1,5 +1,5 @@
 import { SetMetadata } from '@nestjs/common';
-import { AuthTypeEnum } from 'src/common/enum/auth.enum';
+import { UserTypeEnum } from 'src/core/user/enum/user.type.enum';
 
-export const Auth = (authType: AuthTypeEnum) =>
-  SetMetadata('authType', authType);
+export const Auth = (userType: UserTypeEnum) =>
+  SetMetadata('userType', userType);

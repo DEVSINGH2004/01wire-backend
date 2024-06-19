@@ -1,15 +1,15 @@
-// jwt-auth.guard.ts
 import {
   Injectable,
   CanActivate,
   ExecutionContext,
   UnauthorizedException,
   HttpException,
-  HttpStatus
+  HttpStatus,
+  ForbiddenException
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { AuthTypeEnum } from 'src/common/enum/auth.enum';
 import { JwtService } from '../../services/jwt.service';
+import type { UserTypeEnum } from 'src/core/user/enum/user.type.enum';
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
@@ -19,8 +19,8 @@ export class JwtAuthGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const userType = this.reflector.get<AuthTypeEnum>(
-      'authType',
+    const userType = this.reflector.get<UserTypeEnum>(
+      'userType',
       context.getHandler()
     );
 
@@ -30,17 +30,12 @@ export class JwtAuthGuard implements CanActivate {
     const bearer = req.headers?.authorization;
     if (!bearer) throw new UnauthorizedException('token not provided');
     const token = this.getToken(req.headers?.authorization);
-    try {
-      const decoded: any = await this.jwtService.verifyToken(token);
+    const decoded = await this.jwtService.verifyToken(token);
 
-      if (userType !== AuthTypeEnum.PRIVATE && decoded.type !== userType) {
-        throw new UnauthorizedException('invalid token');
-      }
-      req.decoded = decoded;
-    } catch (err) {
-      throw new UnauthorizedException('invalid token');
+    if (decoded.userType !== userType) {
+      throw new ForbiddenException();
     }
-
+    req.decoded = decoded;
     return true;
   }
 
