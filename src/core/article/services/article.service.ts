@@ -169,6 +169,7 @@ export class ArticleService {
       (key) => (dto[key] === null || dto[key] === '') && delete dto[key]
     );
     dto = validate(dto, ArticleUpdateDto);
+    // eslint-disable-next-line prefer-const
     let { id, userId, bundleIds, publicationIds, ...needToUpdate } = dto;
     let articleObj = await this._validateOwnership(id, userId);
 
