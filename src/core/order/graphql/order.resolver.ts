@@ -51,7 +51,7 @@ export class OrderResolver {
     return this.publicationService.load(order.publicationId);
   }
 
-  @ResolveField(() => BundleType)
+  @ResolveField(() => BundleType, { nullable: true })
   async bundleInfo(@Parent() order: Order) {
     return this.bundleService.load(order.bundleId);
   }
