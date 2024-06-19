@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Bundle } from '../bundle.schema';
 import { Model } from 'mongoose';
@@ -10,8 +14,8 @@ import { BundleCreateDto } from '../dto/bundle.create.dto';
 import { BundleUpdateDto } from '../dto/bundle.update.dto';
 import { IMe } from 'src/common/graphql/interface/context.interface';
 import { PublicationService } from 'src/core/publication/services/publication.service';
-import * as assert from 'assert';
 import { VisibilityEnum } from 'src/common/enum/visibility.enum';
+import * as assert from 'assert';
 
 @Injectable()
 export class BundleService {
@@ -107,6 +111,19 @@ export class BundleService {
     );
     dto = validate(dto, BundleUpdateDto);
     const { id, ...needToUpdate } = dto;
+
+    assert(
+      dto.visibility !== VisibilityEnum.PRIVATE,
+      new BadRequestException('Bundle visibility cannot be PRIVATE')
+    );
+
+    const oldObj = await this.load(id);
+    assert(!!oldObj, new NotFoundException('Bundle not found'));
+    assert(
+      oldObj.visibility === VisibilityEnum.SUPPRESSED,
+      new BadRequestException('Bundle can only be updated in suppressed state')
+    );
+
     if (dto?.publicationIds?.length) {
       const publicationList = await this.publicationService.loadMany(
         dto.publicationIds
@@ -116,17 +133,20 @@ export class BundleService {
         publicationList.length === dto.publicationIds.length,
         new BadRequestException('one or few of publication ids are invalid')
       );
+      let traffic = 0;
+      let maxPrice = 0;
+      publicationList.forEach((p) => {
+        traffic += p.stats.traffic;
+        maxPrice += p.price;
+      });
+      needToUpdate['traffic'] = traffic;
+      needToUpdate['maxPrice'] = maxPrice;
     }
-
-    assert(
-      dto.visibility !== VisibilityEnum.PRIVATE,
-      new BadRequestException('visibility cannot be PRIVATE')
-    );
 
     //TODO: calculate maxPrice
     const bundleObj = await this.model.findOneAndUpdate(
       { _id: id },
-      { $set: { ...needToUpdate } },
+      { $set: needToUpdate },
       { new: true }
     );
     await this.loaderService.cleanCacheById(id);

@@ -7,7 +7,6 @@ export class BundleCreateInput extends OmitType(
   ['id', 'traffic', 'description', 'createdAt', 'updatedAt'] as const,
   InputType
 ) {
-
   @Field(() => String, { nullable: true })
   description: string;
 }

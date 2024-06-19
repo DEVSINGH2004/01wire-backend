@@ -145,7 +145,7 @@ export class EstimateService {
       if (!!publicationList[i]) totalCredits += publicationList[i].price;
     }
 
-    return  this.model.create({
+    return this.model.create({
       title,
       userId: userId,
       publicationIds,

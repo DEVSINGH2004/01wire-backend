@@ -174,8 +174,9 @@ export class ArticleService {
 
     //check if bundleId or publicationId is provided
     if (
-      (bundleIds && bundleIds.length) ||
-      (publicationIds && publicationIds.length)
+      articleObj.status === ArticleStatusEnum.DRAFT &&
+      ((bundleIds && bundleIds.length) ||
+        (publicationIds && publicationIds.length))
     ) {
       const [bundleList, publicationList] = await Promise.all([
         this.bundleService.loadMany(bundleIds),
@@ -235,15 +236,20 @@ export class ArticleService {
 
     assert(
       articleObj.status === ArticleStatusEnum.DRAFT ||
-        articleObj.status === ArticleStatusEnum.REJECTED,
+        articleObj.status === ArticleStatusEnum.AWAITING_APPROVAL,
       new BadRequestException(
         `PR in ${articleObj.status} state cannot be edited`
       )
     );
 
+    if (articleObj.status === ArticleStatusEnum.DRAFT) {
+      needToUpdate['bundleIds'] = bundleIds;
+      needToUpdate['publicationIds'] = publicationIds;
+    }
+
     articleObj = await this.model.findOneAndUpdate(
       { _id: id, userId },
-      { $set: { bundleIds, publicationIds, ...needToUpdate } },
+      { $set: needToUpdate },
       { new: true }
     );
     await this.loaderService.cleanCacheById(id);
@@ -267,66 +273,70 @@ export class ArticleService {
       );
       assert(
         articleObj.status === ArticleStatusEnum.DRAFT ||
-          articleObj.status === ArticleStatusEnum.REJECTED,
-        new BadRequestException(`PR already being processed`)
+          articleObj.status === ArticleStatusEnum.AWAITING_APPROVAL,
+        new BadRequestException(`PR being processed or already processed`)
       );
-      const walletObj = await this.walletService.getByUserId(userId);
-      assert(
-        walletObj.balance >= articleObj.totalCredits,
-        new BadRequestException('Insufficient credits in wallet')
-      );
-      // const maxCounter =
-      //   articleObj.publicationIds > articleObj.bundleIds
-      //     ? articleObj.publicationIds.length
-      //     : articleObj.bundleIds.length;
-      //
-      // const orderList = [];
-      //
-      // for (let i = 0; i < maxCounter; i++) {}
-      //
-      // if (articleObj.bundleIds.length) {
-      //   const bundleList = await this.bundleService.loadMany(
-      //     articleObj.bundleIds
-      //   );
-      //
-      //   bundleList.forEach((bundle) => {
-      //     bundle.publicationIds.forEach((pubId) =>
-      //       orderList.push({
-      //         userId: articleObj.userId,
-      //         articleId: articleObj._id,
-      //         prId: articleObj.prId,
-      //         publicationId: pubId,
-      //         bundleId: bundle._id,
-      //         status: OrderStatusEnum.PENDING,
-      //         publishAt: articleObj.publishAt
-      //       })
-      //     );
-      //   });
-      // }
-      //
-      // articleObj.publicationIds.forEach((pubId) =>
-      //   orderList.push({
-      //     userId: articleObj.userId,
-      //     articleId: articleObj._id,
-      //     prId: articleObj.prId,
-      //     publicationId: pubId,
-      //     status: OrderStatusEnum.PENDING
-      //   })
-      // );
-      //
-      this.eventEmitter.emit(EventDomainEnum.ORDER, {
-        action: EventActionEnum.CREATE,
-        data: {
-          ...articleObj.toObject(),
-          articleId: articleObj._id,
-          _id: undefined
-        }
-      });
 
-      await this.walletService.debitBalanceByUserId(
-        userId,
-        articleObj.totalCredits
-      );
+      //Create Order only when PR being submitted from DRAFT state
+      if (articleObj.status === ArticleStatusEnum.DRAFT) {
+        const walletObj = await this.walletService.getByUserId(userId);
+        assert(
+          walletObj.balance >= articleObj.totalCredits,
+          new BadRequestException('Insufficient credits in wallet')
+        );
+        // const maxCounter =
+        //   articleObj.publicationIds > articleObj.bundleIds
+        //     ? articleObj.publicationIds.length
+        //     : articleObj.bundleIds.length;
+        //
+        // const orderList = [];
+        //
+        // for (let i = 0; i < maxCounter; i++) {}
+        //
+        // if (articleObj.bundleIds.length) {
+        //   const bundleList = await this.bundleService.loadMany(
+        //     articleObj.bundleIds
+        //   );
+        //
+        //   bundleList.forEach((bundle) => {
+        //     bundle.publicationIds.forEach((pubId) =>
+        //       orderList.push({
+        //         userId: articleObj.userId,
+        //         articleId: articleObj._id,
+        //         prId: articleObj.prId,
+        //         publicationId: pubId,
+        //         bundleId: bundle._id,
+        //         status: OrderStatusEnum.PENDING,
+        //         publishAt: articleObj.publishAt
+        //       })
+        //     );
+        //   });
+        // }
+        //
+        // articleObj.publicationIds.forEach((pubId) =>
+        //   orderList.push({
+        //     userId: articleObj.userId,
+        //     articleId: articleObj._id,
+        //     prId: articleObj.prId,
+        //     publicationId: pubId,
+        //     status: OrderStatusEnum.PENDING
+        //   })
+        // );
+        //
+        this.eventEmitter.emit(EventDomainEnum.ORDER, {
+          action: EventActionEnum.CREATE,
+          data: {
+            ...articleObj.toObject(),
+            articleId: articleObj._id,
+            _id: undefined
+          }
+        });
+
+        await this.walletService.debitBalanceByUserId(
+          userId,
+          articleObj.totalCredits
+        );
+      }
     } else {
       assert(
         status === ArticleStatusEnum.AWAITING_APPROVAL ||
@@ -356,7 +366,7 @@ export class ArticleService {
         case ArticleStatusEnum.SCHEDULED: {
           assert(
             articleObj.status === ArticleStatusEnum.SUBMITTED ||
-            articleObj.status === ArticleStatusEnum.REVIEW,
+              articleObj.status === ArticleStatusEnum.REVIEW,
             new BadRequestException('PR not in SUBMITTED/REVIEW state')
           );
           break;
@@ -364,7 +374,7 @@ export class ArticleService {
         case ArticleStatusEnum.REJECTED: {
           assert(
             articleObj.status === ArticleStatusEnum.SUBMITTED ||
-            articleObj.status === ArticleStatusEnum.REVIEW ||
+              articleObj.status === ArticleStatusEnum.REVIEW ||
               articleObj.status === ArticleStatusEnum.AWAITING_APPROVAL ||
               articleObj.status === ArticleStatusEnum.SCHEDULED,
             new BadRequestException(

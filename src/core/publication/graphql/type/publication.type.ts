@@ -31,8 +31,8 @@ export class PublicationType {
   @Field(() => PublicationTimelineEnum)
   timeline: PublicationTimelineEnum;
 
-  @Field(()=>VisibilityEnum)
-  visibility: VisibilityEnum
+  @Field(() => VisibilityEnum)
+  visibility: VisibilityEnum;
 
   @Field(() => Int)
   price: number;

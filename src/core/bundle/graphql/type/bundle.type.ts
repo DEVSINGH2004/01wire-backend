@@ -26,8 +26,8 @@ export class BundleType {
   @Field(() => String, { nullable: true })
   traffic: string;
 
-  @Field(()=>VisibilityEnum)
-  visibility: VisibilityEnum
+  @Field(() => VisibilityEnum)
+  visibility: VisibilityEnum;
 
   @Field(() => Int)
   price: number;
