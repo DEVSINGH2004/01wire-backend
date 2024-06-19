@@ -18,7 +18,7 @@ export class OrderType {
   @Field(() => ID)
   publicationId: string;
 
-  @Field(() => ID)
+  @Field(() => ID, { nullable: true })
   bundleId: string;
 
   @Field(() => OrderStatusEnum)
