@@ -96,7 +96,7 @@ export class EstimateService {
     };
   }
 
-  async create(dto: EstimateCreateDto): Promise<boolean> {
+  async create(dto: EstimateCreateDto): Promise<Estimate> {
     dto = validate(dto, EstimateCreateDto);
     let { title, bundleIds, publicationIds, userId } = dto;
 
@@ -145,14 +145,13 @@ export class EstimateService {
       if (!!publicationList[i]) totalCredits += publicationList[i].price;
     }
 
-    await this.model.create({
+    return  this.model.create({
       title,
       userId: userId,
       publicationIds,
       bundleIds,
       totalCredits
     });
-    return true;
   }
 
   async delete(_id: string, me: IMe): Promise<boolean> {
