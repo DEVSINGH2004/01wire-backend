@@ -20,7 +20,7 @@ export class JwtAuthGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const userType = this.reflector.get<UserTypeEnum>(
-      'authType',
+      'userType',
       context.getHandler()
     );
 
