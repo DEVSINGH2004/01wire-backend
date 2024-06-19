@@ -98,7 +98,7 @@ export class EstimateService {
 
   async create(dto: EstimateCreateDto): Promise<boolean> {
     dto = validate(dto, EstimateCreateDto);
-    let { bundleIds, publicationIds, userId } = dto;
+    let { title, bundleIds, publicationIds, userId } = dto;
 
     const [bundleList, publicationList] = await Promise.all([
       this.bundleService.loadMany(bundleIds),
@@ -146,6 +146,7 @@ export class EstimateService {
     }
 
     await this.model.create({
+      title,
       userId: userId,
       publicationIds,
       bundleIds,
