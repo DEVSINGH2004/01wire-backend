@@ -350,6 +350,8 @@ export class ArticleService {
               articleObj.status === ArticleStatusEnum.REVIEW,
             new BadRequestException('PR not in SUBMITTED/REVIEW state')
           );
+          updateObj['notes'] = notes;
+          break;
         }
         case ArticleStatusEnum.SCHEDULED: {
           assert(
@@ -357,6 +359,7 @@ export class ArticleService {
             articleObj.status === ArticleStatusEnum.REVIEW,
             new BadRequestException('PR not in SUBMITTED/REVIEW state')
           );
+          break;
         }
         case ArticleStatusEnum.REJECTED: {
           assert(
@@ -373,12 +376,14 @@ export class ArticleService {
             new BadRequestException('notes is needed to reject PR')
           );
           updateObj['notes'] = notes;
+          break;
         }
         case ArticleStatusEnum.PUBLISHED: {
           assert(
             articleObj.status === ArticleStatusEnum.SCHEDULED,
             new BadRequestException('PR not in SCHEDULED state')
           );
+          break;
         }
         default:
           throw new BadRequestException(
