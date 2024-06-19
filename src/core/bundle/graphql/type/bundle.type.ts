@@ -29,7 +29,6 @@ export class BundleType {
   @Field(()=>VisibilityEnum)
   visibility: VisibilityEnum
 
-
   @Field(() => Int)
   price: number;
 

@@ -8,6 +8,9 @@ export class EstimateType {
   @Field(() => ID)
   userId: string;
 
+  @Field(() => String)
+  title: string;
+
   @Field(() => [ID], { nullable: true })
   publicationIds: string[];
 
