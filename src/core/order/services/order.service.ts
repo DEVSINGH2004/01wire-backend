@@ -203,7 +203,8 @@ export class OrderService {
           publicationId: e._id,
           status: OrderStatusEnum.PENDING,
           publishByDate,
-          bundleId
+          bundleId,
+          prId: dto.prId
         })
       );
     });
