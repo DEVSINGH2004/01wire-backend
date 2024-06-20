@@ -119,10 +119,10 @@ export class BundleService {
 
     const oldObj = await this.load(id);
     assert(!!oldObj, new NotFoundException('Bundle not found'));
-    assert(
-      oldObj.visibility === VisibilityEnum.SUPPRESSED,
-      new BadRequestException('Bundle can only be updated in suppressed state')
-    );
+    // assert(
+    //   oldObj.visibility === VisibilityEnum.SUPPRESSED,
+    //   new BadRequestException('Bundle can only be updated in suppressed state')
+    // );
 
     if (dto?.publicationIds?.length) {
       const publicationList = await this.publicationService.loadMany(
