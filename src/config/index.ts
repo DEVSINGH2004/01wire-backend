@@ -90,7 +90,8 @@ const config = (config: Record<string, unknown>) => {
       'loginViaOtp',
       'signup',
       'getAuthStatus',
-      'verifyOtp'
+      'verifyOtp',
+      'getEstimateById'
     ] as string[],
 
     copperx: {
