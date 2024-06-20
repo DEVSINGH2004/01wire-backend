@@ -14,7 +14,7 @@ export const bundleCreateDto = z.object({
   price: z.number().min(0, 'price cannot be 0'),
   description: z.string().nullish(),
   image: z.string().nullish(),
-  notes: z.array(z.string())
+  notes: z.array(z.string()).nullish()
 });
 
 export class BundleCreateDto extends createZodDto(bundleCreateDto) {}
