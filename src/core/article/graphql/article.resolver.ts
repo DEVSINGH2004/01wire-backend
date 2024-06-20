@@ -34,7 +34,7 @@ export class ArticleResolver {
     private userService: UserService
   ) {}
 
-  @ResolveField(() => [BundleType])
+  @ResolveField(() => [BundleType], { nullable: true })
   async bundleInfo(@Parent() article: Article) {
     if (!article.bundleIds?.length) return [];
     return this.bundleService.loadMany(article.bundleIds);
