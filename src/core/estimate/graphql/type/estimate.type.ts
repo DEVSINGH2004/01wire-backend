@@ -20,6 +20,9 @@ export class EstimateType {
   @Field(() => Int, { nullable: true })
   totalCredits: Number;
 
+  @Field(() => Int, { nullable: true })
+  traffic: Number;
+
   @Field(() => Date)
   createdAt: Date;
 
