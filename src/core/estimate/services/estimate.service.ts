@@ -140,9 +140,17 @@ export class EstimateService {
     }
 
     let totalCredits = 0;
+    let traffic = 0;
+
     for (let i = 0; i < maxIndex; i++) {
-      if (!!bundleList[i]) totalCredits += bundleList[i].price;
-      if (!!publicationList[i]) totalCredits += publicationList[i].price;
+      if (!!bundleList[i]) {
+        totalCredits += bundleList[i].price;
+        traffic += bundleList[i].traffic;
+      }
+      if (!!publicationList[i]) {
+        totalCredits += publicationList[i].price;
+        traffic += publicationList[i].stats.traffic;
+      }
     }
 
     return this.model.create({
@@ -150,7 +158,8 @@ export class EstimateService {
       userId: userId,
       publicationIds,
       bundleIds,
-      totalCredits
+      totalCredits,
+      traffic
     });
   }
 

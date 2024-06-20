@@ -40,6 +40,12 @@ class Estimate extends Document {
   })
   totalCredits: number;
 
+  @Prop({
+    type: Number,
+    default: 0
+  })
+  traffic: number;
+
   @Prop()
   createdAt: Date;
 
