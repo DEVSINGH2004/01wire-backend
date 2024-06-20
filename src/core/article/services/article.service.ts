@@ -26,6 +26,7 @@ import { SequenceService } from 'src/core/sequence/sequence.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { EventDomainEnum } from 'src/core/events/enum/event.domain.enum';
 import { EventActionEnum } from 'src/core/events/enum/event.action.enum';
+import { VisibilityEnum } from 'src/common/enum/visibility.enum';
 
 @Injectable()
 export class ArticleService {
@@ -160,6 +161,28 @@ export class ArticleService {
     dto = validate(dto, ArticleCreateDto);
     const { clientId, userId } = dto;
     await this.clientService.validateOwnership(clientId, userId);
+
+    const bundles = await this.bundleService.loadMany(dto.bundleIds);
+    const isAnyBundleNotPublished = bundles.some(
+      (b) => b.visibility !== VisibilityEnum.PUBLISHED
+    );
+
+    assert(
+      !isAnyBundleNotPublished,
+      new BadRequestException('one or few bundles are not published')
+    );
+
+    const publications = await this.publicationService.loadMany(
+      dto.publicationIds
+    );
+    const isAnyPublicationNotPublished = publications.some(
+      (p) => p.visibility !== VisibilityEnum.PUBLISHED
+    );
+    assert(
+      !isAnyPublicationNotPublished,
+      new BadRequestException('one or few publications are not published')
+    );
+
     const prId = await this.sequenceService.getNextSequence('article');
     return this.model.create({ ...dto, prId, status: ArticleStatusEnum.DRAFT });
   }
@@ -183,6 +206,23 @@ export class ArticleService {
         this.bundleService.loadMany(bundleIds),
         this.publicationService.loadMany(publicationIds)
       ]);
+
+      const isAnyBundleNotPublished = bundleList.some(
+        (b) => b.visibility !== VisibilityEnum.PUBLISHED
+      );
+
+      assert(
+        !isAnyBundleNotPublished,
+        new BadRequestException('one or few bundles are not published')
+      );
+
+      const isAnyPublicationNotPublished = publicationList.some(
+        (p) => p.visibility !== VisibilityEnum.PUBLISHED
+      );
+      assert(
+        !isAnyPublicationNotPublished,
+        new BadRequestException('one or few publications are not published')
+      );
 
       if (bundleIds && bundleIds.length) {
         assert(

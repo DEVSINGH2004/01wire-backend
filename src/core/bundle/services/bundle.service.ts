@@ -77,6 +77,15 @@ export class BundleService {
       publicationIds
     );
 
+    const isSuppressed = publicationList.some(
+      (p) => p.visibility === VisibilityEnum.SUPPRESSED
+    );
+
+    assert(
+      !isSuppressed,
+      new BadRequestException('one or few of publication are suppressed')
+    );
+
     assert(
       publicationList.length === publicationIds.length,
       new BadRequestException('one or few of publication ids are invalid')
@@ -112,11 +121,6 @@ export class BundleService {
     dto = validate(dto, BundleUpdateDto);
     const { id, ...needToUpdate } = dto;
 
-    assert(
-      dto.visibility !== VisibilityEnum.PRIVATE,
-      new BadRequestException('Bundle visibility cannot be PRIVATE')
-    );
-
     const oldObj = await this.load(id);
     assert(!!oldObj, new NotFoundException('Bundle not found'));
     assert(
@@ -143,7 +147,6 @@ export class BundleService {
       needToUpdate['maxPrice'] = maxPrice;
     }
 
-    //TODO: calculate maxPrice
     const bundleObj = await this.model.findOneAndUpdate(
       { _id: id },
       { $set: needToUpdate },
