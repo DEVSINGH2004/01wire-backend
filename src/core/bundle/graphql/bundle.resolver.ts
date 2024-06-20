@@ -4,8 +4,7 @@ import {
   Args,
   ResolveField,
   Parent,
-  Mutation,
-  Context
+  Mutation
 } from '@nestjs/graphql';
 import { PaginationInput } from 'src/common/graphql/input/pagination.input';
 import { BundlePaginationType } from './type/bundle.pagination.type';
@@ -19,7 +18,6 @@ import { BundleUpdateInput } from './input/bundle.update.input';
 import { AllowedRoles } from 'src/core/auth/decorator/allowedroles.decorator';
 import { UserTypeEnum } from 'src/core/user/enum/user.type.enum';
 import { VisibilityEnum } from 'src/common/enum/visibility.enum';
-import { IGraphqlContext } from 'src/common/graphql/interface/context.interface';
 
 @Resolver(() => BundleType)
 export class BundleResolver {
@@ -31,7 +29,9 @@ export class BundleResolver {
   @ResolveField(() => [PublicationType])
   async publicationInfo(@Parent() bundle: Bundle) {
     if (!bundle.publicationIds?.length) return [];
-    return this.publicationService.loadMany(bundle.publicationIds);
+    return this.publicationService.loadMany(bundle.publicationIds, {
+      deletedAt: true
+    });
   }
 
   @Query(() => BundlePaginationType)

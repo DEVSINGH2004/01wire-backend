@@ -37,13 +37,17 @@ export class ArticleResolver {
   @ResolveField(() => [BundleType], { nullable: true })
   async bundleInfo(@Parent() article: Article) {
     if (!article.bundleIds?.length) return [];
-    return this.bundleService.loadMany(article.bundleIds);
+    return this.bundleService.loadMany(article.bundleIds, {
+      deletedAt: true
+    });
   }
 
   @ResolveField(() => [PublicationType])
   async publicationInfo(@Parent() article: Article) {
     if (!article.publicationIds?.length) return [];
-    return this.publicationService.loadMany(article.publicationIds);
+    return this.publicationService.loadMany(article.publicationIds, {
+      deletedAt: true
+    });
   }
 
   @Query(() => ArticlePaginationType)

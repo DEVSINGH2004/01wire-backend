@@ -18,7 +18,14 @@ export const softDeletePlugin = async <T>(schema: Schema<T>) => {
 
   // Define a query middleware to exclude soft-deleted documents
   schema.pre(['find', 'findOne'], function () {
-    if (Object(this.getQuery()).hasOwnProperty(DELETED_AT_FIELD_NAME)) return;
+    const query = this.getQuery();
+    if (Object(query).hasOwnProperty(DELETED_AT_FIELD_NAME)) {
+      // Hacky solution: if deletedAt is sent true then we need to include deleted docs as well
+      if (query.deletedAt === true) {
+        delete query.deletedAt;
+      }
+      return;
+    }
     this.where({ deletedAt: null });
   });
 };
