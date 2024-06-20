@@ -65,10 +65,7 @@ export class BundleResolver {
     @Args('visibility', { type: () => VisibilityEnum })
     visibility: VisibilityEnum
   ) {
-    return this.bundleService.update({
-      id,
-      visibility
-    });
+    return this.bundleService.updateVisibility(id, visibility);
   }
 
   @Mutation(() => Boolean)
