@@ -36,13 +36,13 @@ export class ArticleResolver {
 
   @ResolveField(() => [BundleType], { nullable: true })
   async bundleInfo(@Parent() article: Article) {
-    if (!article.bundleIds?.length) return [];
+    if (!article.bundleIds?.length) return null;
     return this.bundleService.loadMany(article.bundleIds);
   }
 
   @ResolveField(() => [PublicationType])
   async publicationInfo(@Parent() article: Article) {
-    if (!article.publicationIds?.length) return [];
+    if (!article.publicationIds?.length) return null;
     return this.publicationService.loadMany(article.publicationIds);
   }
 
