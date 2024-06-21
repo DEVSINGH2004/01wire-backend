@@ -19,17 +19,26 @@ import { Estimate } from '../estimate.schema';
 import { EstimatePaginationType } from './type/estimate.pagination.type';
 import { EstimateFilterInput } from './input/estimate.filter.input';
 import { EstimateCreateInput } from './input/estimate.create.input';
+import { BundleType } from 'src/core/bundle/graphql/type/bundle.type';
+import { BundleService } from 'src/core/bundle/services/bundle.service';
 
 @Resolver(() => EstimateType)
 export class EstimateResolver {
   constructor(
     private estimateService: EstimateService,
-    private publicationService: PublicationService
+    private publicationService: PublicationService,
+    private bundleService: BundleService
   ) {}
 
   @ResolveField(() => [PublicationType])
   async publicationInfo(@Parent() estimate: Estimate) {
     return this.publicationService.loadMany(estimate.publicationIds);
+  }
+
+  @ResolveField(() => [BundleType])
+  async bundleInfo(@Parent() estimate: Estimate) {
+    if (!estimate.bundleIds?.length) return [];
+    return this.bundleService.loadMany(estimate.bundleIds);
   }
 
   @Query(() => EstimatePaginationType)
