@@ -24,6 +24,8 @@ import { ArticleUpdateStateInput } from './input/article.update.state.input';
 import { ArticlePaginationType } from './type/article.pagination.type';
 import { ArticleStatsType } from './type/article.stats.type';
 import { ArticleType } from './type/article.type';
+import { ClientType } from 'src/core/client/graphql/type/client.type';
+import { ClientService } from 'src/core/client/services/client.service';
 
 @Resolver(() => ArticleType)
 export class ArticleResolver {
@@ -31,8 +33,14 @@ export class ArticleResolver {
     private articleService: ArticleService,
     private publicationService: PublicationService,
     private bundleService: BundleService,
-    private userService: UserService
+    private userService: UserService,
+    private clientService: ClientService
   ) {}
+
+  @ResolveField(() => ClientType)
+  async clientInfo(@Parent() article: Article) {
+    return this.clientService.load(article.clientId);
+  }
 
   @ResolveField(() => [BundleType], { nullable: true })
   async bundleInfo(@Parent() article: Article) {
