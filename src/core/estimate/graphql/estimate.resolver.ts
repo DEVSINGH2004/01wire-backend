@@ -32,14 +32,16 @@ export class EstimateResolver {
 
   @ResolveField(() => [PublicationType])
   async publicationInfo(@Parent() estimate: Estimate) {
-    return this.publicationService.loadMany(estimate.publicationIds);
-  }
+    return this.publicationService.loadMany(estimate.publicationIds, {
+      deletedAt: true
+    });  }
 
   @ResolveField(() => [BundleType])
   async bundleInfo(@Parent() estimate: Estimate) {
     if (!estimate.bundleIds?.length) return [];
-    return this.bundleService.loadMany(estimate.bundleIds);
-  }
+    return this.bundleService.loadMany(estimate.bundleIds, {
+      deletedAt: true
+    });  }
 
   @Query(() => EstimatePaginationType)
   async filterEstimatesPaginated(
