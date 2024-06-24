@@ -350,24 +350,24 @@ export class OrderService {
 
     //NOTE: bulkWrite itself is not atomic, use it with a transaction
 
-    const session = await this.model.startSession();
-    await session.withTransaction(async (session) => {
-      await this.model.bulkWrite(
-        needToUpdate.map((o) => {
-          return {
-            updateOne: {
-              filter: { _id: o.orderId },
-              update: o
-            }
-          };
-        }),
-        {
-          session
-        }
-      );
-      if (publishArticleNeeded) {
-        // TODO: Update the article based on publishArticleNeeded
-      }
-    });
+    // const session = await this.model.startSession();
+    // await session.withTransaction(async (session) => {
+    await this.model.bulkWrite(
+      needToUpdate.map((o) => {
+        return {
+          updateOne: {
+            filter: { _id: o.orderId },
+            update: o
+          }
+        };
+      })
+      // {
+      //   session
+      // }
+    );
+    if (publishArticleNeeded) {
+      // TODO: Update the article based on publishArticleNeeded
+    }
+    // });
   }
 }
