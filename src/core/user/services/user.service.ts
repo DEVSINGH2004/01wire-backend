@@ -135,7 +135,7 @@ export class UserService {
 
     if (user.unblockAt && user.unblockAt > new Date()) {
       const delta = Math.ceil(
-        (user.unblockAt.getTime() - new Date().getTime()) / (1000 * 60)
+        (user.unblockAt.getTime() - new Date().getTime()) / 60000
       );
 
       throw new ForbiddenException(
