@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { User, UserDocument } from '../user.schema';
 import { Model } from 'mongoose';
@@ -18,6 +22,8 @@ import { UserTypeEnum } from '../enum/user.type.enum';
 import { PaginationInputDto } from 'src/common/dto/pagination.input.dto';
 import { UserFilterDto } from '../dto/user.filter.dto';
 import { paginateResponse } from 'src/common/utils';
+import { ConfigService } from '@nestjs/config';
+import { ConfigVariablesType } from 'src/config';
 
 @Injectable()
 export class UserService {
@@ -26,7 +32,8 @@ export class UserService {
     protected model: Model<User>,
     private loaderService: UserLoaderService,
     private walletService: WalletService,
-    private eventEmitter: EventEmitter2
+    private eventEmitter: EventEmitter2,
+    private configService: ConfigService<ConfigVariablesType>
   ) {}
 
   private _getRawEmail(email: string): string {
@@ -126,7 +133,23 @@ export class UserService {
     const user = await this.getUserByEmail(email, '+password');
     assert(user, new BadRequestException('no account found'));
 
+    if (user.unblockAt && user.unblockAt > new Date()) {
+      // calculate delta and send delta back to FE
+
+      const delta = Math.ceil(
+        (user.unblockAt.getTime() - new Date().getTime()) / (1000 * 60)
+      );
+      console.log(
+        (user.unblockAt.getTime() - new Date().getTime()) / (1000 * 60)
+      );
+
+      throw new ForbiddenException(
+        `This account is temporarily blocked. Please try again after ${delta} min`
+      );
+    }
+
     let isPasswordValid = false;
+    let isSaveRequired = false;
     if (user.password) {
       isPasswordValid = await bcryptjs.compare(password, user.password);
       if (
@@ -137,9 +160,28 @@ export class UserService {
         isPasswordValid = true;
     } else if (user.type === UserTypeEnum.ADMIN) {
       user.password = await bcryptjs.hash(password, 10);
-      await user.save();
+      isSaveRequired = true;
       this.loaderService.cleanCacheById(user._id);
       isPasswordValid = true;
+    }
+
+    const { maxAttempts, loginTimeout } = this.configService.get('auth', {
+      infer: true
+    });
+
+    if (!isPasswordValid) {
+      user.loginAttempts += 1;
+      if (user.loginAttempts >= maxAttempts) {
+        user.unblockAt = new Date(new Date().getTime() + loginTimeout);
+      }
+      isSaveRequired = true;
+    } else if (user.loginAttempts !== 0) {
+      user.loginAttempts = 0;
+      isSaveRequired = true;
+    }
+
+    if (isSaveRequired) {
+      await user.save();
     }
 
     assert(

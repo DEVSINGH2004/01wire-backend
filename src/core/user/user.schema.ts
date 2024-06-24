@@ -85,6 +85,14 @@ class User extends Document {
     copperx: string;
   };
 
+  @Prop({
+    default: 0
+  })
+  loginAttempts: number;
+
+  @Prop()
+  unblockAt: Date;
+
   @Prop()
   createdAt: Date;
 
