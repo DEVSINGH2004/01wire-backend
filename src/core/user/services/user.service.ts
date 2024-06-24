@@ -134,12 +134,7 @@ export class UserService {
     assert(user, new BadRequestException('no account found'));
 
     if (user.unblockAt && user.unblockAt > new Date()) {
-      // calculate delta and send delta back to FE
-
       const delta = Math.ceil(
-        (user.unblockAt.getTime() - new Date().getTime()) / (1000 * 60)
-      );
-      console.log(
         (user.unblockAt.getTime() - new Date().getTime()) / (1000 * 60)
       );
 
