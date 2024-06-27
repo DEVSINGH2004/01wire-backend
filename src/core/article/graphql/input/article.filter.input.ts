@@ -8,10 +8,11 @@ import {
 } from '@nestjs/graphql';
 import { ArticleType } from '../type/article.type';
 import { ArticleCategoryEnum } from '../../enum/article.category.enum';
+import { ArticleStatusEnum } from '../../enum/article.status.enum';
 
 @InputType()
 export class ArticleFilterInput extends PartialType(
-  PickType(ArticleType, ['clientId', 'status'] as const),
+  PickType(ArticleType, ['clientId'] as const),
   InputType
 ) {
   @Field(() => [ArticleCategoryEnum], { nullable: true })
@@ -25,6 +26,9 @@ export class ArticleFilterInput extends PartialType(
 
   @Field(() => Int, { nullable: true })
   prId: number;
+
+  @Field(() => [ArticleStatusEnum], { nullable: true })
+  status: ArticleStatusEnum[];
 
   @Field(() => ID, { nullable: true })
   userId: string;

@@ -125,7 +125,7 @@ export class ArticleService {
     //generate query
     if (filterDto.prId) q['userId'] = filterDto.prId;
     if (filterDto.clientId) q['clientId'] = filterDto.clientId;
-    if (filterDto.status) q['status'] = filterDto.status;
+    if (filterDto.status) q['status'] = { $in: filterDto.status };
     if (filterDto.categories) q['category'] = { $in: filterDto.categories };
     if (filterDto.startTime && filterDto.endTime) {
       q['createdAt'] = { $gte: filterDto.startTime, $lte: filterDto.endTime };
