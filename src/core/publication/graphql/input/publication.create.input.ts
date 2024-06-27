@@ -5,7 +5,7 @@ import { PublicationType } from '../type/publication.type';
 @InputType()
 export class PublicationCreateInput extends OmitType(
   PublicationType,
-  ['id', 'stats', 'createdAt', 'updatedAt'] as const,
+  ['id', 'stats', 'visibility', 'createdAt', 'updatedAt'] as const,
   InputType
 ) {
   @Field(() => PublicationStatsInput, { nullable: true })
