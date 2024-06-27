@@ -11,6 +11,8 @@ import { PublicationCreateDto } from '../dto/publication.create.dto';
 import { PublicationUpdateDto } from '../dto/publication.update.dto';
 import { IMe } from 'src/common/graphql/interface/context.interface';
 import * as assert from 'assert';
+import { UserTypeEnum } from 'src/core/user/enum/user.type.enum';
+import { VisibilityEnum } from 'src/common/enum/visibility.enum';
 
 @Injectable()
 export class PublicationService {
@@ -43,13 +45,18 @@ export class PublicationService {
 
   async getFilteredPaginated(
     paginationDto: PaginationInputDto,
-    filterDto: PublicationFilterDto
+    filterDto: PublicationFilterDto,
+    me?: IMe
   ) {
     paginationDto = validate(paginationDto, PaginationInputDto);
     filterDto = validate(filterDto, PublicationFilterDto);
     let { currentPage, perPage } = paginationDto;
     perPage = perPage <= 50 ? perPage : 50;
     const q = {};
+
+    if (me.user.type !== UserTypeEnum.ADMIN) {
+      q['visibility'] = VisibilityEnum.PUBLISHED;
+    }
 
     if (filterDto?.filterIds?.length) q['_id'] = { $nin: filterDto.filterIds };
     //generate query

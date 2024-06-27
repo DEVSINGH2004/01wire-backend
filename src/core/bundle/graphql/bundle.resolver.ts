@@ -4,7 +4,8 @@ import {
   Args,
   ResolveField,
   Parent,
-  Mutation
+  Mutation,
+  Context
 } from '@nestjs/graphql';
 import { PaginationInput } from 'src/common/graphql/input/pagination.input';
 import { BundlePaginationType } from './type/bundle.pagination.type';
@@ -18,6 +19,7 @@ import { BundleUpdateInput } from './input/bundle.update.input';
 import { AllowedRoles } from 'src/core/auth/decorator/allowedroles.decorator';
 import { UserTypeEnum } from 'src/core/user/enum/user.type.enum';
 import { VisibilityEnum } from 'src/common/enum/visibility.enum';
+import { IGraphqlContext } from 'src/common/graphql/interface/context.interface';
 
 @Resolver(() => BundleType)
 export class BundleResolver {
@@ -36,9 +38,10 @@ export class BundleResolver {
 
   @Query(() => BundlePaginationType)
   async filterBundlesPaginated(
-    @Args('paginationInput') paginationInputDto: PaginationInput
+    @Args('paginationInput') paginationInputDto: PaginationInput,
+    @Context() { me }: IGraphqlContext
   ) {
-    return this.bundleService.getFilteredPaginated(paginationInputDto);
+    return this.bundleService.getFilteredPaginated(paginationInputDto, me);
   }
 
   @Mutation(() => BundleType)

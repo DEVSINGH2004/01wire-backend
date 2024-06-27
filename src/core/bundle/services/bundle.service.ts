@@ -16,6 +16,7 @@ import { IMe } from 'src/common/graphql/interface/context.interface';
 import { PublicationService } from 'src/core/publication/services/publication.service';
 import { VisibilityEnum } from 'src/common/enum/visibility.enum';
 import * as assert from 'assert';
+import { UserTypeEnum } from 'src/core/user/enum/user.type.enum';
 
 @Injectable()
 export class BundleService {
@@ -41,11 +42,14 @@ export class BundleService {
     return loader.loadMany(ids);
   }
 
-  async getFilteredPaginated(paginationDto: PaginationInputDto) {
+  async getFilteredPaginated(paginationDto: PaginationInputDto, me?: IMe) {
     paginationDto = validate(paginationDto, PaginationInputDto);
     let { currentPage, perPage } = paginationDto;
     perPage = perPage <= 50 ? perPage : 50;
     const q = {};
+    if (me.user.type !== UserTypeEnum.ADMIN) {
+      q['visibility'] = VisibilityEnum.PUBLISHED;
+    }
 
     //generate query
     const [data, itemCount] = await Promise.all([

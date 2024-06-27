@@ -18,11 +18,13 @@ export class PublicationResolver {
   @Query(() => PublicationPaginationType)
   async filterPublicationsPaginated(
     @Args('paginationInput') paginationInput: PaginationInput,
-    @Args('filterInput') filterInput: PublicationFilterInput
+    @Args('filterInput') filterInput: PublicationFilterInput,
+    @Context() { me }: IGraphqlContext
   ) {
     return this.publicationService.getFilteredPaginated(
       paginationInput,
-      filterInput
+      filterInput,
+      me
     );
   }
 
