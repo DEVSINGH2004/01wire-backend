@@ -39,7 +39,9 @@ export class ArticleResolver {
 
   @ResolveField(() => ClientType)
   async clientInfo(@Parent() article: Article) {
-    return this.clientService.load(article.clientId);
+    return this.clientService.load(article.clientId, {
+      deletedAt: true
+    });
   }
 
   @ResolveField(() => [BundleType], { nullable: true })

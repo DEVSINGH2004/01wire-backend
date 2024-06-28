@@ -25,9 +25,9 @@ export class ClientService {
     private loaderService: ClientLoaderService
   ) {}
 
-  async load(id: string): Promise<Client> {
+  async load(id: string, q: Record<string, any> = null): Promise<Client> {
     if (!id) return null;
-    const loader = await this.loaderService.init();
+    const loader = await this.loaderService.init(q);
     return loader.load(id);
   }
 
