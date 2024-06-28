@@ -123,7 +123,7 @@ export class ArticleService {
     }
 
     //generate query
-    if (filterDto.prId) q['userId'] = filterDto.prId;
+    if (filterDto.prId) q['prId'] = filterDto.prId;
     if (filterDto.clientId) q['clientId'] = filterDto.clientId;
     if (filterDto.status) q['status'] = { $in: filterDto.status };
     if (filterDto.categories) q['category'] = { $in: filterDto.categories };
