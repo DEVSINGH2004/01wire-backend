@@ -22,7 +22,7 @@ import * as path from 'path';
           fileSize: 1024 * 1024 // 1MB
         },
         fileFilter: (req, file, cb) => {
-          if (file.mimetype.match(/\/(jpg|jpeg|png)$/)) {
+          if (file.mimetype.match(/\/(jpg|jpeg|png|webp|svg\+xml)$/)) {
             cb(null, true);
           } else {
             cb(

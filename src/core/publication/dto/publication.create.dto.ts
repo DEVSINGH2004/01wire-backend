@@ -10,11 +10,11 @@ export const publicationCreateDto = z.object({
   image: z.string(),
   stats: z
     .object({
-      da: z.number().nullish(),
-      pa: z.number().nullish(),
-      dr: z.number().nullish(),
-      ur: z.number().nullish(),
-      traffic: z.number().nullish()
+      da: z.coerce.number().nullish(),
+      pa: z.coerce.number().nullish(),
+      dr: z.coerce.number().nullish(),
+      ur: z.coerce.number().nullish(),
+      traffic: z.coerce.number().nullish()
     })
     .nullish(),
   categories: z.array(nativeEnum(PublicationCategoryEnum)),
@@ -22,7 +22,7 @@ export const publicationCreateDto = z.object({
   linkType: nativeEnum(PublicationLinkTypeEnum),
   url: z.string().url().nullish(),
   timeline: nativeEnum(PublicationTimelineEnum),
-  price: z.number().min(0)
+  price: z.coerce.number().min(0)
 });
 
 export class PublicationCreateDto extends createZodDto(publicationCreateDto) {}
