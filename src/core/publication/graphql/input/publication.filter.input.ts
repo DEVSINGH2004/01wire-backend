@@ -6,6 +6,6 @@ export class PublicationFilterInput {
   @Field(() => [ID], { nullable: true })
   filterIds: string[];
 
-  @Field(() => VisibilityEnum, { nullable: true })
-  visibility: VisibilityEnum;
+  @Field(() => [VisibilityEnum], { nullable: true })
+  visibility: VisibilityEnum[];
 }
