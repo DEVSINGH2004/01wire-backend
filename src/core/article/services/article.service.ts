@@ -125,8 +125,8 @@ export class ArticleService {
     //generate query
     if (filterDto.prId) q['prId'] = filterDto.prId;
     if (filterDto.clientId) q['clientId'] = filterDto.clientId;
-    if (filterDto.status) q['status'] = { $in: filterDto.status };
-    if (filterDto.categories) q['category'] = { $in: filterDto.categories };
+    if (filterDto?.status?.length) q['status'] = { $in: filterDto.status };
+    if (filterDto?.categories?.length) q['category'] = { $in: filterDto.categories };
     if (filterDto.startTime && filterDto.endTime) {
       q['createdAt'] = { $gte: filterDto.startTime, $lte: filterDto.endTime };
     } else if (filterDto.startTime) {
