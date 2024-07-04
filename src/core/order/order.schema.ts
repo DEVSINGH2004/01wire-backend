@@ -65,7 +65,7 @@ class Order extends Document {
   publishAt: Date;
 
   @Prop({ type: Date, required: true })
-  publishByDate: Date; // Rename Date
+  publishBy: Date;
 
   @Prop()
   createdAt: Date;
