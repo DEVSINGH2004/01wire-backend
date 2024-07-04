@@ -376,7 +376,7 @@ export class ArticleService {
         });
 
         await this.walletService.debitBalanceByUserId(
-          userId,
+          articleObj.userId,
           articleObj.totalCredits
         );
       }
@@ -454,7 +454,7 @@ export class ArticleService {
     await this.loaderService.cleanCacheById(id);
     if (isRefund === true) {
       await this.walletService.creditBalanceByUserId(
-        userId,
+        articleObj.userId,
         articleObj.totalCredits
       );
     }
