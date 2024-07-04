@@ -109,7 +109,7 @@ export class BundleService {
       maxPrice += p.price;
     });
 
-    return this.model.create({ ...dto, maxPrice, traffic });
+    return this.model.create({ ...dto, maxPrice, traffic: Number(traffic) });
   }
 
   async getById(id: string): Promise<Bundle> {
