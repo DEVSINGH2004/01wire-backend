@@ -307,6 +307,7 @@ export class ArticleService {
         ? await this.load(id)
         : await this._validateOwnership(id, userId);
     const updateObj = {};
+    let isRefund = false;
 
     if (userType === UserTypeEnum.USER) {
       assert(
@@ -428,6 +429,7 @@ export class ArticleService {
             new BadRequestException('notes is needed to reject PR')
           );
           updateObj['notes'] = notes;
+          isRefund = true;
           break;
         }
         case ArticleStatusEnum.PUBLISHED: {
@@ -450,6 +452,12 @@ export class ArticleService {
       { new: true }
     );
     await this.loaderService.cleanCacheById(id);
+    if (isRefund === true) {
+      await this.walletService.creditBalanceByUserId(
+        userId,
+        articleObj.totalCredits
+      );
+    }
     return res;
   }
 

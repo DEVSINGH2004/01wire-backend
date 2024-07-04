@@ -52,7 +52,7 @@ export class TransactionService {
       );
       transactionObj.status = TransactionStatusEnum.SUCCESS;
       await transactionObj.save();
-      await this.walletService.creditBalance(
+      await this.walletService.updateBalance(
         transactionObj.walletId,
         this.txnKindCreditMap[transactionObj.kind]
       );

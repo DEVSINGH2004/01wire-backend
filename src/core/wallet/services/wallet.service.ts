@@ -42,7 +42,7 @@ export class WalletService {
     return this.model.create({ userId, balance: 10 });
   }
 
-  async creditBalance(_id: string, amount: number): Promise<void> {
+  async updateBalance(_id: string, amount: number): Promise<void> {
     await this.model.updateOne({ _id }, { $inc: { balance: amount } });
     await this.loaderService.cleanCacheById(_id);
     const walletObj = await this.load(_id);
@@ -62,7 +62,8 @@ export class WalletService {
       walletObj.balance >= amount,
       new BadRequestException('Insufficient credits balance')
     );
-    await this.model.updateOne(
+    return this.updateBalance(walletObj._id, -amount);
+    /* await this.model.updateOne(
       { _id: walletObj._id },
       { $inc: { balance: -amount } }
     );
@@ -74,6 +75,24 @@ export class WalletService {
         userId: walletObj.userId,
         balance: walletObj.balance - amount
       }
-    });
+    }); */
+  }
+
+  async creditBalanceByUserId(userId: string, amount: number): Promise<void> {
+    const walletObj = await this.getByUserId(userId);
+    return this.updateBalance(walletObj._id, amount);
+    /* await this.model.updateOne(
+      { _id: walletObj._id },
+      { $inc: { balance: -amount } }
+    );
+    await this.loaderService.cleanCacheById(walletObj._id);
+    this.eventEmitter.emit(EventDomainEnum.SSE, {
+      action: EventActionEnum.SEND,
+      data: {
+        event: `${EventDomainEnum.WALLET}.${EventActionEnum.UPDATE}`,
+        userId: walletObj.userId,
+        balance: walletObj.balance - amount
+      }
+    }); */
   }
 }
