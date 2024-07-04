@@ -223,7 +223,7 @@ export class OrderService {
           articleId: dto.articleId,
           publicationId: e._id,
           status: OrderStatusEnum.PENDING,
-          publishByDate,
+          publishBy: publishByDate,
           bundleId,
           prId: dto.prId
         })
