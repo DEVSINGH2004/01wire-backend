@@ -183,6 +183,14 @@ export class OrderService {
           publishByDate.setDate(publishByDate.getDate() + 2);
           break;
         }
+        case PublicationTimelineEnum.D3: {
+          publishByDate.setDate(publishByDate.getDate() + 3);
+          break;
+        }
+        case PublicationTimelineEnum.D4: {
+          publishByDate.setDate(publishByDate.getDate() + 4);
+          break;
+        }
         case PublicationTimelineEnum.D5: {
           publishByDate.setDate(publishByDate.getDate() + 5);
           break;
@@ -193,6 +201,18 @@ export class OrderService {
         }
         case PublicationTimelineEnum.W2: {
           publishByDate.setDate(publishByDate.getDate() + 14);
+          break;
+        }
+        case PublicationTimelineEnum.W3: {
+          publishByDate.setDate(publishByDate.getDate() + 21);
+          break;
+        }
+        case PublicationTimelineEnum.W4: {
+          publishByDate.setDate(publishByDate.getDate() + 28);
+          break;
+        }
+        case PublicationTimelineEnum.W5: {
+          publishByDate.setDate(publishByDate.getDate() + 35);
           break;
         }
       }
