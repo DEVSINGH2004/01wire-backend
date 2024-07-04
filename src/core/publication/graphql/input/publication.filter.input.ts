@@ -8,4 +8,7 @@ export class PublicationFilterInput {
 
   @Field(() => [VisibilityEnum], { nullable: true })
   visibility: VisibilityEnum[];
+
+  @Field(() => String, { nullable: true })
+  title: string;
 }
