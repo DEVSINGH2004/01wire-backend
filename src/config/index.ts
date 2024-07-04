@@ -23,7 +23,9 @@ const config = (config: Record<string, unknown>) => {
     },
     auth: {
       jwtSecret: ENVS.AUTH_JWT_SECRET,
-      masterPassword: ENVS.MASTER_PSWD
+      masterPassword: ENVS.MASTER_PSWD,
+      maxAttempts: 3,
+      loginTimeout: 5 * 60 * 1000 // in ms
     },
     otp: {
       expireInMs: 600000, //10 min
