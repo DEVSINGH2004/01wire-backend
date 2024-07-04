@@ -75,7 +75,7 @@ export class OrderService {
       //generate query
       if (filterDto.userId) q['userId'] = filterDto.userId;
       if (filterDto.articleId) q['articleId'] = filterDto.articleId;
-      if (filterDto.prId) q['publicationId'] = filterDto.prId;
+      if (filterDto.prId) q['prId'] = filterDto.prId;
       if (filterDto.status) q['status'] = filterDto.status;
       if (filterDto.startTime && filterDto.endTime) {
         q['createdAt'] = { $gte: filterDto.startTime, $lte: filterDto.endTime };
