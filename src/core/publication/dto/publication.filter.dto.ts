@@ -1,8 +1,11 @@
 import { createZodDto } from 'nestjs-zod';
-import { z } from 'nestjs-zod/z';
+import { nativeEnum, z } from 'nestjs-zod/z';
+import { VisibilityEnum } from 'src/common/enum/visibility.enum';
 
 const filterDto = z.object({
-  filterIds: z.array(z.string().uuid()).nullish()
+  filterIds: z.array(z.string().uuid()).nullish(),
+  visibilty: z.array(nativeEnum(VisibilityEnum)).nullish(),
+  title: z.string().max(254).nullish()
 });
 
 export class PublicationFilterDto extends createZodDto(filterDto) {}

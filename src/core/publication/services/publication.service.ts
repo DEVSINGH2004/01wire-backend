@@ -54,11 +54,17 @@ export class PublicationService {
     perPage = perPage <= 50 ? perPage : 50;
     const q = {};
 
-    if (me.user.type !== UserTypeEnum.ADMIN) {
+    if (me?.user?.type !== UserTypeEnum.ADMIN) {
       q['visibility'] = VisibilityEnum.PUBLISHED;
+    } else {
+      if (filterDto?.visibilty?.length) {
+        q['visibilty'] = { $in: filterDto.visibilty };
+      }
     }
 
     if (filterDto?.filterIds?.length) q['_id'] = { $nin: filterDto.filterIds };
+    if (filterDto?.title) q['title'] = new RegExp(filterDto.title, 'i');
+
     //generate query
     const [data, itemCount] = await Promise.all([
       this.model
