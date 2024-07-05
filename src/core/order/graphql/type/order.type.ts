@@ -27,6 +27,9 @@ export class OrderType {
   @Field(() => String, { nullable: true })
   notes: string;
 
+  @Field(() => String, { nullable: true })
+  url: string;
+
   @Field(() => Date, { nullable: true })
   publishAt: Date;
 

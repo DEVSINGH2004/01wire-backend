@@ -106,6 +106,13 @@ export class OrderService {
     };
   }
 
+  async rejectPendingByArticleId(articleId: string, notes: string) {
+    return this.model.updateMany(
+      { articleId, status: OrderStatusEnum.PENDING },
+      { $set: { status: OrderStatusEnum.REJECTED, notes } }
+    );
+  }
+
   async updateStatus(dto: OrderUpdateStatusDto): Promise<boolean> {
     dto = validate(dto, OrderUpdateStatusDto);
     const { id, status, notes, url } = dto;
