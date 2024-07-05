@@ -138,7 +138,7 @@ export class ArticleService {
     const [data, itemCount] = await Promise.all([
       this.model
         .find(q)
-        .sort({ createdAt: -1 })
+        .sort({ updatedAt: -1 })
         .limit(perPage)
         .skip(currentPage * perPage),
       this.model.countDocuments(q)
