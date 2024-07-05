@@ -79,7 +79,7 @@ export class EstimateService {
     const [data, itemCount] = await Promise.all([
       this.model
         .find(q)
-        .sort({ publishBy: -1 })
+        .sort({ createdAt: -1 })
         .skip(currentPage * perPage)
         .limit(perPage),
       this.model.countDocuments(q)
