@@ -58,7 +58,7 @@ export class PublicationService {
       q['visibility'] = VisibilityEnum.PUBLISHED;
     } else {
       if (filterDto?.visibilty?.length) {
-        q['visibilty'] = { $in: filterDto.visibilty };
+        q['visibility'] = { $in: filterDto.visibilty };
       }
     }
 
