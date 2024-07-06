@@ -97,7 +97,7 @@ export class UserService {
         .find(q)
         .limit(perPage)
         .skip(currentPage * perPage),
-      this.model.countDocuments(q)
+      this.model.countDocuments({ ...q, deletedAt: null })
     ]);
     const { paginationInfo } = paginateResponse(
       itemCount,

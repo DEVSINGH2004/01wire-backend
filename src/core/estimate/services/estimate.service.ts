@@ -82,7 +82,7 @@ export class EstimateService {
         .sort({ createdAt: -1 })
         .skip(currentPage * perPage)
         .limit(perPage),
-      this.model.countDocuments(q)
+      this.model.countDocuments({ ...q, deletedAt: null })
     ]);
     const { paginationInfo } = paginateResponse(
       itemCount,

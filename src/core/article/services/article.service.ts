@@ -126,7 +126,8 @@ export class ArticleService {
     if (filterDto.prId) q['prId'] = filterDto.prId;
     if (filterDto.clientId) q['clientId'] = filterDto.clientId;
     if (filterDto?.status?.length) q['status'] = { $in: filterDto.status };
-    if (filterDto?.categories?.length) q['category'] = { $in: filterDto.categories };
+    if (filterDto?.categories?.length)
+      q['category'] = { $in: filterDto.categories };
     if (filterDto.startTime && filterDto.endTime) {
       q['createdAt'] = { $gte: filterDto.startTime, $lte: filterDto.endTime };
     } else if (filterDto.startTime) {
@@ -141,7 +142,7 @@ export class ArticleService {
         .sort({ updatedAt: -1 })
         .limit(perPage)
         .skip(currentPage * perPage),
-      this.model.countDocuments(q)
+      this.model.countDocuments({ ...q, deletedAt: null })
     ]);
     const { paginationInfo } = paginateResponse(
       itemCount,
