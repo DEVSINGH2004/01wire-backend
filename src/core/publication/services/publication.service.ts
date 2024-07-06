@@ -57,8 +57,8 @@ export class PublicationService {
     if (me?.user?.type !== UserTypeEnum.ADMIN) {
       q['visibility'] = VisibilityEnum.PUBLISHED;
     } else {
-      if (filterDto?.visibilty?.length) {
-        q['visibility'] = { $in: filterDto.visibilty };
+      if (filterDto?.visibility?.length) {
+        q['visibility'] = { $in: filterDto.visibility };
       }
     }
 
