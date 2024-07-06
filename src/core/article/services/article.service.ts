@@ -1,7 +1,9 @@
 import {
   BadRequestException,
+  Inject,
   Injectable,
-  NotFoundException
+  NotFoundException,
+  forwardRef
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Article } from '../article.schema';
@@ -27,6 +29,8 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { EventDomainEnum } from 'src/core/events/enum/event.domain.enum';
 import { EventActionEnum } from 'src/core/events/enum/event.action.enum';
 import { VisibilityEnum } from 'src/common/enum/visibility.enum';
+import { OrderService } from 'src/core/order/services/order.service';
+import { OrderStatusEnum } from 'src/core/order/enum/order.status.enum';
 
 @Injectable()
 export class ArticleService {
@@ -39,7 +43,10 @@ export class ArticleService {
     private publicationService: PublicationService,
     private walletService: WalletService,
     private sequenceService: SequenceService,
-    private eventEmitter: EventEmitter2
+    private eventEmitter: EventEmitter2,
+
+    @Inject(forwardRef(() => OrderService))
+    private orderService: OrderService
   ) {}
 
   async load(id: string): Promise<Article> {
@@ -429,6 +436,17 @@ export class ArticleService {
             !!notes,
             new BadRequestException('notes is needed to reject PR')
           );
+          const ordersCount = await this.orderService.countByQuery({
+            articleId: articleObj._id,
+            status: OrderStatusEnum.PUBLISHED,
+            deletedAt: null
+          });
+
+          assert(
+            !ordersCount,
+            new BadRequestException('One or more orders are PUBLISHED')
+          );
+
           updateObj['notes'] = notes;
           isRefund = true;
           break;
@@ -438,6 +456,28 @@ export class ArticleService {
             articleObj.status === ArticleStatusEnum.SCHEDULED,
             new BadRequestException('PR not in SCHEDULED state')
           );
+          const orders = await this.orderService.getByQuery({
+            articleId: articleObj._id
+          });
+          let isAnyOrderPublished = false;
+          for (const order of orders) {
+            if (order.status === OrderStatusEnum.PUBLISHED) {
+              isAnyOrderPublished = true;
+            }
+            if (order.status === OrderStatusEnum.PENDING) {
+              throw new BadRequestException(
+                'One or more orders are in PENDING state'
+              );
+            }
+          }
+
+          assert(
+            isAnyOrderPublished,
+            new BadRequestException(
+              'One or more orders should be PUBLISHED before article'
+            )
+          );
+
           break;
         }
         default:

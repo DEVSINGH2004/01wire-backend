@@ -397,4 +397,12 @@ export class OrderService {
     }
     // });
   }
+
+  async getByQuery(ob: FilterQuery<Order>) {
+    return this.model.find(ob).lean();
+  }
+
+  async countByQuery(ob: FilterQuery<Order>) {
+    return this.model.countDocuments(ob);
+  }
 }
