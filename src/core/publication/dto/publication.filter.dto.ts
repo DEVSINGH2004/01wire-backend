@@ -4,7 +4,7 @@ import { VisibilityEnum } from 'src/common/enum/visibility.enum';
 
 const filterDto = z.object({
   filterIds: z.array(z.string().uuid()).nullish(),
-  visibilty: z.array(nativeEnum(VisibilityEnum)).nullish(),
+  visibility: z.array(nativeEnum(VisibilityEnum)).nullish(),
   title: z.string().max(254).nullish()
 });
 
