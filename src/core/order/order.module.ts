@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { OrderService } from './services/order.service';
 import { OrderLoaderService } from './services/order.loader.service';
 import { MongooseModule } from '@nestjs/mongoose';
@@ -15,7 +15,7 @@ import { UserModule } from '../user/user.module';
     MongooseModule.forFeature([{ name: Order.name, schema: OrderSchema }]),
     PublicationModule,
     BundleModule,
-    ArticleModule,
+    forwardRef(() => ArticleModule),
     UserModule
   ],
   providers: [OrderService, OrderLoaderService, OrderResolver],

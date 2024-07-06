@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { ArticleService } from './services/article.service';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Article, ArticleSchema } from './article.schema';
@@ -10,6 +10,7 @@ import { BundleModule } from '../bundle/bundle.module';
 import { WalletModule } from '../wallet/wallet.module';
 import { SequenceModule } from '../sequence/sequence.module';
 import { UserModule } from '../user/user.module';
+import { OrderModule } from '../order/order.module';
 
 @Module({
   imports: [
@@ -19,7 +20,8 @@ import { UserModule } from '../user/user.module';
     PublicationModule,
     WalletModule,
     SequenceModule,
-    UserModule
+    UserModule,
+    forwardRef(() => OrderModule)
   ],
   providers: [ArticleService, ArticleLoaderService, ArticleResolver],
   exports: [ArticleService]
