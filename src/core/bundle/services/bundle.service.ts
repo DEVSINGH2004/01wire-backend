@@ -95,7 +95,11 @@ export class BundleService {
       new BadRequestException('one or few of publication ids are invalid')
     );
 
-    const isFound = await this.model.countDocuments({ category, type });
+    const isFound = await this.model.countDocuments({
+      category,
+      type,
+      deletedAt: null
+    });
     assert(
       isFound === 0,
       new BadRequestException(`A ${category}:${type} bundle already exists`)
