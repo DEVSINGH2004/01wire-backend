@@ -116,21 +116,25 @@ export class OrderService {
   async updateStatus(dto: OrderUpdateStatusDto): Promise<boolean> {
     dto = validate(dto, OrderUpdateStatusDto);
     const { id, status, notes, url } = dto;
-    const prObj = await this.load(id);
+    const orderObj = await this.load(id);
     const updateObj = {};
-    assert(!!prObj, new BadRequestException('invalid pr id'));
-
+    assert(!!orderObj, new BadRequestException('invalid article id'));
+    const articleObj = await this.articleService.load(orderObj.articleId);
     assert(
-      prObj.status === OrderStatusEnum.PENDING,
-      new BadRequestException(`Order is in ${prObj.status} state`)
+      articleObj.status === ArticleStatusEnum.SCHEDULED,
+      new BadRequestException('Article is not scheduled yet')
+    );
+    assert(
+      orderObj.status === OrderStatusEnum.PENDING,
+      new BadRequestException(`Order is in ${orderObj.status} state`)
     );
 
     switch (status) {
       case OrderStatusEnum.REJECTED: {
         assert(
-          prObj.status === OrderStatusEnum.PENDING,
+          orderObj.status === OrderStatusEnum.PENDING,
           new BadRequestException(
-            `PR in ${prObj.status} state cannot be rejected`
+            `PR in ${orderObj.status} state cannot be rejected`
           )
         );
         assert(
@@ -142,7 +146,7 @@ export class OrderService {
       }
       case OrderStatusEnum.PUBLISHED: {
         assert(
-          prObj.status === OrderStatusEnum.PENDING,
+          orderObj.status === OrderStatusEnum.PENDING,
           new BadRequestException('PR not in PENDING state')
         );
         assert(
@@ -305,6 +309,13 @@ export class OrderService {
     // set file name
     response.set('Content-Disposition', `attachment; filename="orders.xlsx"`);
     await workbook.xlsx.write(response);
+  }
+
+  async rejectBulkByArticleId(articleId: string, notes: string) {
+    return this.model.updateMany(
+      { articleId, status: OrderStatusEnum.PENDING },
+      { $set: { notes, status: OrderStatusEnum.REJECTED } }
+    );
   }
 
   async uploadUpdate(req: Request) {

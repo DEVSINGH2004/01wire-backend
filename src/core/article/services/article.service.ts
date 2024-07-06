@@ -494,10 +494,13 @@ export class ArticleService {
     );
     await this.loaderService.cleanCacheById(id);
     if (isRefund === true) {
-      await this.walletService.creditBalanceByUserId(
-        articleObj.userId,
-        articleObj.totalCredits
-      );
+      await Promise.all([
+        this.walletService.creditBalanceByUserId(
+          articleObj.userId,
+          articleObj.totalCredits
+        ),
+        this.orderService.rejectBulkByArticleId(articleObj._id, notes)
+      ]);
     }
     return res;
   }
