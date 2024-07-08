@@ -77,7 +77,7 @@ class Client extends Document {
       linkedIn: { type: String, default: null },
       twitter: { type: String, default: null },
       youtube: { type: String, default: null },
-      other: { type: String, default: null }
+      others: { type: String, default: null }
     })
   )
   social: {
