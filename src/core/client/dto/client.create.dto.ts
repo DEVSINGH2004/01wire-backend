@@ -19,7 +19,7 @@ export const clientCreateDto = z.object({
       linkedIn: z.string().url().nullish(),
       twitter: z.string().url().nullish(),
       youtube: z.string().url().nullish(),
-      other: z.string().url().nullish()
+      others: z.string().url().nullish()
     })
     .nullish()
 });
