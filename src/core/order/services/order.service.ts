@@ -179,8 +179,7 @@ export class OrderService {
     });
 
     const publicationObjs = await this.publicationService.loadMany([
-      ...dto.publicationIds,
-      ...bundlePubIds
+      ...new Set([...dto.publicationIds, ...bundlePubIds])
     ]);
     const orderBulkPayload: OrderDocument[] = [];
     publicationObjs.forEach((e) => {
