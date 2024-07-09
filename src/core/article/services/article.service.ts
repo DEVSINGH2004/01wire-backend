@@ -79,7 +79,7 @@ export class ArticleService {
 
   async getArticleStats(userId): Promise<Record<string, number>[]> {
     const stats = await this.model.aggregate([
-      { $match: { userId: userId } },
+      { $match: { userId: userId, deletedAt: null } },
       { $project: { status: true, _id: false } },
       { $group: { _id: '$status', count: { $sum: 1 } } },
       { $project: { status: '$_id', count: true, _id: false } }
