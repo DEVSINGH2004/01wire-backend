@@ -56,6 +56,36 @@ export class WalletService {
     });
   }
 
+  async updateBalanceAndCreateTransaction({
+    userId,
+    amount,
+    notes
+  }: {
+    userId: string;
+    amount: number;
+    notes: string;
+  }) {
+    if (amount === 0) {
+      throw new BadRequestException("Amount can't be zero");
+    }
+    await this.model.updateOne(
+      { userId },
+      {
+        $inc: { balance: amount }
+      }
+    );
+    this.eventEmitter.emit(EventDomainEnum.TRANSACTION, {
+      action: EventActionEnum.CREATE,
+      data: {
+        event: `${EventDomainEnum.TRANSACTION}.${EventActionEnum.CREATE}`,
+        userId,
+        amount,
+        notes
+      }
+    });
+    return true;
+  }
+
   async debitBalanceByUserId(userId: string, amount: number): Promise<void> {
     const walletObj = await this.getByUserId(userId);
     assert(

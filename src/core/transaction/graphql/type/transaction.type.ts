@@ -1,4 +1,4 @@
-import { Field, ID, ObjectType } from '@nestjs/graphql';
+import { Field, ID, Int, ObjectType } from '@nestjs/graphql';
 import { TransactionStatusEnum } from '../../enum/transaction.status.enum';
 import { TransactionKindEnum } from '../../enum/transaction.kind.enum';
 import { TransactionTypeEnum } from '../../enum/transaction.type.enum';
@@ -20,8 +20,11 @@ export class TransactionType {
   @Field(() => TransactionKindEnum)
   kind: TransactionKindEnum;
 
-  @Field(() => String)
-  amount: string;
+  @Field(() => Int)
+  amount: number;
+
+  @Field(() => String, { nullable: true })
+  notes?: string;
 
   @Field(() => Date)
   createdAt: Date;

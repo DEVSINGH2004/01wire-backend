@@ -10,5 +10,6 @@ export enum EventDomainEnum {
   MSG = 'msg',
   SENDER = 'sender',
   SUPERGROUP = 'supergroup',
-  ORDER = 'order'
+  ORDER = 'order',
+  TRANSACTION = 'transaction'
 }

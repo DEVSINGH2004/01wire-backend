@@ -3,7 +3,11 @@ import {
   Query,
   Context,
   ResolveField,
-  Parent
+  Parent,
+  Mutation,
+  Args,
+  Int,
+  ID
 } from '@nestjs/graphql';
 import { IGraphqlContext } from 'src/common/graphql/interface/context.interface';
 import { WalletService } from '../services/wallet.service';
@@ -22,5 +26,21 @@ export class WalletResolver {
   @Query(() => WalletType, { nullable: true })
   async getUserWallet(@Context() { me }: IGraphqlContext) {
     return this.walletService.getByUserId(me.userId);
+  }
+
+  @Mutation(() => Boolean)
+  async updateWalletBalance(
+    @Args('amount', { type: () => Int })
+    amount: number,
+    @Args('notes')
+    notes: string,
+    @Args('userId', { type: () => ID })
+    userId: string
+  ): Promise<boolean> {
+    return this.walletService.updateBalanceAndCreateTransaction({
+      amount,
+      notes,
+      userId
+    });
   }
 }
