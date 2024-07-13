@@ -13,6 +13,8 @@ import { IGraphqlContext } from 'src/common/graphql/interface/context.interface'
 import { WalletService } from '../services/wallet.service';
 import { WalletType } from './type/wallet.type';
 import { WalletDocument } from '../wallet.schema';
+import { AllowedRoles } from 'src/core/auth/decorator/allowedroles.decorator';
+import { UserTypeEnum } from 'src/core/user/enum/user.type.enum';
 
 @Resolver(() => WalletType)
 export class WalletResolver {
@@ -29,6 +31,7 @@ export class WalletResolver {
   }
 
   @Mutation(() => Boolean)
+  @AllowedRoles([UserTypeEnum.ADMIN])
   async updateWalletBalance(
     @Args('amount', { type: () => Int })
     amount: number,
