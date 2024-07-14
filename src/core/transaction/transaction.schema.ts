@@ -43,6 +43,9 @@ class Transaction {
   amount: number;
 
   @Prop()
+  notes: string;
+
+  @Prop()
   createdAt: Date;
 
   @Prop()

@@ -1,7 +1,6 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { validate } from 'nestjs-zod';
-import { IMe } from 'src/common/graphql/interface/context.interface';
 import { TransactionKindEnum } from '../enum/transaction.kind.enum';
 import { Transaction } from '../transaction.schema';
 import { ConfigService } from '@nestjs/config';
@@ -30,7 +29,8 @@ export class TransactionService {
     [TransactionKindEnum.CREDITS_100]: 100,
     [TransactionKindEnum.CREDITS_500]: 500,
     [TransactionKindEnum.CREDITS_1000]: 1000,
-    [TransactionKindEnum.CREDITS_5000]: 5000
+    [TransactionKindEnum.CREDITS_5000]: 5000,
+    [TransactionKindEnum.ADMIN_UPDATE]: null
   };
   constructor(
     @InjectModel(Transaction.name)
@@ -110,61 +110,37 @@ export class TransactionService {
     };
   }
 
-  async create(dto: TransactionCreateDto, me: IMe) {
+  async create(dto: TransactionCreateDto, userId: string) {
     dto = validate(dto, TransactionCreateDto);
-    const { kind, coupon } = dto;
-    const { userId } = me;
-    let amount = null;
-
-    switch (kind) {
-      case TransactionKindEnum.CREDITS_100:
-        amount = 100;
-        break;
-      case TransactionKindEnum.CREDITS_500:
-        amount = 500;
-        break;
-      case TransactionKindEnum.CREDITS_1000:
-        amount = 1000;
-        break;
-      case TransactionKindEnum.CREDITS_5000:
-        amount = 5000;
-        break;
-      default:
-        throw new BadRequestException(
-          `transaction of ${kind} kind is not allowed`
-        );
-    }
-
+    const amount =
+      'amount' in dto ? dto.amount : this.txnKindCreditMap[dto.kind];
+    const status = 'status' in dto ? dto.status : TransactionStatusEnum.PENDING;
     let transactionObj = await this.model.findOne({
-      userId: me.userId,
-      kind,
-      status: TransactionStatusEnum.PENDING,
-      type: TransactionTypeEnum.CREDIT
+      ...dto,
+      status,
+      userId
     });
-
-    let paymentSessionObj = null;
-    if (!!transactionObj) {
-      paymentSessionObj = await this.paymentService.createCheckoutSession({
+    if (!transactionObj) {
+      const walletObj = await this.walletService.getByUserId(userId);
+      transactionObj = await this.model.create({
+        ...dto,
         userId,
-        amount: amount * 100000000,
-        dbTransactionId: transactionObj._id
+        walletId: walletObj._id,
+        amount,
+        status
       });
-      return paymentSessionObj.url;
     }
-    const walletObj = await this.walletService.getByUserId(userId);
-    transactionObj = await this.model.create({
-      userId,
-      walletId: walletObj._id,
-      status: TransactionStatusEnum.PENDING,
-      type: TransactionTypeEnum.CREDIT,
-      kind,
-      amount
-    });
-    paymentSessionObj = await this.paymentService.createCheckoutSession({
-      userId,
-      amount: amount * 100000000,
-      dbTransactionId: transactionObj._id
-    });
-    return paymentSessionObj.url;
+    let url: string;
+    if (status === TransactionStatusEnum.PENDING) {
+      const paymentSessionObj = await this.paymentService.createCheckoutSession(
+        {
+          userId,
+          amount: amount * 100000000,
+          dbTransactionId: transactionObj._id
+        }
+      );
+      url = paymentSessionObj.url;
+    }
+    return url;
   }
 }

@@ -37,7 +37,7 @@ export class WalletService {
   }
 
   async create(userId: string): Promise<Wallet> {
-    let walletObj = await this.model.findOne({ userId });
+    const walletObj = await this.model.findOne({ userId });
     if (walletObj) return walletObj;
     return this.model.create({ userId, balance: 10 });
   }
@@ -56,43 +56,51 @@ export class WalletService {
     });
   }
 
-  async debitBalanceByUserId(userId: string, amount: number): Promise<void> {
-    const walletObj = await this.getByUserId(userId);
-    assert(
-      walletObj.balance >= amount,
-      new BadRequestException('Insufficient credits balance')
-    );
-    return this.updateBalance(walletObj._id, -amount);
-    /* await this.model.updateOne(
-      { _id: walletObj._id },
-      { $inc: { balance: -amount } }
-    );
-    await this.loaderService.cleanCacheById(walletObj._id);
-    this.eventEmitter.emit(EventDomainEnum.SSE, {
-      action: EventActionEnum.SEND,
+  async updateBalanceAndCreateTransaction({
+    userId,
+    amount,
+    notes
+  }: {
+    userId: string;
+    amount: number;
+    notes: string;
+  }) {
+    if (amount === 0) {
+      throw new BadRequestException("Amount can't be zero");
+    }
+    const wallet = await this.getByUserId(userId);
+    if (wallet.balance + amount < 0) {
+      new BadRequestException('Insufficient credits balance');
+    }
+
+    await this.updateBalance(wallet._id, amount);
+    this.eventEmitter.emit(EventDomainEnum.TRANSACTION, {
+      action: EventActionEnum.CREATE,
       data: {
-        event: `${EventDomainEnum.WALLET}.${EventActionEnum.UPDATE}`,
-        userId: walletObj.userId,
-        balance: walletObj.balance - amount
+        event: `${EventDomainEnum.TRANSACTION}.${EventActionEnum.CREATE}`,
+        userId,
+        amount,
+        notes
       }
-    }); */
+    });
+    return true;
+  }
+
+  async debitBalanceByUserId(userId: string, amount: number): Promise<void> {
+    assert(amount > 0, new BadRequestException('Invalid amount'));
+    await this.updateBalanceAndCreateTransaction({
+      userId,
+      amount: -amount,
+      notes: '' //TODO: Check what note to add
+    });
   }
 
   async creditBalanceByUserId(userId: string, amount: number): Promise<void> {
-    const walletObj = await this.getByUserId(userId);
-    return this.updateBalance(walletObj._id, amount);
-    /* await this.model.updateOne(
-      { _id: walletObj._id },
-      { $inc: { balance: -amount } }
-    );
-    await this.loaderService.cleanCacheById(walletObj._id);
-    this.eventEmitter.emit(EventDomainEnum.SSE, {
-      action: EventActionEnum.SEND,
-      data: {
-        event: `${EventDomainEnum.WALLET}.${EventActionEnum.UPDATE}`,
-        userId: walletObj.userId,
-        balance: walletObj.balance - amount
-      }
-    }); */
+    assert(amount > 0, new BadRequestException('Invalid amount'));
+    await this.updateBalanceAndCreateTransaction({
+      userId,
+      amount,
+      notes: '' //TODO: Check what note to add
+    });
   }
 }

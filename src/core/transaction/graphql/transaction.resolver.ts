@@ -19,7 +19,7 @@ export class TransactionResolver {
     @Args('params') params: TransactionCreateInput,
     @Context() { me }: IGraphqlContext
   ) {
-    return this.transactionService.create(params, me);
+    return this.transactionService.create(params, me.userId);
   }
 
   @Query(() => TransactionFilterType)
