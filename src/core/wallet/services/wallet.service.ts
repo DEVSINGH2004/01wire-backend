@@ -7,6 +7,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { EventDomainEnum } from 'src/core/events/enum/event.domain.enum';
 import { EventActionEnum } from 'src/core/events/enum/event.action.enum';
 import * as assert from 'assert';
+import { TransactionKindEnum } from 'src/core/transaction/enum/transaction.kind.enum';
 
 @Injectable()
 export class WalletService {
@@ -59,15 +60,23 @@ export class WalletService {
   async updateBalanceAndCreateTransaction({
     userId,
     amount,
-    notes
+    notes,
+    kind
   }: {
     userId: string;
     amount: number;
     notes: string;
+    kind: TransactionKindEnum;
   }) {
     if (amount === 0) {
       throw new BadRequestException("Amount can't be zero");
     }
+    notes = notes.trim();
+
+    if (!notes) {
+      throw new BadRequestException('notes cannot be empty');
+    }
+
     const wallet = await this.getByUserId(userId);
     if (wallet.balance + amount < 0) {
       new BadRequestException('Insufficient credits balance');
@@ -80,27 +89,50 @@ export class WalletService {
         event: `${EventDomainEnum.TRANSACTION}.${EventActionEnum.CREATE}`,
         userId,
         amount,
-        notes
+        notes,
+        kind
       }
     });
     return true;
   }
 
-  async debitBalanceByUserId(userId: string, amount: number): Promise<void> {
+  async debitBalanceByUserId({
+    userId,
+    amount,
+    notes,
+    kind = TransactionKindEnum.WALLET
+  }: {
+    userId: string;
+    amount: number;
+    notes: string;
+    kind?: TransactionKindEnum;
+  }): Promise<void> {
     assert(amount > 0, new BadRequestException('Invalid amount'));
     await this.updateBalanceAndCreateTransaction({
       userId,
       amount: -amount,
-      notes: '' //TODO: Check what note to add
+      notes,
+      kind
     });
   }
 
-  async creditBalanceByUserId(userId: string, amount: number): Promise<void> {
+  async creditBalanceByUserId({
+    userId,
+    amount,
+    notes,
+    kind = TransactionKindEnum.WALLET
+  }: {
+    userId: string;
+    amount: number;
+    notes: string;
+    kind?: TransactionKindEnum;
+  }): Promise<void> {
     assert(amount > 0, new BadRequestException('Invalid amount'));
     await this.updateBalanceAndCreateTransaction({
       userId,
       amount,
-      notes: '' //TODO: Check what note to add
+      notes,
+      kind
     });
   }
 }
