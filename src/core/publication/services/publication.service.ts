@@ -91,7 +91,7 @@ export class PublicationService {
     );
     dto = validate(dto, PublicationCreateDto);
     const { title } = dto;
-    const isFound = await this.model.countDocuments({ title });
+    const isFound = await this.model.countDocuments({ title, deletedAt: null });
     assert(
       isFound === 0,
       new BadRequestException(
@@ -111,7 +111,8 @@ export class PublicationService {
     if (dto.title) {
       const isFound = await this.model.countDocuments({
         _id: { $ne: id },
-        title: dto.title
+        title: dto.title,
+        deletedAt: null
       });
       assert(
         isFound === 0,
