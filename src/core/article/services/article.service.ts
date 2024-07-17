@@ -506,7 +506,7 @@ export class ArticleService {
         this.walletService.creditBalanceByUserId({
           userId: articleObj.userId,
           amount: articleObj.totalCredits,
-          notes: `Credited for PR ID: ${articleObj.prId}`
+          notes: `Refund for PR ID: ${articleObj.prId}`
         }),
         this.orderService.rejectBulkByArticleId(articleObj._id, notes)
       ]);
