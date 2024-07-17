@@ -393,7 +393,7 @@ export class ArticleService {
         await this.walletService.debitBalanceByUserId({
           userId: articleObj.userId,
           amount: articleObj.totalCredits,
-          notes: `Debit for ${articleObj.prId} PR id`
+          notes: `Debited for PR ID: ${articleObj.prId}`
         });
       }
     } else {
@@ -506,7 +506,7 @@ export class ArticleService {
         this.walletService.creditBalanceByUserId({
           userId: articleObj.userId,
           amount: articleObj.totalCredits,
-          notes: `Credit for ${articleObj.prId} PR id`
+          notes: `Credited for PR ID: ${articleObj.prId}`
         }),
         this.orderService.rejectBulkByArticleId(articleObj._id, notes)
       ]);
