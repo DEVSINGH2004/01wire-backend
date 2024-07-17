@@ -104,10 +104,10 @@ export class EventService {
     );
     switch (e.action) {
       case EventActionEnum.CREATE: {
-        const { userId, amount, notes } = e.data;
+        const { userId, amount, notes, kind } = e.data;
         await this.transactionService.create(
           {
-            kind: TransactionKindEnum.ADMIN_UPDATE,
+            kind,
             type:
               amount > 0
                 ? TransactionTypeEnum.CREDIT

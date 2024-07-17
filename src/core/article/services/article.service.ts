@@ -390,10 +390,11 @@ export class ArticleService {
           }
         });
 
-        await this.walletService.debitBalanceByUserId(
-          articleObj.userId,
-          articleObj.totalCredits
-        );
+        await this.walletService.debitBalanceByUserId({
+          userId: articleObj.userId,
+          amount: articleObj.totalCredits,
+          notes: `Debited for PR ID: ${articleObj.prId}`
+        });
       }
     } else {
       assert(
@@ -502,10 +503,11 @@ export class ArticleService {
     await this.loaderService.cleanCacheById(id);
     if (isRefund === true) {
       await Promise.all([
-        this.walletService.creditBalanceByUserId(
-          articleObj.userId,
-          articleObj.totalCredits
-        ),
+        this.walletService.creditBalanceByUserId({
+          userId: articleObj.userId,
+          amount: articleObj.totalCredits,
+          notes: `Refund for PR ID: ${articleObj.prId}`
+        }),
         this.orderService.rejectBulkByArticleId(articleObj._id, notes)
       ]);
     }
