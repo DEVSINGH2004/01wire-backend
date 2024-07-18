@@ -162,7 +162,7 @@ class Article extends Document {
     linkedIn: string;
     twitter: string;
     youtube: string;
-    other: string;
+    others: string;
   };
 
   @Prop({ type: Date, default: null })

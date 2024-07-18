@@ -29,7 +29,7 @@ export const articleCreateDto = z.object({
       email: z.string().nullish(),
       phone: z.string().nullish(),
       website: z.string().nullish(),
-      addres: z.string().nullish(),
+      address: z.string().nullish(),
       state: z.string().nullish(),
       country: z.string().nullish(),
       facebook: z.string().nullish(),
@@ -37,7 +37,7 @@ export const articleCreateDto = z.object({
       linkedIn: z.string().nullish(),
       twitter: z.string().nullish(),
       youtube: z.string().nullish(),
-      other: z.string().nullish()
+      others: z.string().nullish()
     })
     .nullish(),
   publishAt: z.date().nullish()
