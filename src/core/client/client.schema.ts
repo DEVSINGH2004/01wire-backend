@@ -86,7 +86,7 @@ class Client extends Document {
     linkedIn: string;
     twitter: string;
     youtube: string;
-    other: string;
+    others: string;
   };
 
   @Prop()
