@@ -49,9 +49,9 @@ export class ArticleService {
     private orderService: OrderService
   ) {}
 
-  async load(id: string): Promise<Article> {
+  async load(id: string, q: Record<string, any> = null): Promise<Article> {
     if (!id) return null;
-    const loader = await this.loaderService.init();
+    const loader = await this.loaderService.init(q);
     return loader.load(id);
   }
 

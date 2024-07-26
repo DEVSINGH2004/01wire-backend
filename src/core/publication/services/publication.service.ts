@@ -22,9 +22,9 @@ export class PublicationService {
     private loaderService: PublicationLoaderService
   ) {}
 
-  async load(id: string): Promise<Publication> {
+  async load(id: string, q: Record<string, any> = null): Promise<Publication> {
     if (!id) return null;
-    const loader = await this.loaderService.init();
+    const loader = await this.loaderService.init(q);
     return loader.load(id);
   }
 

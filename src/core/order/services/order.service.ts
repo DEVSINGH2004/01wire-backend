@@ -38,9 +38,9 @@ export class OrderService {
     private bundleService: BundleService
   ) {}
 
-  async load(id: string): Promise<Order> {
+  async load(id: string, q: Record<string, any> = null): Promise<Order> {
     if (!id) return null;
-    const loader = await this.loaderService.init();
+    const loader = await this.loaderService.init(q);
     return loader.load(id);
   }
 

@@ -48,12 +48,16 @@ export class OrderResolver {
 
   @ResolveField(() => PublicationType)
   async publicationInfo(@Parent() order: Order) {
-    return this.publicationService.load(order.publicationId);
+    return this.publicationService.load(order.publicationId, {
+      deletedAt: true
+    });
   }
 
   @ResolveField(() => BundleType, { nullable: true })
   async bundleInfo(@Parent() order: Order) {
-    return this.bundleService.load(order.bundleId);
+    return this.bundleService.load(order.bundleId, {
+      deletedAt: true
+    });
   }
 
   @Query(() => OrderPaginationType)

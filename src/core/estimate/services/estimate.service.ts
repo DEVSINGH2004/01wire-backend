@@ -27,9 +27,9 @@ export class EstimateService {
     private bundleService: BundleService
   ) {}
 
-  async load(id: string): Promise<Estimate> {
+  async load(id: string, q: Record<string, any> = null): Promise<Estimate> {
     if (!id) return null;
-    const loader = await this.loaderService.init();
+    const loader = await this.loaderService.init(q);
     return loader.load(id);
   }
 

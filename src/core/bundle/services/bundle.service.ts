@@ -27,9 +27,9 @@ export class BundleService {
     private publicationService: PublicationService
   ) {}
 
-  async load(id: string): Promise<Bundle> {
+  async load(id: string, q: Record<string, any> = null): Promise<Bundle> {
     if (!id) return null;
-    const loader = await this.loaderService.init();
+    const loader = await this.loaderService.init(q);
     return loader.load(id);
   }
 
