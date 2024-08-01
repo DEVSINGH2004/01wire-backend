@@ -13,7 +13,9 @@ export const transactionCreateDto = z
         TransactionKindEnum.CREDITS_1000,
         TransactionKindEnum.CREDITS_5000
       ]),
-      type: z.literal(TransactionTypeEnum.CREDIT)
+      type: z
+        .literal(TransactionTypeEnum.CREDIT)
+        .default(TransactionTypeEnum.CREDIT)
     }),
     z.object({
       kind: z.enum([
