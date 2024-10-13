@@ -5,7 +5,8 @@ import { clientCreateDto } from './client.create.dto';
 
 const filterDto = clientCreateDto
   .pick({
-    type: true
+    type: true,
+    title: true
   })
   .extend({
     categories: z.array(z.nativeEnum(ClientCategoryEnum))

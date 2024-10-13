@@ -26,6 +26,7 @@ import { ArticleStatsType } from './type/article.stats.type';
 import { ArticleType } from './type/article.type';
 import { ClientType } from 'src/core/client/graphql/type/client.type';
 import { ClientService } from 'src/core/client/services/client.service';
+import { OrderType } from 'src/core/order/graphql/type/order.type';
 
 @Resolver(() => ArticleType)
 export class ArticleResolver {
@@ -36,6 +37,13 @@ export class ArticleResolver {
     private userService: UserService,
     private clientService: ClientService
   ) {}
+
+  @ResolveField(() => [OrderType], { nullable: true })
+  async ordersInfo(@Parent() article: Article) {
+    return this.clientService.load(article.clientId, {
+      deletedAt: true
+    });
+  }
 
   @ResolveField(() => ClientType)
   async clientInfo(@Parent() article: Article) {

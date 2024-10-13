@@ -69,6 +69,7 @@ export class ClientService {
     const q = me.user.type === UserTypeEnum.ADMIN ? {} : { userId: me.userId };
 
     //generate query
+    if (filterDto.title) q['title'] = new RegExp(filterDto.title, 'i');
     if (filterDto.type) q['type'] = filterDto.type;
     if (filterDto.type) q['categories'] = { $in: filterDto.categories };
 
