@@ -61,7 +61,7 @@ export class OrderService {
     paginationDto = validate(paginationDto, PaginationInputDto);
     filterDto = validate(filterDto, OrderFilterDto);
     let { currentPage, perPage } = paginationDto;
-    perPage = perPage <= 50 ? perPage : 50;
+    perPage = perPage <= 500 ? perPage : 50;
     const q: FilterQuery<OrderTypeWithoutDocument> = {};
 
     if (me.user.type === UserTypeEnum.USER) {
