@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  UnauthorizedException
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import {
   Order,
@@ -62,9 +66,9 @@ export class OrderService {
     filterDto = validate(filterDto, OrderFilterDto);
     let { currentPage, perPage } = paginationDto;
     perPage = perPage <= 500 ? perPage : 50;
-    const q: FilterQuery<OrderTypeWithoutDocument> = {};
+    let q: FilterQuery<OrderTypeWithoutDocument> = {};
 
-    if (me.user.type === UserTypeEnum.USER) {
+    if (me?.user?.type === UserTypeEnum.USER) {
       assert(
         filterDto.articleId,
         new BadRequestException('articleId is mandatory')
@@ -83,6 +87,10 @@ export class OrderService {
         q['createdAt'] = { $gte: filterDto.startTime };
       } else if (filterDto.endTime) {
         q['createdAt'] = { $lte: filterDto.endTime };
+      }
+      if (me === null) {
+        if (!filterDto.articleId) throw new UnauthorizedException();
+        q = { articleId: filterDto.articleId };
       }
     }
 
