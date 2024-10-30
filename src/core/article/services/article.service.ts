@@ -100,6 +100,7 @@ export class ArticleService {
     if (me !== null && me.user.type === UserTypeEnum.USER && obj.userId !== me.userId)
       return null;
     if (
+      me !== null && 
       me.user.type === UserTypeEnum.ADMIN &&
       obj.status === ArticleStatusEnum.SUBMITTED
     ) {
