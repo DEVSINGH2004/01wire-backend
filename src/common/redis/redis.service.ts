@@ -44,7 +44,14 @@ export class RedisService implements OnModuleInit {
   };
 
   private handleError = (e: unknown) => {
-    this._logger.log('REDIS ERROR :O', e);
+     if (e instanceof Error) {
+    this._logger.error(
+      `Redis client error: ${e.message}`,
+      e.stack,
+    );
+  } else {
+    this._logger.error(`Redis client error: ${String(e)}`);
+  }
   };
 
   async scanKeys(pattern: string) {

@@ -39,7 +39,12 @@ async function bootstrap() {
   );
   app.useGlobalGuards(new RolesGuard(app.get(Reflector)));
 
-  await app.listen(cfg.app.port);
-  logger.log(`${cfg.app.appName} listening on port : ${await app.getUrl()}`);
+  const port = Number(process.env.PORT) || cfg.app.port;
+
+await app.listen(port, '0.0.0.0');
+
+logger.log(
+  `${cfg.app.appName} listening on port: ${await app.getUrl()}`
+);
 }
 bootstrap();
