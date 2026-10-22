@@ -83,9 +83,11 @@ export class AuthService {
 
   async signup(userSignupDto: UserSignupDto) {
     const user = await this.userService.createUser(userSignupDto);
-    const otpObj = await this.otpService.sendVerificationOtp(user._id);
-    const token = otpObj._id;
-    const status = AuthStatusEnum.EMAIL_NOT_VERIFIED;
+    const token = this.jwtService.signToken({
+      userType: user.type,
+      userId: user._id
+    });
+    const status = AuthStatusEnum.LOGGED_IN;
     return { type: user.type, status, token };
   }
 }

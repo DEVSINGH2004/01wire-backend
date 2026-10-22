@@ -205,6 +205,7 @@ export class UserService {
       _id: userId,
       walletId: walletObj._id,
       ...parsedDto,
+      isEmailVerified: true,
       ...(email && {
         rawEmail: this._getRawEmail(email),
         email: this._getConvertedEmail(email)
