@@ -1,5 +1,6 @@
 import { z } from 'nestjs-zod/z';
 import { OrderStatusEnum } from '../enum/order.status.enum';
+import { MAX_NOTES } from 'src/common/dto/text.limits';
 
 export const orderBulkUpdateSchema = z.array(
   z
@@ -9,7 +10,7 @@ export const orderBulkUpdateSchema = z.array(
       }),
       z.object({
         status: z.literal(OrderStatusEnum.REJECTED),
-        notes: z.string().min(1)
+        notes: z.string().min(1).max(MAX_NOTES)
       }),
 
       z.object({

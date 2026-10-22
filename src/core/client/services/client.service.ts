@@ -64,8 +64,7 @@ export class ClientService {
   ) {
     paginationDto = validate(paginationDto, PaginationInputDto);
     filterDto = validate(filterDto, ClientFilterDto);
-    let { currentPage, perPage } = paginationDto;
-    perPage = perPage <= 50 ? perPage : 50;
+    const { currentPage, perPage } = paginationDto;
     const q = me.user.type === UserTypeEnum.ADMIN ? {} : { userId: me.userId };
 
     //generate query

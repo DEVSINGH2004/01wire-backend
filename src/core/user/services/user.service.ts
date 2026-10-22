@@ -77,8 +77,7 @@ export class UserService {
   ) {
     paginationDto = validate(paginationDto, PaginationInputDto);
     filterDto = validate(filterDto, UserFilterDto);
-    let { currentPage, perPage } = paginationDto;
-    perPage = perPage <= 50 ? perPage : 50;
+    const { currentPage, perPage } = paginationDto;
     const q = {};
 
     //generate query

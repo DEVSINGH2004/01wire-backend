@@ -1,9 +1,10 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'nestjs-zod/z';
+import { MAX_TITLE } from 'src/common/dto/text.limits';
 
 const estimateCreateDto = z
   .object({
-    title: z.string(),
+    title: z.string().max(MAX_TITLE),
     userId: z.string().uuid(),
     bundleIds: z
       .array(z.string().uuid())

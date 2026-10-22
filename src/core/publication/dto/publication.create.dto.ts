@@ -4,9 +4,10 @@ import { PublicationCategoryEnum } from '../enum/publication.category.enum';
 import { PublicationLinkTypeEnum } from '../enum/publication.link.type.enum';
 import { PublicationTimelineEnum } from '../enum/publication.timeline.enum';
 import { VisibilityEnum } from 'src/common/enum/visibility.enum';
+import { MAX_TITLE } from 'src/common/dto/text.limits';
 
 export const publicationCreateDto = z.object({
-  title: z.string(),
+  title: z.string().max(MAX_TITLE),
   image: z.string(),
   stats: z
     .object({

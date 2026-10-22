@@ -34,11 +34,13 @@ export class WalletResolver {
   @AllowedRoles([UserTypeEnum.ADMIN])
   async updateWalletBalance(
     @Args('params')
-    params: WalletBalanceUpdateInput
+    params: WalletBalanceUpdateInput,
+    @Context() { me }: IGraphqlContext
   ): Promise<boolean> {
     return this.walletService.updateBalanceAndCreateTransaction({
       ...params,
-      kind: TransactionKindEnum.ADMIN_UPDATE
+      kind: TransactionKindEnum.ADMIN_UPDATE,
+      performedBy: me.userId
     });
   }
 }

@@ -76,8 +76,7 @@ export class TransactionService {
   ) {
     paginationDto = validate(paginationDto, PaginationInputDto);
     filterDto = validate(filterDto, TransactionFilterDto);
-    let { currentPage, perPage } = paginationDto;
-    perPage = perPage <= 50 ? perPage : 50;
+    const { currentPage, perPage } = paginationDto;
     const q = { userId, status: TransactionStatusEnum.SUCCESS };
 
     //generate query
@@ -115,11 +114,12 @@ export class TransactionService {
     const amount =
       'amount' in dto ? dto.amount : this.txnKindCreditMap[dto.kind];
     const status = 'status' in dto ? dto.status : TransactionStatusEnum.PENDING;
-    let transactionObj = await this.model.findOne({
-      ...dto,
-      status,
-      userId
-    });
+    // Reuse an identical PENDING purchase (retried checkout); completed
+    // wallet/admin entries are always recorded, even if identical
+    let transactionObj =
+      status === TransactionStatusEnum.PENDING
+        ? await this.model.findOne({ ...dto, status, userId })
+        : null;
     if (!transactionObj) {
       const walletObj = await this.walletService.getByUserId(userId);
       transactionObj = await this.model.create({

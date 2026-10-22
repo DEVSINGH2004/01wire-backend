@@ -122,8 +122,7 @@ export class ArticleService {
   ) {
     paginationDto = validate(paginationDto, PaginationInputDto);
     filterDto = validate(filterDto, ArticleFilterDto);
-    let { currentPage, perPage } = paginationDto;
-    perPage = perPage <= 50 ? perPage : 50;
+    const { currentPage, perPage } = paginationDto;
     const q = {};
 
     if (me.user.type === UserTypeEnum.ADMIN) {
@@ -208,8 +207,20 @@ export class ArticleService {
       new BadRequestException('one or few publications are not published')
     );
 
+    // Same price as update(): every selected bundle + publication, once each.
+    // Clients can't send totalCredits (the DTO strips it).
+    const totalCredits = [...bundles, ...publications].reduce(
+      (sum, item) => sum + item.price,
+      0
+    );
+
     const prId = await this.sequenceService.getNextSequence('article');
-    return this.model.create({ ...dto, prId, status: ArticleStatusEnum.DRAFT });
+    return this.model.create({
+      ...dto,
+      totalCredits,
+      prId,
+      status: ArticleStatusEnum.DRAFT
+    });
   }
 
   async update(dto: ArticleUpdateDto): Promise<Article> {

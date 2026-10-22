@@ -30,7 +30,21 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     logger
   });
-  app.enableCors();
+  // Only our own frontends may call the API from a browser. Override with a
+  // comma-separated CORS_ORIGINS env var (e.g. to add a Vercel preview URL).
+  const corsOrigins = (
+    process.env.CORS_ORIGINS ||
+    [
+      'https://01wire-frontend.vercel.app',
+      'https://dashboard.01wire.com',
+      'https://app.01wire.com',
+      'http://localhost:3005'
+    ].join(',')
+  )
+    .split(',')
+    .map((o) => o.trim().replace(/\/+$/, ''))
+    .filter(Boolean);
+  app.enableCors({ origin: corsOrigins });
   // Serve uploaded files (POST /upload) at /public/<fileName>. The CSP sandbox
   // stops an uploaded SVG from running scripts when opened directly.
   app.useStaticAssets(resolve(cfg.file.uploadDir), {

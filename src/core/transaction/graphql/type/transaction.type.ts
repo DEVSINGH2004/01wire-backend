@@ -26,6 +26,12 @@ export class TransactionType {
   @Field(() => String, { nullable: true })
   notes?: string;
 
+  @Field(() => ID, {
+    nullable: true,
+    description: 'Admin who made the change (ADMIN_UPDATE only); admins only'
+  })
+  performedBy?: string;
+
   @Field(() => Date)
   createdAt: Date;
 

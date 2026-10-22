@@ -62,8 +62,7 @@ export class EstimateService {
   ) {
     paginationDto = validate(paginationDto, PaginationInputDto);
     filterDto = validate(filterDto, EstimateFilterDto);
-    let { currentPage, perPage } = paginationDto;
-    perPage = perPage <= 50 ? perPage : 50;
+    const { currentPage, perPage } = paginationDto;
     const q = {};
 
     //generate query

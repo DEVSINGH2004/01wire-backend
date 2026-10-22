@@ -50,8 +50,7 @@ export class PublicationService {
   ) {
     paginationDto = validate(paginationDto, PaginationInputDto);
     filterDto = validate(filterDto, PublicationFilterDto);
-    let { currentPage, perPage } = paginationDto;
-    perPage = perPage <= 50 ? perPage : 50;
+    const { currentPage, perPage } = paginationDto;
     const q = {};
 
     if (me?.user?.type !== UserTypeEnum.ADMIN) {

@@ -8,7 +8,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { GraphQLModule } from '@nestjs/graphql';
 import { Request, Response } from 'express';
 import gql from 'graphql-tag';
-import { verify } from 'jsonwebtoken';
+import { GraphQLError } from 'graphql';
+import { TokenExpiredError, verify } from 'jsonwebtoken';
 import { UserService } from 'src/core/user/services/user.service';
 import { UserModule } from 'src/core/user/user.module';
 import { UserTypeEnum } from '../../core/user/enum/user.type.enum';
@@ -35,6 +36,17 @@ const decodeToken = (tokenString: string, configService: ConfigService) => {
   return decoded;
 };
 
+// Clean, uniform auth error: HTTP 401 + code UNAUTHENTICATED, no library text
+const unauthenticated = (message: string) =>
+  new GraphQLError(message, {
+    extensions: { code: 'UNAUTHENTICATED', http: { status: 401 } }
+  });
+
+const badRequest = (message: string) =>
+  new GraphQLError(message, {
+    extensions: { code: 'GRAPHQL_PARSE_FAILED', http: { status: 400 } }
+  });
+
 const genCtx = async (
   { req, res }: { req: Request; res: Response },
   configService: ConfigService,
@@ -46,14 +58,14 @@ const genCtx = async (
   try {
     parsedQuery = gql(body.query);
   } catch (error) {
-    throw new Error('error parsing GraphQL query');
+    throw badRequest('error parsing GraphQL query');
   }
 
   // Safely accessing operation name
   const operationName =
     parsedQuery.definitions[0]?.selectionSet?.selections[0]?.name?.value;
   if (!operationName) {
-    throw new Error('operation name could not be determined from the query');
+    throw badRequest('operation name could not be determined from the query');
   }
 
   // Every top-level field across every operation in the document. Fragment
@@ -75,6 +87,9 @@ const genCtx = async (
     const userType: UserTypeEnum = decoded.userType || UserTypeEnum.USER;
 
     const userObj = await userService.load(decoded.userId);
+    if (!userObj) {
+      throw unauthenticated('Invalid session, please log in again');
+    }
     if (
       userType === UserTypeEnum.USER &&
       (!userObj?.email || !userObj.isEmailVerified) &&
@@ -108,6 +123,18 @@ const genCtx = async (
       return { me: null, req, res, logger: Logger.createInstance() };
     }
 
+    if (err instanceof GraphQLError) throw err;
+    if (!headers.authorization) throw unauthenticated('Not logged in');
+    if (err instanceof TokenExpiredError) {
+      throw unauthenticated('Session expired, please log in again');
+    }
+    // Any other token problem (malformed, bad signature, bad Bearer format)
+    if (
+      err instanceof UnauthorizedException ||
+      err?.name === 'JsonWebTokenError'
+    ) {
+      throw unauthenticated('Invalid session, please log in again');
+    }
     throw err;
   }
 };
@@ -125,6 +152,8 @@ const genCtx = async (
           csrfPrevention: false,
           introspection: true,
           playground: true,
+          // Stack traces (file paths) only for local development
+          includeStacktraceInErrorResponses: process.env.NODE_ENV === 'local',
           autoSchemaFile: true,
           context: (param: { req: Request; res: Response }) =>
             genCtx(param, configService, userService)

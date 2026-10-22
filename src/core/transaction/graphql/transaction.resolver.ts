@@ -1,4 +1,15 @@
-import { Args, Context, Mutation, Query, Resolver } from '@nestjs/graphql';
+import {
+  Args,
+  Context,
+  ID,
+  Mutation,
+  Parent,
+  Query,
+  ResolveField,
+  Resolver
+} from '@nestjs/graphql';
+import { UserTypeEnum } from 'src/core/user/enum/user.type.enum';
+import { Transaction } from '../transaction.schema';
 import { IGraphqlContext } from 'src/common/graphql/interface/context.interface';
 import { TransactionService } from '../services/transaction.service';
 import { TransactionCreateInput } from './input/transaction.create.input';
@@ -13,6 +24,17 @@ export class TransactionResolver {
   private _logger = new Logger(TransactionResolver.name);
 
   constructor(private transactionService: TransactionService) {}
+
+  // Which admin made a wallet change is an internal audit detail
+  @ResolveField(() => ID, { nullable: true })
+  performedBy(
+    @Parent() transaction: Transaction,
+    @Context() { me }: IGraphqlContext
+  ) {
+    return me?.user?.type === UserTypeEnum.ADMIN
+      ? transaction.performedBy
+      : null;
+  }
 
   @Mutation(() => String)
   async createTransaction(

@@ -45,6 +45,10 @@ class Transaction {
   @Prop()
   notes: string;
 
+  // Admin who made an ADMIN_UPDATE change (null for system/user transactions)
+  @Prop({ type: String, default: null })
+  performedBy: string;
+
   @Prop()
   createdAt: Date;
 

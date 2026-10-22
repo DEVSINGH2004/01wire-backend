@@ -27,8 +27,7 @@ export class CouponService {
 
   async getFilteredPaginated(paginationDto: PaginationInputDto) {
     paginationDto = validate(paginationDto, PaginationInputDto);
-    let { currentPage, perPage } = paginationDto;
-    perPage = perPage <= 50 ? perPage : 50;
+    const { currentPage, perPage } = paginationDto;
     const q = {};
 
     //generate query

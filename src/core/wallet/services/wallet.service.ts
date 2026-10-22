@@ -8,6 +8,9 @@ import { EventDomainEnum } from 'src/core/events/enum/event.domain.enum';
 import { EventActionEnum } from 'src/core/events/enum/event.action.enum';
 import * as assert from 'assert';
 import { TransactionKindEnum } from 'src/core/transaction/enum/transaction.kind.enum';
+import { MAX_NOTES } from 'src/common/dto/text.limits';
+
+const SIGNUP_BONUS_CREDITS = 10;
 
 @Injectable()
 export class WalletService {
@@ -40,7 +43,15 @@ export class WalletService {
   async create(userId: string): Promise<Wallet> {
     const walletObj = await this.model.findOne({ userId });
     if (walletObj) return walletObj;
-    return this.model.create({ userId, balance: 10 });
+    // Start at 0 and add the signup credits as a real ledger entry, so every
+    // credit in a wallet has a matching transaction
+    const newWallet = await this.model.create({ userId, balance: 0 });
+    await this.creditBalanceByUserId({
+      userId,
+      amount: SIGNUP_BONUS_CREDITS,
+      notes: 'Signup bonus'
+    });
+    return this.model.findOne({ _id: newWallet._id });
   }
 
   async updateBalance(_id: string, amount: number): Promise<void> {
@@ -70,12 +81,14 @@ export class WalletService {
     userId,
     amount,
     notes,
-    kind
+    kind,
+    performedBy = null
   }: {
     userId: string;
     amount: number;
     notes: string;
     kind: TransactionKindEnum;
+    performedBy?: string;
   }) {
     if (amount === 0) {
       throw new BadRequestException("Amount can't be zero");
@@ -85,6 +98,12 @@ export class WalletService {
     if (!notes) {
       throw new BadRequestException('notes cannot be empty');
     }
+    // Checked before the balance changes: the transaction record is written
+    // afterwards and would otherwise fail validation silently
+    assert(
+      notes.length <= MAX_NOTES,
+      new BadRequestException(`notes must be at most ${MAX_NOTES} characters`)
+    );
 
     const wallet = await this.getByUserId(userId);
     assert(!!wallet, new BadRequestException('wallet not found'));
@@ -97,7 +116,8 @@ export class WalletService {
         userId,
         amount,
         notes,
-        kind
+        kind,
+        performedBy
       }
     });
     return true;

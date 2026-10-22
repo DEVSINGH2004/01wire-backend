@@ -3,6 +3,7 @@ import { z } from 'nestjs-zod/z';
 import { TransactionKindEnum } from '../enum/transaction.kind.enum';
 import { TransactionTypeEnum } from '../enum/transaction.type.enum';
 import { TransactionStatusEnum } from '../enum/transaction.status.enum';
+import { MAX_NOTES } from 'src/common/dto/text.limits';
 
 export const transactionCreateDto = z
   .discriminatedUnion('kind', [
@@ -33,7 +34,8 @@ export const transactionCreateDto = z
   .and(
     z.object({
       coupon: z.string().length(6).toUpperCase().nullish(),
-      notes: z.string().optional()
+      notes: z.string().max(MAX_NOTES).optional(),
+      performedBy: z.string().uuid().nullish()
     })
   );
 

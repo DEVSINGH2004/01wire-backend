@@ -44,8 +44,7 @@ export class BundleService {
 
   async getFilteredPaginated(paginationDto: PaginationInputDto, me?: IMe) {
     paginationDto = validate(paginationDto, PaginationInputDto);
-    let { currentPage, perPage } = paginationDto;
-    perPage = perPage <= 50 ? perPage : 50;
+    const { currentPage, perPage } = paginationDto;
     const q = {};
     if (me.user.type !== UserTypeEnum.ADMIN) {
       q['visibility'] = VisibilityEnum.PUBLISHED;

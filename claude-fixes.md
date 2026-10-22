@@ -9,7 +9,8 @@ Source: `01Wire-QA-Audit-2026-10-21.docx`. Fixes applied in severity order.
 | 1 | Critical | OLD-1, OLD-2 (+ allow-list bypass found during fix) | ✅ Done | 2026-10-22 |
 | 2 | High | OLD-3, OLD-6, BE-1, BE-3, BE-6, FE-1/CU-1, CU-2 (+ BE-4, BE-9, BE-13, BE-15, FE-4, CU-11 fixed along the way) | ✅ Done | 2026-10-22 |
 | 3 | Medium-High | CU-12, BE-7, CU-7 (+ CU-8, CU-10 and the same id check in article create/update) | ✅ Done | 2026-10-22 |
-| 4 | Medium / Low | rest (minus those already fixed above) | ⏳ Pending | — |
+| 4a | Medium / Low (backend) | BE-2, BE-5, OLD-9, BE-8/CU-9, BE-14, OLD-12, OLD-15, OLD-17, BE-10 (+ createArticle pricing, ledger duplicates) | ✅ Done | 2026-10-22 |
+| 4b | Medium / Low (frontend) | FE-2, FE-3, OLD-7, OLD-8, OLD-5, FE-5, FE-6, CU-4, CU-5, CU-6, FE-7, FE-8, OLD-13, OLD-16 | ⏳ Pending | — |
 
 ---
 
@@ -157,3 +158,56 @@ Frontend: no change needed. `createArticle` / `createEstimate` pass the whole `$
 |---|---|
 | `createArticle` ignores price | Publications passed to `createArticle` are stored but `totalCredits` stays 0; only `updateArticle` calculates it. UI is unaffected (wizard sets publications via update). Since Step 2, such a PR can't be submitted until it's updated. Candidate: compute credits on create, or recompute at submit. |
 | Other `countDocuments` calls | Only client title checks were missing `deletedAt: null`; publication/bundle checks already filter. Plugin itself unchanged. |
+
+---
+
+## Step 4a — Medium / Low (backend)
+
+**User decisions:** upload label → 1MB (done in 4b); fix enum typo with a migration; CORS allow-list incl. `https://01wire-frontend.vercel.app`; **Playground/introspection stay ON in production for now** (BE-11 deferred); text limits 200 / 1,000 / 2,000 / 100,000.
+
+| Finding | Root cause | Fix | File(s) |
+|---|---|---|---|
+| **BE-2** (Med) auth → HTTP 500 + raw jsonwebtoken text | Context threw library errors | Every auth failure → HTTP 401, `UNAUTHENTICATED`, plain message: "Not logged in" / "Session expired, please log in again" / "Invalid session, please log in again". Malformed query → 400 `GRAPHQL_PARSE_FAILED`. Token for a deleted user → 401. Stack traces only when `NODE_ENV=local` | `common/graphql/graphql.module.ts` |
+| BE-2 (frontend side) | Auto-logout matched exact 500 + "invalid signature" text | Logs out on `UNAUTHENTICATED` **or** the old message; only when a token is stored (share pages never redirect) | FE `providers/apollo-client.ts` |
+| **BE-5** (Med) undocumented 0-indexing | — | Schema descriptions on `PaginationInput` | `common/graphql/input/pagination.input.ts` |
+| **OLD-12** (Low) silent per-resolver caps (500 / 50) | 9 different hard-coded caps | One cap, `MAX_PER_PAGE = 200` (what the FE requests), documented; per-service caps removed. **Also fixes:** publication/client pickers asked for 200 but got 50 | `common/dto/pagination.input.dto.ts`, 9 `*.service.ts` |
+| **OLD-9** (Med) admin wallet changes unattributed | No actor field | `performedBy` stored on every admin change, from the logged-in admin; returned to admins only | `transaction.schema.ts`, `transaction.type.ts`, `transaction.create.dto.ts`, `transaction.resolver.ts`, `wallet.service.ts`, `wallet.resolver.ts`, `event.service.ts` |
+| Ledger duplicates (found) | `create()` reused any identical transaction → 2 identical admin credits = 1 ledger row | Reuse only identical **PENDING** purchases | `transaction.service.ts` |
+| **OLD-15** (Low) seed balance has no ledger entry | Wallet created with `balance: 10` | Wallet starts at 0 + "Signup bonus" CREDIT transaction (existing wallets untouched) | `wallet.service.ts` |
+| **BE-8 / CU-9** (Low) no max length | — | Limits on all free-text DTO fields (title 200, short text 500, summary 1,000, notes 2,000, content 100,000); wallet notes checked **before** the balance changes | `common/dto/text.limits.ts` (new), 11 DTOs, `wallet.service.ts` |
+| **BE-14** (Low) negative totalCredits "coerced" | Clients can't set it (DTO strips it) | Documented in schema as server-calculated | `article.type.ts` |
+| createArticle ignored prices (Step 3 follow-up) | Only `update` priced | `create` sums selected bundles + publications (same as update) | `article.service.ts` |
+| **OLD-17** (Low) `COMAPNY_NAME_*` typo | — | Renamed to `COMPANY_NAME_*` in API + FE dropdown; migration script for existing data | `article.category.enum.ts`, FE `releases/components/Media/index.tsx`, `scripts/migrate-article-category-typo.js` |
+| **BE-10** (Low) CORS `*` | `app.enableCors()` | Allow-list: `01wire-frontend.vercel.app`, `dashboard.01wire.com`, `app.01wire.com`, `localhost:3005`; override with `CORS_ORIGINS` env (comma-separated) | `src/main.ts` |
+| **BE-11** (Info) | — | ⏸ Deferred at user's request (Playground stays on) | — |
+
+### Verification run
+
+| Test | Expected | Result |
+|---|---|---|
+| No token / garbage / wrong signature / expired | 401 `UNAUTHENTICATED`, plain message | ✅ all four |
+| Malformed query | 400 | ✅ |
+| Anonymous public query | still 200 | ✅ |
+| `perPage: 1000` | `perPage: 200` | ✅ |
+| 10,008-char client title | rejected | ✅ "at most 200 character(s)" |
+| Old enum `COMAPNY_NAME_CHANGE` | rejected with suggestion | ✅ |
+| `createArticle` with a 200-credit publication | `totalCredits: 200` | ✅ (was 0) |
+| CORS preflight: vercel / localhost / evil.example.com | allowed / allowed / no header | ✅ |
+| Admin +1, +1 (identical), −2 | 3 ledger rows, `performedBy` = admin, balance unchanged | ✅ |
+| Customer sees `performedBy` | `null` | ✅ |
+| New signup | wallet 10 + "Signup bonus" transaction | ✅ (test user deleted) |
+| Migration dry run (local DB) | runs | ✅ 0 rows to update |
+| Browser: bad-signature token in storage | redirected to /sign-in, token cleared | ✅ |
+| Browser: anonymous share page | not redirected | ✅ |
+| BE `tsc` + `nest build`, FE `tsc` + `CI=true` build | pass | ✅ |
+
+**Test data:** 3 `QA-TEST step4 ledger` admin transactions on `test1@example.com` (net 0); 1 soft-deleted `QA-TEST Step4 Client` + its deleted article.
+
+### Deploy notes (Step 4a)
+
+| # | Action |
+|---|---|
+| 1 | Deploy **frontend and backend together** (enum rename: an old FE would send `COMAPNY_*` to a new BE and fail; new FE + old BE fails the other way). |
+| 2 | Right after the backend deploy: `node scripts/migrate-article-category-typo.js` (dry run) → then `--apply` against the production DB. |
+| 3 | If you use Vercel **preview** URLs, add them via `CORS_ORIGINS` on Render, or their API calls will be blocked. |
+| 4 | Stack traces are hidden unless `NODE_ENV=local`, so they're hidden on Render regardless of its `NODE_ENV`. |

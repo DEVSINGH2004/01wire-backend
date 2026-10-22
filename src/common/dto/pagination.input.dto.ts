@@ -1,6 +1,9 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'nestjs-zod/z';
 
+// Single page-size cap for every filter*Paginated query
+export const MAX_PER_PAGE = 200;
+
 export class PaginationInputDto extends createZodDto(
   z.object({
     // 0-indexed: currentPage 0 is the first page
@@ -14,11 +17,6 @@ export class PaginationInputDto extends createZodDto(
       .int('perPage must be an integer')
       .min(1, 'perPage must be >= 1')
       .default(10)
-      .transform((val) => {
-        if (val > 500) {
-          return 500;
-        }
-        return val;
-      })
+      .transform((val) => Math.min(val, MAX_PER_PAGE))
   })
 ) {}

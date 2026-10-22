@@ -67,7 +67,11 @@ export class ArticleType {
   @Field(() => ArticleMediaContactType, { nullable: true })
   mediaContact: ArticleMediaContactType;
 
-  @Field(() => Int, { nullable: true })
+  @Field(() => Int, {
+    nullable: true,
+    description:
+      'Calculated by the server from the selected publications and bundles. Any value sent in an input is ignored.'
+  })
   totalCredits: Number;
 
   @Field(() => Date, { nullable: true })

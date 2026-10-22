@@ -104,7 +104,7 @@ export class EventService {
     );
     switch (e.action) {
       case EventActionEnum.CREATE: {
-        const { userId, amount, notes, kind } = e.data;
+        const { userId, amount, notes, kind, performedBy } = e.data;
         await this.transactionService.create(
           {
             kind,
@@ -113,7 +113,8 @@ export class EventService {
                 ? TransactionTypeEnum.CREDIT
                 : TransactionTypeEnum.DEBIT,
             amount: Math.abs(amount),
-            notes
+            notes,
+            performedBy
           },
           userId
         );
