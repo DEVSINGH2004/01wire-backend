@@ -10,7 +10,7 @@ Source: `01Wire-QA-Audit-2026-10-21.docx`. Fixes applied in severity order.
 | 2 | High | OLD-3, OLD-6, BE-1, BE-3, BE-6, FE-1/CU-1, CU-2 (+ BE-4, BE-9, BE-13, BE-15, FE-4, CU-11 fixed along the way) | ✅ Done | 2026-10-22 |
 | 3 | Medium-High | CU-12, BE-7, CU-7 (+ CU-8, CU-10 and the same id check in article create/update) | ✅ Done | 2026-10-22 |
 | 4a | Medium / Low (backend) | BE-2, BE-5, OLD-9, BE-8/CU-9, BE-14, OLD-12, OLD-15, OLD-17, BE-10 (+ createArticle pricing, ledger duplicates) | ✅ Done | 2026-10-22 |
-| 4b | Medium / Low (frontend) | FE-2, FE-3, OLD-7, OLD-8, OLD-5, FE-5, FE-6, CU-4, CU-5, CU-6, FE-7, FE-8, OLD-13, OLD-16 | ⏳ Pending | — |
+| 4b | Medium / Low (frontend) | FE-2, FE-3, OLD-7, OLD-8, OLD-5 (not reproducible), FE-5, FE-6, CU-4, CU-5, CU-6, FE-7, FE-8, OLD-13, OLD-16 | ✅ Done | 2026-10-22 |
 
 ---
 
@@ -211,3 +211,55 @@ Frontend: no change needed. `createArticle` / `createEstimate` pass the whole `$
 | 2 | Right after the backend deploy: `node scripts/migrate-article-category-typo.js` (dry run) → then `--apply` against the production DB. |
 | 3 | If you use Vercel **preview** URLs, add them via `CORS_ORIGINS` on Render, or their API calls will be blocked. |
 | 4 | Stack traces are hidden unless `NODE_ENV=local`, so they're hidden on Render regardless of its `NODE_ENV`. |
+
+---
+
+## Step 4b — Medium / Low (frontend, `01wire-fe`)
+
+| Finding | Root cause | Fix | File(s) |
+|---|---|---|---|
+| **FE-2** (Med) raw "Request failed with status code 400" | Axios `error.message` shown directly | New `getErrorMessage()` (server message → friendly fallback; 413 / network handled) and `getBlobErrorMessage()` for blob downloads. Used on all 3 Axios call sites (template upload/download, image upload, editor image) | `utils/errors.ts` (new), `ArticleBundleModal`, `FileUpload`, `MDEditor` |
+| **FE-3** (Med) template upload takes any file | `accept` attribute not enforced | `.xlsx`/`.xls` check before upload; success toast + list refresh; same file can be re-picked | `releases/components/ArticleBundleModal/index.tsx` |
+| **OLD-7** (Med) empty plan reaches Submit | No check on Plan & Payment | Next blocked with "Select at least one publication or bundle to continue." (backend also rejects since Step 2) | `releases/components/PlanNPayment/index.tsx` |
+| **OLD-8** (Med) 1MB real vs "3MB" label; silent failure | Constant + labels said 3MB; rejected file types uploaded `undefined` | `MAX_IMAGE_SIZE_MB = 1` drives the check, the message and all 4 labels; wrong type → clear message; editor images size-checked too | `constants/index.ts`, `FileUpload.tsx`, `MDEditor`, `BundleForm`, `ClientInfo`, `PublicationForm`, `AddPress` |
+| **OLD-5** (Med, unconfirmed) Add Client not saving | — | **Not reproducible:** 3/3 clean-session runs saved (verified in DB). Closed, no change | — |
+| **FE-6 / CU-4** (Low) no `*` on required fields | `FormField` passed `required` to the label only for text inputs | `*` derived from the field's validation rules, for every field type (dropdown, radio, file, editor, date…) | `releases/components/FormField/index.tsx`, `MDLabel.tsx` |
+| **CU-5** (Low) "No changes to save" on new client | Dirty-check also applied to new records | New client always runs validation | `clients/components/ClientInfo/index.tsx` |
+| **CU-6** (Low) `getArticleById(id: false)` | Step 1 calls `refetch()` before the new id reaches the wizard | `fetchData` skips until an id exists | `releases/components/ReleaseForm/index.tsx` |
+| **FE-5** (Low) wrong screen-reader name | Every row's select had the same `id="demo-select-small"` | Unique id per row, in all 4 tables (publications, bundles, PR management, releases) | 4× `makeColumns.js` |
+| **FE-7** (Low) Google Fonts blocked (ORB) | Inter URL used commas: `wght@400,500,…` → Google returns HTTP 400 HTML | Semicolons (`wght@400;500;600;700`) → 200 CSS | `public/index.html` |
+| **FE-8** (Low) Apollo `onCompleted` warning | Deprecated `useLazyQuery({ onCompleted })` in 9 places | `useEffect` on the query's `data` | 9 page/components files |
+| **OLD-13** (Low) header misses admin top-ups | Wallet queried once | `pollInterval: 30000` | `DashboardNavbar` |
+| **OLD-16** (Low) blank credits on load | `balance || 0` / blank before data | "… Credits" only while loading; no wallet → 0 | `DashboardNavbar` |
+
+### Verification run (Playwright against local FE + local BE)
+
+| Test | Expected | Result |
+|---|---|---|
+| Add Client: Save on empty form | field errors, no "No changes" toast | ✅ |
+| Add Client: required markers | `*` on Company Type, Industry Type, Logo | ✅ |
+| Add Client ×3, clean sessions | saved every time | ✅ 3/3 in DB (deleted after) |
+| 1.5MB image | "Image is too large. Maximum size is 1MB.", no upload | ✅ |
+| PDF in image field | "Please choose a JPG, PNG or SVG image.", no upload | ✅ |
+| Upload label | "(max. 1MB)" | ✅ |
+| New PR wizard | no `getArticleById` with non-string id | ✅ |
+| Empty Plan & Payment → Next | message, stays on step, nothing saved | ✅ |
+| Font requests | none failing | ✅ |
+| `onCompleted` console warnings | 0 | ✅ |
+| Header credits (user without wallet) | "0 Credits" (not stuck on "…") | ✅ |
+| Status dropdowns | unique ids, name = shown value | ✅ |
+| `getErrorMessage` (Axios 400/413/network, Apollo, blob) | readable text | ✅ unit-checked |
+| `.xlsx` filter | xlsx/XLS accepted; txt, `.xlsx.exe` rejected | ✅ |
+| `tsc` + `CI=true npm run build` | pass | ✅ |
+| Template download/upload in the real dialog | — | ⚠️ Not run: local DB has no orders |
+
+**Test data:** all QA-TEST clients/articles created in 4b were deleted; uploads were intercepted (nothing sent to `api.01wire.com`).
+
+### Still open after Step 4
+
+| Item | Note |
+|---|---|
+| **BE-11** introspection/Playground on in production | Deferred by user |
+| **CU-3** Save button swallowing clicks | Not reproducible in the audit's own re-tests; no change |
+| OLD-8 server side | `api.01wire.com` is a separate server; its 1MB limit (likely nginx) can only be raised there |
+| Real image storage | Uploads on Render's disk would vanish on redeploy; long-term: Cloudinary/S3 |
