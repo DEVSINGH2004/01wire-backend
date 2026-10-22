@@ -52,7 +52,7 @@ class Publication extends Document {
   @Prop({
     type: String,
     enum: VisibilityEnum,
-    default: VisibilityEnum.SUPPRESSED
+    default: VisibilityEnum.PUBLISHED
   })
   visibility: VisibilityEnum;
 

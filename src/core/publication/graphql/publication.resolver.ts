@@ -29,8 +29,19 @@ export class PublicationResolver {
   }
 
   @Query(() => PublicationType, { nullable: true })
-  async getPublicationById(@Args('id') id: string) {
-    return this.publicationService.getById(id);
+  async getPublicationById(
+    @Args('id') id: string,
+    @Context() { me }: IGraphqlContext
+  ) {
+    const obj = await this.publicationService.getById(id);
+    // Customers only see what the catalog list shows them
+    if (
+      obj &&
+      me?.user?.type !== UserTypeEnum.ADMIN &&
+      obj.visibility !== VisibilityEnum.PUBLISHED
+    )
+      return null;
+    return obj;
   }
 
   @Mutation(() => PublicationType)

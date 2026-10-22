@@ -5,7 +5,7 @@ export class EstimateType {
   @Field(() => ID)
   id: string;
 
-  @Field(() => ID)
+  @Field(() => ID, { nullable: true })
   userId: string;
 
   @Field(() => String)

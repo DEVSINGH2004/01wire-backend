@@ -69,12 +69,9 @@ export class OrderService {
     let q: FilterQuery<OrderTypeWithoutDocument> = {};
 
     if (me?.user?.type === UserTypeEnum.USER) {
-      assert(
-        filterDto.articleId,
-        new BadRequestException('articleId is mandatory')
-      );
+      // Customers only ever see their own orders; articleId just narrows it
       q['userId'] = me.userId;
-      q['articleId'] = filterDto.articleId;
+      if (filterDto.articleId) q['articleId'] = filterDto.articleId;
     } else {
       //generate query
       if (filterDto.userId) q['userId'] = filterDto.userId;
@@ -90,6 +87,10 @@ export class OrderService {
       }
       if (me === null) {
         if (!filterDto.articleId) throw new UnauthorizedException();
+        // Public share-release view: same rule as getArticleById, no drafts
+        const articleObj = await this.articleService.load(filterDto.articleId);
+        if (!articleObj || articleObj.status === ArticleStatusEnum.DRAFT)
+          throw new UnauthorizedException();
         q = { articleId: filterDto.articleId };
       }
     }
@@ -128,6 +129,7 @@ export class OrderService {
     const updateObj = {};
     assert(!!orderObj, new BadRequestException('invalid article id'));
     const articleObj = await this.articleService.load(orderObj.articleId);
+    assert(!!articleObj, new BadRequestException('article not found'));
     assert(
       articleObj.status === ArticleStatusEnum.SCHEDULED,
       new BadRequestException('Article is not scheduled yet')
@@ -318,6 +320,14 @@ export class OrderService {
     await workbook.xlsx.write(response);
   }
 
+  // Rollback helper for a failed PR submit (see ArticleService._submitDraft)
+  async deletePendingByArticleId(articleId: string) {
+    return this.model.deleteMany({
+      articleId,
+      status: OrderStatusEnum.PENDING
+    });
+  }
+
   async rejectBulkByArticleId(articleId: string, notes: string) {
     return this.model.updateMany(
       { articleId, status: OrderStatusEnum.PENDING },
@@ -375,6 +385,7 @@ export class OrderService {
 
     const articleId = pendingOrdersInDb[0].articleId;
     const article = await this.articleService.load(articleId);
+    assert(!!article, new BadRequestException('article not found'));
 
     if (
       article.status === ArticleStatusEnum.PUBLISHED ||
@@ -414,6 +425,11 @@ export class OrderService {
       // TODO: Update the article based on publishArticleNeeded
     }
     // });
+  }
+
+  // Not lean: GraphQL OrderType needs the `id` virtual
+  async getByArticleId(articleId: string) {
+    return this.model.find({ articleId, deletedAt: null });
   }
 
   async getByQuery(ob: FilterQuery<Order>) {

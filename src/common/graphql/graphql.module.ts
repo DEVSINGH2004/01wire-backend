@@ -56,6 +56,15 @@ const genCtx = async (
     throw new Error('operation name could not be determined from the query');
   }
 
+  // Every top-level field across every operation in the document. Fragment
+  // spreads / inline fragments have no name and yield undefined, so they can
+  // never match the public allow-list.
+  const topLevelFields: string[] = parsedQuery.definitions
+    .filter((def) => def.kind === 'OperationDefinition')
+    .flatMap((def) =>
+      def.selectionSet.selections.map((sel) => sel.name?.value)
+    );
+
   try {
     if (!headers.authorization) {
       throw new UnauthorizedException('authorization token not found');
@@ -89,7 +98,11 @@ const genCtx = async (
     return ctx;
   } catch (err) {
     const allowedOperations = configService.get<string>('allowedOperations');
-    const isOperationAllowed = allowedOperations.includes(operationName);
+    // Run anonymously only if EVERY requested field is public; otherwise a
+    // public field placed first would smuggle private fields in with me: null.
+    const isOperationAllowed =
+      topLevelFields.length > 0 &&
+      topLevelFields.every((field) => allowedOperations.includes(field));
 
     if (isOperationAllowed) {
       return { me: null, req, res, logger: Logger.createInstance() };

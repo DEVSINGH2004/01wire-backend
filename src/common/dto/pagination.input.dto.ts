@@ -3,9 +3,16 @@ import { z } from 'nestjs-zod/z';
 
 export class PaginationInputDto extends createZodDto(
   z.object({
-    currentPage: z.coerce.number().default(0),
+    // 0-indexed: currentPage 0 is the first page
+    currentPage: z.coerce
+      .number()
+      .int('currentPage must be an integer')
+      .min(0, 'currentPage must be >= 0')
+      .default(0),
     perPage: z.coerce
       .number()
+      .int('perPage must be an integer')
+      .min(1, 'perPage must be >= 1')
       .default(10)
       .transform((val) => {
         if (val > 500) {

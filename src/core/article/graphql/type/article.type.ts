@@ -10,7 +10,7 @@ export class ArticleType {
   @Field(() => ID)
   id: string;
 
-  @Field(() => ID)
+  @Field(() => ID, { nullable: true })
   userId: string;
 
   @Field(() => ID)

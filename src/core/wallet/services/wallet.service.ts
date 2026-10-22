@@ -44,7 +44,16 @@ export class WalletService {
   }
 
   async updateBalance(_id: string, amount: number): Promise<void> {
-    await this.model.updateOne({ _id }, { $inc: { balance: amount } });
+    // Debits only apply if the balance covers them; the check and the $inc are
+    // one atomic operation, so concurrent debits can't overdraw the wallet
+    const filter = amount < 0 ? { _id, balance: { $gte: -amount } } : { _id };
+    const res = await this.model.updateOne(filter, {
+      $inc: { balance: amount }
+    });
+    assert(
+      res.modifiedCount === 1,
+      new BadRequestException('Insufficient credits balance')
+    );
     await this.loaderService.cleanCacheById(_id);
     const walletObj = await this.load(_id);
     this.eventEmitter.emit(EventDomainEnum.SSE, {
@@ -78,9 +87,7 @@ export class WalletService {
     }
 
     const wallet = await this.getByUserId(userId);
-    if (wallet.balance + amount < 0) {
-      new BadRequestException('Insufficient credits balance');
-    }
+    assert(!!wallet, new BadRequestException('wallet not found'));
 
     await this.updateBalance(wallet._id, amount);
     this.eventEmitter.emit(EventDomainEnum.TRANSACTION, {

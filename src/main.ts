@@ -1,5 +1,5 @@
 import * as dotenv from 'dotenv-flow';
-import { join } from 'path';
+import { join, resolve } from 'path';
 dotenv.config({ silent: true, path: join(`${__dirname}/../`) });
 
 if (process.env.SECRETS && process.env.SECRETS.length) {
@@ -10,6 +10,7 @@ if (process.env.SECRETS && process.env.SECRETS.length) {
 }
 
 import { HttpAdapterHost, NestFactory, Reflector } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { ZodValidationPipe } from 'nestjs-zod';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/allexception.filter';
@@ -26,10 +27,22 @@ async function bootstrap() {
     transports: [ConsoleTransport(cfg.app.appName)]
   });
 
-  const app = await NestFactory.create(AppModule, {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     logger
   });
   app.enableCors();
+  // Serve uploaded files (POST /upload) at /public/<fileName>. The CSP sandbox
+  // stops an uploaded SVG from running scripts when opened directly.
+  app.useStaticAssets(resolve(cfg.file.uploadDir), {
+    prefix: '/public/',
+    setHeaders: (res) => {
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      res.setHeader(
+        'Content-Security-Policy',
+        "default-src 'none'; style-src 'unsafe-inline'; sandbox"
+      );
+    }
+  });
   app.useGlobalPipes(new ZodValidationPipe());
   app.useGlobalFilters(
     new AllExceptionsFilter(app.get(HttpAdapterHost).httpAdapter)

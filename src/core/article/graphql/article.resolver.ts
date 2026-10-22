@@ -1,6 +1,7 @@
 import {
   Args,
   Context,
+  ID,
   Mutation,
   Parent,
   Query,
@@ -27,6 +28,8 @@ import { ArticleType } from './type/article.type';
 import { ClientType } from 'src/core/client/graphql/type/client.type';
 import { ClientService } from 'src/core/client/services/client.service';
 import { OrderType } from 'src/core/order/graphql/type/order.type';
+import { OrderService } from 'src/core/order/services/order.service';
+import { Inject, forwardRef } from '@nestjs/common';
 
 @Resolver(() => ArticleType)
 export class ArticleResolver {
@@ -35,14 +38,14 @@ export class ArticleResolver {
     private publicationService: PublicationService,
     private bundleService: BundleService,
     private userService: UserService,
-    private clientService: ClientService
+    private clientService: ClientService,
+    @Inject(forwardRef(() => OrderService))
+    private orderService: OrderService
   ) {}
 
   @ResolveField(() => [OrderType], { nullable: true })
   async ordersInfo(@Parent() article: Article) {
-    return this.clientService.load(article.clientId, {
-      deletedAt: true
-    });
+    return this.orderService.getByArticleId(article._id);
   }
 
   @ResolveField(() => ClientType)
@@ -94,9 +97,16 @@ export class ArticleResolver {
     return this.articleService.getArticleStats(me.userId);
   }
 
-  @ResolveField(() => UserType)
-  async user(@Parent() article: Article) {
+  // Owner identity is hidden from anonymous (share-link) viewers
+  @ResolveField(() => UserType, { nullable: true })
+  async user(@Parent() article: Article, @Context() { me }: IGraphqlContext) {
+    if (!me) return null;
     return this.userService.load(article.userId);
+  }
+
+  @ResolveField(() => ID, { nullable: true })
+  async userId(@Parent() article: Article, @Context() { me }: IGraphqlContext) {
+    return me ? article.userId : null;
   }
 
   @Mutation(() => ArticleType)

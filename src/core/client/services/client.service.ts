@@ -98,7 +98,12 @@ export class ClientService {
     );
     dto = validate(dto, ClientCreateDto);
     const { userId, title } = dto;
-    const isFound = await this.model.countDocuments({ title, userId });
+    // countDocuments isn't covered by the soft-delete plugin's find hook
+    const isFound = await this.model.countDocuments({
+      title,
+      userId,
+      deletedAt: null
+    });
     assert(
       isFound === 0,
       new BadRequestException(`A client with title ${title} already exists`)
@@ -117,7 +122,8 @@ export class ClientService {
       const isFound = await this.model.countDocuments({
         _id: { $ne: id },
         title: dto.title,
-        userId
+        userId,
+        deletedAt: null
       });
       assert(
         isFound === 0,
@@ -144,6 +150,7 @@ export class ClientService {
         data: { keywordId: _id }
       });
     } */
+    await this.loaderService.cleanCacheById(_id);
     return true;
   }
 }

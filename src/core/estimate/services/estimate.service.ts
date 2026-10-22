@@ -105,6 +105,17 @@ export class EstimateService {
       this.publicationService.loadMany(publicationIds)
     ]);
 
+    // loadMany keeps a null placeholder for every unknown id, so a length
+    // comparison alone never catches a non-existent id
+    assert(
+      !bundleList.includes(null),
+      new BadRequestException('Invalid bundle Ids')
+    );
+    assert(
+      !publicationList.includes(null),
+      new BadRequestException('Invalid publication Ids')
+    );
+
     if (bundleIds && bundleIds.length) {
       assert(
         bundleList.length === bundleIds.length,

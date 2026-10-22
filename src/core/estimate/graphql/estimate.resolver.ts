@@ -5,7 +5,8 @@ import {
   Context,
   ResolveField,
   Parent,
-  Mutation
+  Mutation,
+  ID
 } from '@nestjs/graphql';
 import { PaginationInput } from 'src/common/graphql/input/pagination.input';
 import { IGraphqlContext } from 'src/common/graphql/interface/context.interface';
@@ -58,9 +59,30 @@ export class EstimateResolver {
     );
   }
 
+  // Public for /share-estimation links (me is null); logged-in customers only
+  // get their own estimates, admins get all
   @Query(() => EstimateType, { nullable: true })
-  async getEstimateById(@Args('id') id: string) {
-    return this.estimateService.load(id);
+  async getEstimateById(
+    @Args('id') id: string,
+    @Context() { me }: IGraphqlContext
+  ) {
+    const estimate = await this.estimateService.load(id);
+    if (!estimate) return null;
+    if (
+      me &&
+      me.user.type === UserTypeEnum.USER &&
+      estimate.userId !== me.userId
+    )
+      return null;
+    return estimate;
+  }
+
+  @ResolveField(() => ID, { nullable: true })
+  async userId(
+    @Parent() estimate: Estimate,
+    @Context() { me }: IGraphqlContext
+  ) {
+    return me ? estimate.userId : null;
   }
 
   @Mutation(() => EstimateType)

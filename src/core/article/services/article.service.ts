@@ -97,6 +97,8 @@ export class ArticleService {
   async getById(id: string, me: IMe): Promise<Article> {
     const obj = await this.load(id);
     if (!obj) return null;
+    // Anonymous callers (public /share-release links) never see drafts
+    if (!me && obj.status === ArticleStatusEnum.DRAFT) return null;
     if (me !== null && me.user.type === UserTypeEnum.USER && obj.userId !== me.userId)
       return null;
     if (
@@ -180,6 +182,8 @@ export class ArticleService {
     await this.clientService.validateOwnership(clientId, userId);
 
     const bundles = await this.bundleService.loadMany(dto.bundleIds);
+    // Unknown ids come back as null placeholders from loadMany
+    assert(!bundles.includes(null), new BadRequestException('Invalid bundle Ids'));
     const isAnyBundleNotPublished = bundles.some(
       (b) => b.visibility !== VisibilityEnum.PUBLISHED
     );
@@ -191,6 +195,10 @@ export class ArticleService {
 
     const publications = await this.publicationService.loadMany(
       dto.publicationIds
+    );
+    assert(
+      !publications.includes(null),
+      new BadRequestException('Invalid publication Ids')
     );
     const isAnyPublicationNotPublished = publications.some(
       (p) => p.visibility !== VisibilityEnum.PUBLISHED
@@ -223,6 +231,16 @@ export class ArticleService {
         this.bundleService.loadMany(bundleIds),
         this.publicationService.loadMany(publicationIds)
       ]);
+
+      // Unknown ids come back as null placeholders from loadMany
+      assert(
+        !bundleList.includes(null),
+        new BadRequestException('Invalid bundle Ids')
+      );
+      assert(
+        !publicationList.includes(null),
+        new BadRequestException('Invalid publication Ids')
+      );
 
       const isAnyBundleNotPublished = bundleList.some(
         (b) => b.visibility !== VisibilityEnum.PUBLISHED
@@ -338,64 +356,7 @@ export class ArticleService {
 
       //Create Order only when PR being submitted from DRAFT state
       if (articleObj.status === ArticleStatusEnum.DRAFT) {
-        const walletObj = await this.walletService.getByUserId(userId);
-        assert(
-          walletObj.balance >= articleObj.totalCredits,
-          new BadRequestException('Insufficient credits in wallet')
-        );
-        // const maxCounter =
-        //   articleObj.publicationIds > articleObj.bundleIds
-        //     ? articleObj.publicationIds.length
-        //     : articleObj.bundleIds.length;
-        //
-        // const orderList = [];
-        //
-        // for (let i = 0; i < maxCounter; i++) {}
-        //
-        // if (articleObj.bundleIds.length) {
-        //   const bundleList = await this.bundleService.loadMany(
-        //     articleObj.bundleIds
-        //   );
-        //
-        //   bundleList.forEach((bundle) => {
-        //     bundle.publicationIds.forEach((pubId) =>
-        //       orderList.push({
-        //         userId: articleObj.userId,
-        //         articleId: articleObj._id,
-        //         prId: articleObj.prId,
-        //         publicationId: pubId,
-        //         bundleId: bundle._id,
-        //         status: OrderStatusEnum.PENDING,
-        //         publishAt: articleObj.publishAt
-        //       })
-        //     );
-        //   });
-        // }
-        //
-        // articleObj.publicationIds.forEach((pubId) =>
-        //   orderList.push({
-        //     userId: articleObj.userId,
-        //     articleId: articleObj._id,
-        //     prId: articleObj.prId,
-        //     publicationId: pubId,
-        //     status: OrderStatusEnum.PENDING
-        //   })
-        // );
-        //
-        this.eventEmitter.emit(EventDomainEnum.ORDER, {
-          action: EventActionEnum.CREATE,
-          data: {
-            ...articleObj.toObject(),
-            articleId: articleObj._id,
-            _id: undefined
-          }
-        });
-
-        await this.walletService.debitBalanceByUserId({
-          userId: articleObj.userId,
-          amount: articleObj.totalCredits,
-          notes: `Debited for PR ID: ${articleObj.prId}`
-        });
+        await this._submitDraft(articleObj);
       }
     } else {
       assert(
@@ -513,6 +474,69 @@ export class ArticleService {
       ]);
     }
     return res;
+  }
+
+  // DRAFT -> SUBMITTED: validate, claim, debit, create orders. Any failure
+  // after a write is rolled back, so no order can exist without a debit.
+  private async _submitDraft(articleObj: Article) {
+    const { _id, userId, prId, totalCredits } = articleObj;
+    const publicationIds = articleObj.publicationIds || [];
+    const bundleIds = articleObj.bundleIds || [];
+
+    assert(
+      publicationIds.length > 0 || bundleIds.length > 0,
+      new BadRequestException('Select at least one publication or bundle')
+    );
+    assert(totalCredits > 0, new BadRequestException('Invalid PR amount'));
+
+    // Atomic claim: only one concurrent submit can move the PR out of DRAFT
+    const claimed = await this.model.findOneAndUpdate(
+      { _id, status: ArticleStatusEnum.DRAFT },
+      { $set: { status: ArticleStatusEnum.SUBMITTED } }
+    );
+    await this.loaderService.cleanCacheById(_id);
+    assert(
+      !!claimed,
+      new BadRequestException('PR being processed or already processed')
+    );
+
+    const revertToDraft = async () => {
+      await this.model.updateOne(
+        { _id },
+        { $set: { status: ArticleStatusEnum.DRAFT } }
+      );
+      await this.loaderService.cleanCacheById(_id);
+    };
+
+    try {
+      await this.walletService.debitBalanceByUserId({
+        userId,
+        amount: totalCredits,
+        notes: `Debited for PR ID: ${prId}`
+      });
+    } catch (e) {
+      await revertToDraft();
+      throw e;
+    }
+
+    try {
+      await this.orderService.createBulk({
+        userId,
+        articleId: _id,
+        prId,
+        publicationIds,
+        bundleIds
+      });
+    } catch (e) {
+      await this.orderService.deletePendingByArticleId(_id);
+      await this.walletService.creditBalanceByUserId({
+        userId,
+        amount: totalCredits,
+        notes: `Refund for PR ID: ${prId} (submit failed)`
+      });
+      await revertToDraft();
+      throw e;
+    }
   }
 
   async delete(_id: string, me: IMe) {
