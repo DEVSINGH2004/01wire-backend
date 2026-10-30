@@ -30,6 +30,9 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     logger
   });
+  // Express defaults to 100kb, below a full-length press release (MAX_CONTENT
+  // is 100k chars plus the other fields); 413s showed up on long PRs.
+  app.useBodyParser('json', { limit: '2mb' });
   // Only our own frontends may call the API from a browser. Override with a
   // comma-separated CORS_ORIGINS env var (e.g. to add a Vercel preview URL).
   const corsOrigins = (
