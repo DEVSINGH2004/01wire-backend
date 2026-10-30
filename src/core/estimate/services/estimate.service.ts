@@ -15,6 +15,7 @@ import { Estimate } from '../estimate.schema';
 import { EstimateFilterDto } from '../dto/estimate.filter.dto';
 import { EstimateCreateDto } from '../dto/estimate.create.bulk.dto';
 import { BundleService } from 'src/core/bundle/services/bundle.service';
+import { UserTypeEnum } from 'src/core/user/enum/user.type.enum';
 import * as assert from 'assert';
 
 @Injectable()
@@ -63,10 +64,15 @@ export class EstimateService {
     paginationDto = validate(paginationDto, PaginationInputDto);
     filterDto = validate(filterDto, EstimateFilterDto);
     const { currentPage, perPage } = paginationDto;
-    const q = {};
+    const q: Record<string, any> = { deletedAt: null };
 
     //generate query
-    if (filterDto.userId) q['userId'] = filterDto.userId;
+    // Customers only ever see their own estimates; admins may filter by user
+    if (me?.user?.type === UserTypeEnum.ADMIN) {
+      if (filterDto.userId) q['userId'] = filterDto.userId;
+    } else {
+      q['userId'] = me?.userId ?? null;
+    }
     if (filterDto.startTime && filterDto.endTime) {
       q['createdAt'] = { $gte: filterDto.startTime, $lte: filterDto.endTime };
     } else if (filterDto.startTime) {
@@ -81,7 +87,7 @@ export class EstimateService {
         .sort({ createdAt: -1 })
         .skip(currentPage * perPage)
         .limit(perPage),
-      this.model.countDocuments({ ...q, deletedAt: null })
+      this.model.countDocuments(q)
     ]);
     const { paginationInfo } = paginateResponse(
       itemCount,

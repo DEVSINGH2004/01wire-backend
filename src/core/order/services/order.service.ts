@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   UnauthorizedException
 } from '@nestjs/common';
@@ -124,6 +125,8 @@ export class OrderService {
   async updateStatus(dto: OrderUpdateStatusDto): Promise<boolean> {
     dto = validate(dto, OrderUpdateStatusDto);
     const { id, status, notes, url } = dto;
+    // Fresh read: the decision below must not be based on a cached status
+    await this.loaderService.cleanCacheById(id);
     const orderObj = await this.load(id);
     const updateObj = {};
     assert(!!orderObj, new BadRequestException('invalid article id'));
@@ -169,8 +172,18 @@ export class OrderService {
         throw new BadRequestException(`status ${status} not handled for ADMIN`);
     }
     updateObj['status'] = status;
-    await this.model.updateOne({ _id: id }, { $set: updateObj });
+    // Only a still-PENDING order may change, so a concurrent publish and
+    // reject cannot both succeed
+    const res = await this.model.updateOne(
+      { _id: id, status: OrderStatusEnum.PENDING },
+      { $set: updateObj }
+    );
     await this.loaderService.cleanCacheById(id);
+    if (!res.modifiedCount) {
+      throw new ConflictException(
+        'This order was already updated. Refresh and try again.'
+      );
+    }
     return true;
   }
 
@@ -411,7 +424,7 @@ export class OrderService {
       needToUpdate.map((o) => {
         return {
           updateOne: {
-            filter: { _id: o.orderId },
+            filter: { _id: o.orderId, status: OrderStatusEnum.PENDING },
             update: o
           }
         };
@@ -419,6 +432,9 @@ export class OrderService {
       // {
       //   session
       // }
+    );
+    await Promise.all(
+      needToUpdate.map((o) => this.loaderService.cleanCacheById(o.orderId))
     );
     if (publishArticleNeeded) {
       // TODO: Update the article based on publishArticleNeeded

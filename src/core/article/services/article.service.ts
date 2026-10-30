@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Inject,
   Injectable,
   NotFoundException,
@@ -107,9 +108,10 @@ export class ArticleService {
       obj.status === ArticleStatusEnum.SUBMITTED
     ) {
       await this.model.updateOne(
-        { _id: id },
+        { _id: id, status: ArticleStatusEnum.SUBMITTED },
         { $set: { status: ArticleStatusEnum.REVIEW } }
       );
+      await this.loaderService.cleanCacheById(id);
       //TODO: send notification to user thaht article status has been changed to REVIEW
     }
     return obj;
@@ -347,10 +349,13 @@ export class ArticleService {
     dto = validate(dto, ArticleUpdateStatusDto);
     const { id, status, notes } = dto;
     const { userId, userType } = me;
+    // Fresh read: the decision below must not be based on a cached status
+    await this.loaderService.cleanCacheById(id);
     const articleObj =
       userType === UserTypeEnum.ADMIN
         ? await this.load(id)
         : await this._validateOwnership(id, userId);
+    assert(!!articleObj, new BadRequestException('PR not found'));
     const updateObj = {};
     let isRefund = false;
 
@@ -468,12 +473,29 @@ export class ArticleService {
       }
     }
     updateObj['status'] = status;
+    // Only apply the change if the PR is still in the status checked above, so
+    // two concurrent requests cannot both act (e.g. reject + refund twice).
+    // A submit from DRAFT was already claimed atomically as SUBMITTED.
+    const submittedFromDraft =
+      userType === UserTypeEnum.USER &&
+      articleObj.status === ArticleStatusEnum.DRAFT;
+    const expectedStatus = submittedFromDraft
+      ? ArticleStatusEnum.SUBMITTED
+      : articleObj.status;
     const res = await this.model.findOneAndUpdate(
-      { _id: id },
+      { _id: id, status: expectedStatus },
       { $set: { ...updateObj } },
       { new: true }
     );
     await this.loaderService.cleanCacheById(id);
+    if (!res) {
+      // The draft submit itself succeeded (debit + orders); only a racing
+      // admin read moved it on, so report the PR as it is now
+      if (submittedFromDraft) return this.load(id);
+      throw new ConflictException(
+        'This PR was just updated by someone else. Refresh and try again.'
+      );
+    }
     if (isRefund === true) {
       await Promise.all([
         this.walletService.creditBalanceByUserId({
