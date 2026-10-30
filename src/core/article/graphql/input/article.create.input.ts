@@ -19,10 +19,11 @@ export class ArticleCreateInput extends OmitType(
   @Field(() => ArticleMediaContactInput, { nullable: true })
   mediaContact: ArticleMediaContactInput;
 
-  // Required on create (ArticleCreateDto enforces them); optional on ArticleType
-  @Field(() => String)
+  // Optional "Sub-heading" in the PR form
+  @Field(() => String, { nullable: true })
   summary: string;
 
+  // Required on create (ArticleCreateDto enforces it); optional on ArticleType
   @Field(() => String)
   featureImage: string;
 }

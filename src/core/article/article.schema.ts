@@ -140,6 +140,7 @@ class Article extends Document {
       website: { type: String, default: null },
       address: { type: String, default: null },
       state: { type: String, default: null },
+      city: { type: String, default: null },
       country: { type: String, default: null },
       facebook: { type: String, default: null },
       instagram: { type: String, default: null },
@@ -156,6 +157,7 @@ class Article extends Document {
     website: string;
     address: string;
     state: string;
+    city: string;
     country: string;
     facebook: string;
     instagram: string;

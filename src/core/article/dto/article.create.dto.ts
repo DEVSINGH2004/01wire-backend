@@ -17,7 +17,8 @@ export const articleCreateDto = z.object({
   clientId: z.string().uuid(),
   title: z.string().max(MAX_TITLE),
   content: z.string().max(MAX_CONTENT),
-  summary: z.string().max(MAX_SUMMARY),
+  // Shown as the optional "Sub-heading" in the PR form
+  summary: z.string().max(MAX_SUMMARY).nullish(),
   featureImage: z.string(),
   language: nativeEnum(LanguageEnum).nullish(),
   featureImageDesc: z.string().max(MAX_SUMMARY).nullish(),
@@ -38,6 +39,7 @@ export const articleCreateDto = z.object({
       website: z.string().max(MAX_SHORT_TEXT).nullish(),
       address: z.string().max(MAX_SHORT_TEXT).nullish(),
       state: z.string().max(MAX_SHORT_TEXT).nullish(),
+      city: z.string().max(MAX_SHORT_TEXT).nullish(),
       country: z.string().max(MAX_SHORT_TEXT).nullish(),
       facebook: z.string().max(MAX_SHORT_TEXT).nullish(),
       instagram: z.string().max(MAX_SHORT_TEXT).nullish(),
