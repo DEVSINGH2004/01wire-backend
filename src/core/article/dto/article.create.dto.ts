@@ -12,6 +12,10 @@ import {
   MAX_TITLE
 } from 'src/common/dto/text.limits';
 
+// SEO fields shown to publishers; lengths follow the usual search snippet limits
+export const MAX_META_TITLE = 60;
+export const MAX_META_DESCRIPTION = 160;
+
 export const articleCreateDto = z.object({
   userId: z.string().uuid(),
   clientId: z.string().uuid(),
@@ -28,6 +32,8 @@ export const articleCreateDto = z.object({
   timezone: z.string().nullish(),
   instructions: z.string().max(MAX_NOTES).nullish(),
   notes: z.string().max(MAX_NOTES).nullish(),
+  metaTitle: z.string().max(MAX_META_TITLE).nullish(),
+  metaDescription: z.string().max(MAX_META_DESCRIPTION).nullish(),
   status: nativeEnum(ArticleStatusEnum).nullish(),
   bundleIds: z.array(z.string().uuid()).nullish(),
   publicationIds: z.array(z.string().uuid()).nullish(),

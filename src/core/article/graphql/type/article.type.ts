@@ -56,6 +56,12 @@ export class ArticleType {
   instructions: string;
 
   @Field(() => String, { nullable: true })
+  metaTitle: string;
+
+  @Field(() => String, { nullable: true })
+  metaDescription: string;
+
+  @Field(() => String, { nullable: true })
   notes: string;
 
   @Field(() => [String], { nullable: true })

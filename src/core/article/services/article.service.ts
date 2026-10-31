@@ -10,6 +10,10 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Article } from '../article.schema';
 import { Model } from 'mongoose';
 import { PaginationInputDto } from 'src/common/dto/pagination.input.dto';
+import {
+  COMPANY_EMAIL_MESSAGE,
+  isPersonalEmail
+} from 'src/common/dto/company.email';
 import { ArticleFilterDto } from '../dto/article.filter.dto';
 import { validate } from 'nestjs-zod';
 import { paginateResponse } from 'src/common/utils';
@@ -179,6 +183,11 @@ export class ArticleService {
       (key) => (dto[key] === null || dto[key] === '') && delete dto[key]
     );
     dto = validate(dto, ArticleCreateDto);
+    // Media contact must be a company / organisation address
+    assert(
+      !isPersonalEmail(dto.mediaContact?.email),
+      new BadRequestException(COMPANY_EMAIL_MESSAGE)
+    );
     const { clientId, userId } = dto;
     await this.clientService.validateOwnership(clientId, userId);
 
@@ -230,6 +239,10 @@ export class ArticleService {
       (key) => (dto[key] === null || dto[key] === '') && delete dto[key]
     );
     dto = validate(dto, ArticleUpdateDto);
+    assert(
+      !isPersonalEmail(dto.mediaContact?.email),
+      new BadRequestException(COMPANY_EMAIL_MESSAGE)
+    );
     // eslint-disable-next-line prefer-const
     let { id, userId, bundleIds, publicationIds, ...needToUpdate } = dto;
     let articleObj = await this._validateOwnership(id, userId);

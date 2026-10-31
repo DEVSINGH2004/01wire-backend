@@ -118,6 +118,18 @@ class Article extends Document {
     type: String,
     default: null
   })
+  metaTitle: string;
+
+  @Prop({
+    type: String,
+    default: null
+  })
+  metaDescription: string;
+
+  @Prop({
+    type: String,
+    default: null
+  })
   notes: string;
 
   @Prop({
