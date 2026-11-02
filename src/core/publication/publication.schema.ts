@@ -58,10 +58,10 @@ class Publication extends Document {
   })
   visibility: VisibilityEnum;
 
-  // Blank when the vendor did not say
+  // Blank when the vendor did not say (null must be listed: Mongoose's enum check rejects it otherwise)
   @Prop({
     type: String,
-    enum: PublicationLinkTypeEnum,
+    enum: [...Object.values(PublicationLinkTypeEnum), null],
     default: null
   })
   linkType: PublicationLinkTypeEnum;
@@ -73,7 +73,7 @@ class Publication extends Document {
 
   @Prop({
     type: String,
-    enum: PublicationTimelineEnum,
+    enum: [...Object.values(PublicationTimelineEnum), null],
     default: null
   })
   timeline: PublicationTimelineEnum;
