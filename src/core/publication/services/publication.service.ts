@@ -111,6 +111,12 @@ export class PublicationService {
   }
 
   // Credits, rounded up: vendor INR + markup + GST, converted at the USD rate ($1 = 1 credit)
+  // Credits for a vendor price, using the current markup / GST / rate settings
+  // (also used for bundle packages)
+  async priceFromVendor(item: { vendorPriceInr?: number; markupPercent?: number }): Promise<number> {
+    return this.calcPrice(item, await this.getSettings());
+  }
+
   private calcPrice(
     pub: { vendorPriceInr?: number; markupPercent?: number; gstPercent?: number },
     s: PublicationSettings

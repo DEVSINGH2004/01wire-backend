@@ -30,9 +30,10 @@ class Order extends Document {
   })
   prId: number;
 
+  // null for a package order (bundleId points at the package)
   @Prop({
     type: String,
-    required: true
+    default: null
   })
   publicationId: string;
 

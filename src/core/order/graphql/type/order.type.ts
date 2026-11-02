@@ -15,7 +15,7 @@ export class OrderType {
   @Field(() => Int)
   prId: number;
 
-  @Field(() => ID)
+  @Field(() => ID, { nullable: true, description: 'null for a package order' })
   publicationId: string;
 
   @Field(() => ID, { nullable: true })

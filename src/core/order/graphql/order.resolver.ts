@@ -46,7 +46,7 @@ export class OrderResolver {
     return this.articleService.load(order.articleId);
   }
 
-  @ResolveField(() => PublicationType)
+  @ResolveField(() => PublicationType, { nullable: true })
   async publicationInfo(@Parent() order: Order) {
     return this.publicationService.load(order.publicationId, {
       deletedAt: true

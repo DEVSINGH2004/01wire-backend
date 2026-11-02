@@ -5,7 +5,8 @@ import {
   ResolveField,
   Parent,
   Mutation,
-  Context
+  Context,
+  Int
 } from '@nestjs/graphql';
 import { PaginationInput } from 'src/common/graphql/input/pagination.input';
 import { BundlePaginationType } from './type/bundle.pagination.type';
@@ -34,6 +35,46 @@ export class BundleResolver {
     return this.publicationService.loadMany(bundle.publicationIds, {
       deletedAt: true
     });
+  }
+
+  // Vendor details are for admins only; clients get null
+  private adminOnly(me: IGraphqlContext['me'], value: any) {
+    return me?.user?.type === UserTypeEnum.ADMIN ? value ?? null : null;
+  }
+
+  @ResolveField(() => String, { nullable: true })
+  vendor(@Parent() b: Bundle, @Context() { me }: IGraphqlContext) {
+    return this.adminOnly(me, b.vendor);
+  }
+
+  @ResolveField(() => String, { nullable: true })
+  vendorPackageName(@Parent() b: Bundle, @Context() { me }: IGraphqlContext) {
+    return this.adminOnly(me, b.vendorPackageName);
+  }
+
+  @ResolveField(() => Int, { nullable: true })
+  vendorPriceInr(@Parent() b: Bundle, @Context() { me }: IGraphqlContext) {
+    return this.adminOnly(me, b.vendorPriceInr);
+  }
+
+  @ResolveField(() => Int, { nullable: true })
+  markupPercent(@Parent() b: Bundle, @Context() { me }: IGraphqlContext) {
+    return this.adminOnly(me, b.markupPercent);
+  }
+
+  @ResolveField(() => String, { nullable: true })
+  internalNotes(@Parent() b: Bundle, @Context() { me }: IGraphqlContext) {
+    return this.adminOnly(me, b.internalNotes);
+  }
+
+  @ResolveField(() => String, { nullable: true })
+  source(@Parent() b: Bundle, @Context() { me }: IGraphqlContext) {
+    return this.adminOnly(me, b.source);
+  }
+
+  @ResolveField(() => String, { nullable: true })
+  importBatch(@Parent() b: Bundle, @Context() { me }: IGraphqlContext) {
+    return this.adminOnly(me, b.importBatch);
   }
 
   @Query(() => BundlePaginationType)

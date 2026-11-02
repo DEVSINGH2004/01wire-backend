@@ -194,10 +194,10 @@ export class OrderService {
     const pubIdTobundleIdMap = new Map<string, string>();
 
     bundleObjs.forEach((bundle) => {
-      bundle.publicationIds.forEach((pubId) => {
+      (bundle.publicationIds || []).forEach((pubId) => {
         pubIdTobundleIdMap.set(pubId, bundle._id);
       });
-      bundlePubIds.push(...bundle.publicationIds);
+      bundlePubIds.push(...(bundle.publicationIds || []));
     });
 
     const publicationObjs = await this.publicationService.loadMany([
@@ -261,6 +261,26 @@ export class OrderService {
         })
       );
     });
+
+    // A package (no Marketplace publications) is one order for the whole package;
+    // the admin places it with the vendor and adds the report link when published.
+    bundleObjs
+      .filter((b) => !b.publicationIds?.length)
+      .forEach((b) => {
+        const publishByDate = new Date();
+        publishByDate.setDate(publishByDate.getDate() + 7);
+        orderBulkPayload.push(
+          new this.model({
+            userId: dto.userId,
+            articleId: dto.articleId,
+            publicationId: null,
+            bundleId: b._id,
+            status: OrderStatusEnum.PENDING,
+            publishBy: publishByDate,
+            prId: dto.prId
+          })
+        );
+      });
 
     await this.model.insertMany(orderBulkPayload);
     return true;

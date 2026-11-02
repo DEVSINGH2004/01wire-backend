@@ -18,19 +18,81 @@ class Bundle extends Document {
   })
   publicationIds: string[];
 
+  // Old-style bundles (publications from the Marketplace) use type + category.
+  // Packages (vendor PR packages) use name + tier + media instead.
   @Prop({
     type: String,
-    enum: BundleTypeEnum,
-    required: true
+    enum: [...Object.values(BundleTypeEnum), null],
+    default: null
   })
   type: BundleTypeEnum;
 
   @Prop({
     type: String,
-    enum: BundleCategoryEnum,
-    required: true
+    enum: [...Object.values(BundleCategoryEnum), null],
+    default: null
   })
   category: BundleCategoryEnum;
+
+  @Prop({ type: String, default: null, index: true })
+  name: string;
+
+  // Starter, Standard, Good, Very Good, Premium, Elite
+  @Prop({ type: String, default: null })
+  tier: string;
+
+  // e.g. "Wire (same article on all platforms)", "Tech PR", "Hindi PR"
+  @Prop({ type: String, default: null })
+  packageType: string;
+
+  // Named outlets; image is copied from a matching Marketplace publication
+  @Prop({
+    type: [{ name: String, image: String, _id: false }],
+    default: []
+  })
+  media: { name: string; image?: string }[];
+
+  // Extra coverage beyond the named media, e.g. "250+ Medias"
+  @Prop({ type: String, default: null })
+  coverage: string;
+
+  @Prop({ type: String, default: null })
+  contentRule: string;
+
+  @Prop({ type: String, default: null })
+  backlinks: string;
+
+  @Prop({ type: String, default: null })
+  disclaimer: string;
+
+  @Prop({ type: String, default: null })
+  language: string;
+
+  @Prop({ type: String, default: null })
+  tat: string;
+
+  // ---- admin only (never shown to clients) ----
+  @Prop({ type: String, default: null })
+  vendor: string;
+
+  @Prop({ type: String, default: null })
+  vendorPackageName: string;
+
+  @Prop({ type: Number, default: null })
+  vendorPriceInr: number;
+
+  // Overrides the default markup from the pricing settings
+  @Prop({ type: Number, default: null })
+  markupPercent: number;
+
+  @Prop({ type: String, default: null })
+  internalNotes: string;
+
+  @Prop({ type: String, default: null })
+  source: string;
+
+  @Prop({ type: String, default: null })
+  importBatch: string;
 
   @Prop({
     type: String,

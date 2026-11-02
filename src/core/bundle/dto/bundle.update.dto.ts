@@ -1,8 +1,8 @@
 import { createZodDto } from 'nestjs-zod';
-import { bundleCreateDto } from './bundle.create.dto';
+import { bundleBaseDto } from './bundle.create.dto';
 import { z } from 'nestjs-zod/z';
 
-const bundleUpdateDto = bundleCreateDto
+const bundleUpdateDto = bundleBaseDto
   .partial()
   .omit({ visibility: true })
   .extend({ id: z.string().uuid() });

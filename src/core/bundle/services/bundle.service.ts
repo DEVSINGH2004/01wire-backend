@@ -54,6 +54,7 @@ export class BundleService {
     const [data, itemCount] = await Promise.all([
       this.model
         .find(q)
+        .sort({ price: 1, _id: 1 })
         .limit(perPage)
         .skip(currentPage * perPage),
       this.model.countDocuments({ ...q, deletedAt: null })
@@ -75,44 +76,39 @@ export class BundleService {
       (key) => (dto[key] === null || dto[key] === '') && delete dto[key]
     );
     dto = validate(dto, BundleCreateDto);
+    const doc: Record<string, any> = { ...dto, publicationIds: dto.publicationIds || [] };
+
+    if (dto.name) {
+      // Package: its own media list, priced from the vendor price when given
+      const isFound = await this.model.countDocuments({ name: dto.name, deletedAt: null });
+      assert(isFound === 0, new BadRequestException(`A package named "${dto.name}" already exists`));
+      if (dto.vendorPriceInr) doc.price = await this.publicationService.priceFromVendor(dto);
+      doc.maxPrice = doc.price;
+      doc.traffic = 0;
+      return this.model.create(doc);
+    }
+
     const { publicationIds, category, type } = dto;
-    const publicationList = await this.publicationService.loadMany(
-      publicationIds
-    );
-
-    const isSuppressed = publicationList.some(
-      (p) => p.visibility === VisibilityEnum.SUPPRESSED
-    );
-
+    const publicationList = await this.publicationService.loadMany(publicationIds);
     assert(
-      !isSuppressed,
-      new BadRequestException('one or few of publication are suppressed')
-    );
-
-    assert(
-      publicationList.length === publicationIds.length,
+      !publicationList.includes(null) && publicationList.length === publicationIds.length,
       new BadRequestException('one or few of publication ids are invalid')
     );
-
-    const isFound = await this.model.countDocuments({
-      category,
-      type,
-      deletedAt: null
-    });
     assert(
-      isFound === 0,
-      new BadRequestException(`A ${category}:${type} bundle already exists`)
+      !publicationList.some((p) => p.visibility === VisibilityEnum.SUPPRESSED),
+      new BadRequestException('one or few of publication are suppressed')
     );
+    const isFound = await this.model.countDocuments({ category, type, deletedAt: null });
+    assert(isFound === 0, new BadRequestException(`A ${category}:${type} bundle already exists`));
 
     let traffic = 0;
     let maxPrice = 0;
-
     publicationList.forEach((p) => {
-      traffic += p.stats.traffic;
+      traffic += p.stats?.traffic || 0;
       maxPrice += p.price;
     });
-
-    return this.model.create({ ...dto, maxPrice, traffic });
+    if (dto.vendorPriceInr && !dto.price) doc.price = await this.publicationService.priceFromVendor(dto);
+    return this.model.create({ ...doc, maxPrice, traffic });
   }
 
   async getById(id: string): Promise<Bundle> {
@@ -141,17 +137,42 @@ export class BundleService {
       );
 
       assert(
-        publicationList.length === dto.publicationIds.length,
+        !publicationList.includes(null) &&
+          publicationList.length === dto.publicationIds.length,
         new BadRequestException('one or few of publication ids are invalid')
       );
       let traffic = 0;
       let maxPrice = 0;
       publicationList.forEach((p) => {
-        traffic += p.stats.traffic;
+        traffic += p.stats?.traffic || 0;
         maxPrice += p.price;
       });
       needToUpdate['traffic'] = traffic;
       needToUpdate['maxPrice'] = maxPrice;
+    }
+
+    if (needToUpdate.name && needToUpdate.name !== oldObj.name) {
+      const isFound = await this.model.countDocuments({
+        name: needToUpdate.name,
+        _id: { $ne: id },
+        deletedAt: null
+      });
+      assert(isFound === 0, new BadRequestException(`A package named "${needToUpdate.name}" already exists`));
+    }
+
+    // Packages are re-priced whenever the vendor price or markup changes
+    const vendorPriceInr = needToUpdate.vendorPriceInr ?? oldObj.vendorPriceInr;
+    if (
+      vendorPriceInr &&
+      (needToUpdate.vendorPriceInr !== undefined || needToUpdate.markupPercent !== undefined)
+    ) {
+      needToUpdate['price'] = await this.publicationService.priceFromVendor({
+        vendorPriceInr,
+        markupPercent: needToUpdate.markupPercent ?? oldObj.markupPercent
+      });
+    }
+    if (!(oldObj.publicationIds?.length || dto?.publicationIds?.length) && needToUpdate['price']) {
+      needToUpdate['maxPrice'] = needToUpdate['price'];
     }
 
     const bundleObj = await this.model.findOneAndUpdate(
@@ -168,9 +189,11 @@ export class BundleService {
       visibility !== VisibilityEnum.PRIVATE,
       new BadRequestException('Bundle visibility cannot be PRIVATE')
     );
-    return this.model
+    const res = await this.model
       .findOneAndUpdate({ _id: id }, { $set: { visibility } }, { new: true })
-      .orFail(new NotFoundException('Bunder not found'));
+      .orFail(new NotFoundException('Bundle not found'));
+    await this.loaderService.cleanCacheById(id);
+    return res;
   }
 
   async delete(id: string) {
