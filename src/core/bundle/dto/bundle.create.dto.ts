@@ -36,6 +36,8 @@ export const bundleBaseDto = z.object({
   disclaimer: text,
   language: text,
   tat: text,
+  featured: z.boolean().nullish(),
+  featuredRank: z.number().int().min(1).max(999).nullish(),
   vendor: text,
   vendorPackageName: text,
   vendorPriceInr: z.number().positive().nullish(),

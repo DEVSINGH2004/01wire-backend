@@ -71,6 +71,13 @@ class Bundle extends Document {
   @Prop({ type: String, default: null })
   tat: string;
 
+  // "Popular" packages are listed first, in featuredRank order
+  @Prop({ type: Boolean, default: false, index: true })
+  featured: boolean;
+
+  @Prop({ type: Number, default: null })
+  featuredRank: number;
+
   // ---- admin only (never shown to clients) ----
   @Prop({ type: String, default: null })
   vendor: string;

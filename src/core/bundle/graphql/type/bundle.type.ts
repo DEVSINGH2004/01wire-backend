@@ -63,6 +63,12 @@ export class BundleType {
   @Field(() => String, { nullable: true })
   tat: string;
 
+  @Field(() => Boolean, { nullable: true, description: 'Shown as "Popular" and listed first' })
+  featured: boolean;
+
+  @Field(() => Int, { nullable: true, description: 'Order among featured packages (1 = first)' })
+  featuredRank: number;
+
   // Admin only: resolved to null for everyone else (see BundleResolver)
   @Field(() => String, { nullable: true })
   vendor: string;

@@ -64,6 +64,12 @@ export class BundleCreateInput {
   @Field(() => String, { nullable: true })
   tat?: string;
 
+  @Field(() => Boolean, { nullable: true })
+  featured?: boolean;
+
+  @Field(() => Int, { nullable: true })
+  featuredRank?: number;
+
   @Field(() => String, { nullable: true })
   vendor?: string;
 

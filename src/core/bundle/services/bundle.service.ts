@@ -54,7 +54,8 @@ export class BundleService {
     const [data, itemCount] = await Promise.all([
       this.model
         .find(q)
-        .sort({ price: 1, _id: 1 })
+        // Popular (featured) packages first, in their rank order, then by price
+        .sort({ featured: -1, featuredRank: 1, price: 1, _id: 1 })
         .limit(perPage)
         .skip(currentPage * perPage),
       this.model.countDocuments({ ...q, deletedAt: null })
@@ -77,6 +78,7 @@ export class BundleService {
     );
     dto = validate(dto, BundleCreateDto);
     const doc: Record<string, any> = { ...dto, publicationIds: dto.publicationIds || [] };
+    doc.featuredRank = dto.featured ? dto.featuredRank || 999 : null;
 
     if (dto.name) {
       // Package: its own media list, priced from the vendor price when given
@@ -118,18 +120,32 @@ export class BundleService {
   }
 
   async update(dto: BundleUpdateDto): Promise<Bundle> {
+    // featured false / rank null are real values ("not popular"), keep them
     Object.keys(dto).forEach(
-      (key) => (dto[key] === null || dto[key] === '') && delete dto[key]
+      (key) =>
+        (dto[key] === null || dto[key] === '') &&
+        !['featured', 'featuredRank'].includes(key) &&
+        delete dto[key]
     );
     dto = validate(dto, BundleUpdateDto);
     const { id, ...needToUpdate } = dto;
 
     const oldObj = await this.load(id);
     assert(!!oldObj, new NotFoundException('Bundle not found'));
+    // Marking a live package as Popular (or not) doesn't need it hidden first
+    const onlyFeatured = Object.keys(needToUpdate).every((k) =>
+      ['featured', 'featuredRank'].includes(k)
+    );
     assert(
-      oldObj.visibility === VisibilityEnum.SUPPRESSED,
+      onlyFeatured || oldObj.visibility === VisibilityEnum.SUPPRESSED,
       new BadRequestException('Bundle can only be updated in suppressed state')
     );
+    if (needToUpdate.featured === false) needToUpdate['featuredRank'] = null;
+    // Popular without a rank keeps its old rank, or goes last among the popular ones
+    if (needToUpdate.featured === true && !needToUpdate.featuredRank)
+      needToUpdate['featuredRank'] = oldObj.featuredRank || 999;
+    if (needToUpdate.featuredRank === null && needToUpdate.featured === undefined)
+      delete needToUpdate['featuredRank'];
 
     if (dto?.publicationIds?.length) {
       const publicationList = await this.publicationService.loadMany(
