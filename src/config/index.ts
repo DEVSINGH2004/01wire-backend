@@ -107,6 +107,13 @@ const config = (config: Record<string, unknown>) => {
       cancelUrl: 'https://app.01wire.com/payment-failed',
       secretKey: ENVS.COPPERX_SECRET_KEY,
       webhookSecretKey: ENVS.COPPERX_WEBHOOK_SECRET_KEY
+    },
+
+    razorpay: {
+      baseUrl: ENVS.RAZORPAY_API_URL || 'https://api.razorpay.com/v1',
+      keyId: ENVS.RAZORPAY_KEY_ID?.trim() || null,
+      keySecret: ENVS.RAZORPAY_KEY_SECRET?.trim() || null,
+      webhookSecret: ENVS.RAZORPAY_WEBHOOK_SECRET?.trim() || null
     }
   } as const;
 };

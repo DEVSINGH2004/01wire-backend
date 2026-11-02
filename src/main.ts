@@ -28,7 +28,9 @@ async function bootstrap() {
   });
 
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
-    logger
+    logger,
+    // Keeps req.rawBody so payment webhooks can verify their signatures
+    rawBody: true
   });
   // Express defaults to 100kb, below a full-length press release (MAX_CONTENT
   // is 100k chars plus the other fields); 413s showed up on long PRs.

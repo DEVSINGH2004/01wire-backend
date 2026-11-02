@@ -22,6 +22,7 @@ import { PublicationModule } from './core/publication/publication.module';
 import { CouponModule } from './core/coupon/coupon.module';
 import { UploadModule } from './core/upload/upload.module';
 import { PaymentModule } from './core/payment/payment.module';
+import { RazorpayModule } from './core/payment/razorpay/razorpay.module';
 import { OrderModule } from './core/order/order.module';
 import { SequenceModule } from './core/sequence/sequence.module';
 import { EstimateModule } from './core/estimate/estimate.module';
@@ -53,6 +54,7 @@ import { EstimateModule } from './core/estimate/estimate.module';
     CouponModule,
     UploadModule,
     PaymentModule,
+    RazorpayModule,
     OrderModule,
     SequenceModule,
     EstimateModule

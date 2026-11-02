@@ -26,5 +26,12 @@ export const ConfigValidationSchema = z.object({
   SLACK_WEBHOOK_URL: z.string().url(),
 
   COPPERX_SECRET_KEY: z.string(),
-  COPPERX_WEBHOOK_SECRET_KEY: z.string()
+  COPPERX_WEBHOOK_SECRET_KEY: z.string(),
+
+  // Razorpay (optional: the Razorpay option stays hidden until these are set)
+  RAZORPAY_KEY_ID: z.string().nullish(),
+  RAZORPAY_KEY_SECRET: z.string().nullish(),
+  RAZORPAY_WEBHOOK_SECRET: z.string().nullish(),
+  // Only for local tests against a fake Razorpay; live uses the real API
+  RAZORPAY_API_URL: z.string().url().nullish()
 });
