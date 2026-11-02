@@ -1,4 +1,13 @@
-import { Resolver, Query, Args, Mutation, Context } from '@nestjs/graphql';
+import {
+  Resolver,
+  Query,
+  Args,
+  Mutation,
+  Context,
+  ResolveField,
+  Parent,
+  Float
+} from '@nestjs/graphql';
 import { PaginationInput } from 'src/common/graphql/input/pagination.input';
 import { PublicationType } from './type/publication.type';
 import { PublicationService } from '../services/publication.service';
@@ -10,6 +19,19 @@ import { PublicationUpdateInput } from './input/publication.update.input';
 import { AllowedRoles } from 'src/core/auth/decorator/allowedroles.decorator';
 import { UserTypeEnum } from 'src/core/user/enum/user.type.enum';
 import { VisibilityEnum } from 'src/common/enum/visibility.enum';
+import { Publication } from '../publication.schema';
+import {
+  PublicationBulkInput,
+  PublicationImportInput,
+  PublicationSettingsInput
+} from './input/publication.admin.input';
+import {
+  PublicationBulkResultType,
+  PublicationImportResultType,
+  PublicationSettingsType
+} from './type/publication.admin.type';
+
+const isAdmin = (ctx: IGraphqlContext) => ctx?.me?.user?.type === UserTypeEnum.ADMIN;
 
 @Resolver(() => PublicationType)
 export class PublicationResolver {
@@ -28,6 +50,12 @@ export class PublicationResolver {
     );
   }
 
+  // Every visible offering, for the Marketplace page
+  @Query(() => [PublicationType])
+  async marketplaceListings() {
+    return this.publicationService.getMarketplaceListings();
+  }
+
   @Query(() => PublicationType, { nullable: true })
   async getPublicationById(
     @Args('id') id: string,
@@ -42,6 +70,12 @@ export class PublicationResolver {
     )
       return null;
     return obj;
+  }
+
+  @Query(() => PublicationSettingsType)
+  @AllowedRoles([UserTypeEnum.ADMIN])
+  async getPublicationSettings() {
+    return this.publicationService.getSettings();
   }
 
   @Mutation(() => PublicationType)
@@ -82,5 +116,54 @@ export class PublicationResolver {
     id: string
   ): Promise<boolean> {
     return this.publicationService.delete(id);
+  }
+
+  @Mutation(() => PublicationBulkResultType)
+  @AllowedRoles([UserTypeEnum.ADMIN])
+  async bulkUpdatePublications(@Args('params') params: PublicationBulkInput) {
+    return this.publicationService.bulk(params);
+  }
+
+  @Mutation(() => PublicationSettingsType)
+  @AllowedRoles([UserTypeEnum.ADMIN])
+  async updatePublicationSettings(@Args('params') params: PublicationSettingsInput) {
+    return this.publicationService.updateSettings(params);
+  }
+
+  @Mutation(() => PublicationImportResultType)
+  @AllowedRoles([UserTypeEnum.ADMIN])
+  async importPublications(@Args('params') params: PublicationImportInput) {
+    return this.publicationService.importRows(params);
+  }
+
+  // ---- Admin-only fields: null for everyone else, wherever a publication is returned ----
+  @ResolveField(() => Float, { nullable: true })
+  vendorPriceInr(@Parent() p: Publication, @Context() ctx: IGraphqlContext) {
+    return isAdmin(ctx) ? p.vendorPriceInr : null;
+  }
+
+  @ResolveField(() => Float, { nullable: true })
+  markupPercent(@Parent() p: Publication, @Context() ctx: IGraphqlContext) {
+    return isAdmin(ctx) ? p.markupPercent : null;
+  }
+
+  @ResolveField(() => Float, { nullable: true })
+  gstPercent(@Parent() p: Publication, @Context() ctx: IGraphqlContext) {
+    return isAdmin(ctx) ? p.gstPercent : null;
+  }
+
+  @ResolveField(() => String, { nullable: true })
+  sourceVendor(@Parent() p: Publication, @Context() ctx: IGraphqlContext) {
+    return isAdmin(ctx) ? p.sourceVendor : null;
+  }
+
+  @ResolveField(() => String, { nullable: true })
+  internalNotes(@Parent() p: Publication, @Context() ctx: IGraphqlContext) {
+    return isAdmin(ctx) ? p.internalNotes : null;
+  }
+
+  @ResolveField(() => String, { nullable: true })
+  importBatch(@Parent() p: Publication, @Context() ctx: IGraphqlContext) {
+    return isAdmin(ctx) ? p.importBatch : null;
   }
 }

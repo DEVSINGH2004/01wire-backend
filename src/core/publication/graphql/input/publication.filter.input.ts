@@ -1,4 +1,4 @@
-import { Field, ID, InputType } from '@nestjs/graphql';
+import { Field, ID, InputType, Int } from '@nestjs/graphql';
 import { VisibilityEnum } from 'src/common/enum/visibility.enum';
 
 @InputType()
@@ -11,4 +11,23 @@ export class PublicationFilterInput {
 
   @Field(() => String, { nullable: true })
   title: string;
+
+  // Admin list: matches title or domain
+  @Field(() => String, { nullable: true })
+  search: string;
+
+  @Field(() => String, { nullable: true })
+  section: string;
+
+  @Field(() => String, { nullable: true })
+  language: string;
+
+  @Field(() => Int, { nullable: true })
+  priceMin: number;
+
+  @Field(() => Int, { nullable: true })
+  priceMax: number;
+
+  @Field(() => String, { nullable: true })
+  importBatch: string;
 }

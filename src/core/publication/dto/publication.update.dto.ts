@@ -1,8 +1,8 @@
 import { createZodDto } from 'nestjs-zod';
-import { publicationCreateDto } from './publication.create.dto';
+import { publicationBaseDto } from './publication.create.dto';
 import { z } from 'nestjs-zod/z';
 
-const publicationUpdateDto = publicationCreateDto.partial().extend({
+const publicationUpdateDto = publicationBaseDto.partial().extend({
   id: z.string().uuid()
 });
 
