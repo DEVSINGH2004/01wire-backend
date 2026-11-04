@@ -39,5 +39,7 @@ export const ConfigValidationSchema = z.object({
   SHOPIFY_STORE_DOMAIN: z.string().nullish(),
   SHOPIFY_CLIENT_ID: z.string().nullish(),
   SHOPIFY_CLIENT_SECRET: z.string().nullish(),
-  SHOPIFY_API_VERSION: z.string().nullish()
+  SHOPIFY_API_VERSION: z.string().nullish(),
+  // Public URL Shopify posts "order paid" to; when set, the backend registers it on start
+  SHOPIFY_WEBHOOK_URL: z.string().url().nullish()
 });

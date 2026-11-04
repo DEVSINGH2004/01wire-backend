@@ -12,10 +12,11 @@ import { PaymentFulfilService } from './payment.fulfil.service';
 import { ShopifyClient } from '../shopify/shopify.client';
 import { ShopifyService } from '../shopify/shopify.service';
 import { ShopifyResolver } from '../shopify/shopify.resolver';
+import { ShopifyController } from '../shopify/shopify.controller';
 
 // Pay for a PR through a gateway (one shared credits + submit step):
 // - Razorpay: order -> checkout popup -> verify/webhook -> credits -> submit
-// - Shopify: draft order -> Shopify checkout -> status check -> credits -> submit
+// - Shopify: draft order -> Shopify checkout -> status check / orders-paid webhook -> credits -> submit
 @Module({
   imports: [
     MongooseModule.forFeature([
@@ -34,6 +35,6 @@ import { ShopifyResolver } from '../shopify/shopify.resolver';
     ShopifyService,
     ShopifyResolver
   ],
-  controllers: [RazorpayController]
+  controllers: [RazorpayController, ShopifyController]
 })
 export class RazorpayModule {}

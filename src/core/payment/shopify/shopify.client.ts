@@ -1,6 +1,7 @@
 import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
+import { createHmac, timingSafeEqual } from 'crypto';
 import { ConfigVariablesType } from 'src/config';
 
 export interface IShopifyDraftOrder {
@@ -39,6 +40,10 @@ export class ShopifyClient {
 
   get enabled() {
     return !!(this.cfg?.storeDomain && this.cfg?.clientId && this.cfg?.clientSecret);
+  }
+
+  get webhookUrl(): string | null {
+    return this.cfg?.webhookUrl || null;
   }
 
   private assertEnabled() {
@@ -134,6 +139,38 @@ export class ShopifyClient {
     const { draftOrder, userErrors } = data.draftOrderCreate;
     if (userErrors?.length) throw new Error(userErrors.map((e) => e.message).join('; '));
     return draftOrder;
+  }
+
+  // Shopify signs each webhook body with the app's client secret (base64 HMAC-SHA256)
+  isWebhookValid(rawBody: Buffer, hmac: string): boolean {
+    if (!this.cfg?.clientSecret || !rawBody || !hmac) return false;
+    const expected = Buffer.from(createHmac('sha256', this.cfg.clientSecret).update(rawBody).digest('base64'));
+    const given = Buffer.from(hmac);
+    return expected.length === given.length && timingSafeEqual(expected, given);
+  }
+
+  isOurShop(domain: string): boolean {
+    return !!domain && domain.toLowerCase() === (this.cfg?.storeDomain || '').toLowerCase();
+  }
+
+  // Makes sure the store sends "order paid" to our webhook URL (creates it once; safe to repeat)
+  async ensureOrdersPaidWebhook(uri: string): Promise<'exists' | 'created'> {
+    const found = await this.gql<{ webhookSubscriptions: { nodes: { id: string; uri: string }[] } }>(
+      `{ webhookSubscriptions(first: 50, topics: [ORDERS_PAID]) { nodes { id uri } } }`
+    );
+    if (found.webhookSubscriptions.nodes.some((w) => w.uri === uri)) return 'exists';
+    const data = await this.gql<{ webhookSubscriptionCreate: { userErrors: { message: string }[] } }>(
+      `mutation create($uri: String!) {
+        webhookSubscriptionCreate(topic: ORDERS_PAID, webhookSubscription: { uri: $uri, format: JSON }) {
+          webhookSubscription { id }
+          userErrors { message }
+        }
+      }`,
+      { uri }
+    );
+    const errs = data.webhookSubscriptionCreate.userErrors;
+    if (errs?.length) throw new Error(errs.map((e) => e.message).join('; '));
+    return 'created';
   }
 
   async getDraftOrder(id: string): Promise<IShopifyDraftOrder | null> {

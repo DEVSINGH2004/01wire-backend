@@ -1,4 +1,11 @@
-import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+  OnApplicationBootstrap,
+  ServiceUnavailableException
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import * as assert from 'assert';
@@ -17,7 +24,7 @@ const toPaise = (amount: string) => Math.round(Number(amount) * 100);
 // Pay for a PR on Shopify's checkout: draft order (full PR amount in INR) ->
 // the user pays on Shopify -> we ask Shopify whether it is paid -> credits -> submit.
 @Injectable()
-export class ShopifyService {
+export class ShopifyService implements OnApplicationBootstrap {
   private _logger = new Logger(ShopifyService.name);
 
   constructor(
@@ -30,6 +37,17 @@ export class ShopifyService {
 
   get enabled() {
     return this.client.enabled;
+  }
+
+  // On start (when SHOPIFY_WEBHOOK_URL is set): make sure Shopify sends "order paid" to us.
+  // Never blocks or breaks the start; the payment page's polling works without it.
+  onApplicationBootstrap() {
+    const uri = this.client.webhookUrl;
+    if (!this.enabled || !uri) return;
+    this.client
+      .ensureOrdersPaidWebhook(uri)
+      .then((r) => this._logger.log(`Shopify orders/paid webhook ${r}: ${uri}`))
+      .catch((e) => this._logger.error(`Shopify webhook registration failed: ${e.message}`));
   }
 
   // Returns the Shopify checkout link for this PR (reuses an open one when nothing changed)
@@ -131,6 +149,66 @@ export class ShopifyService {
       { sort: { createdAt: -1 } }
     );
     if (!pending) return { status: 'PENDING', submitted: false, message: 'No Shopify payment started yet' };
+    return this.confirm(pending);
+  }
+
+  // Shopify "orders/paid" webhook (signature already checked by the controller).
+  // The body only tells us which payment to look at; the payment itself is always
+  // confirmed by asking Shopify (same check as the page's polling).
+  async handleWebhook(topic: string, shopDomain: string, body: any): Promise<{ ok: boolean }> {
+    if (topic !== 'orders/paid') return { ok: true };
+    if (!this.client.isOurShop(shopDomain)) {
+      this._logger.warn(`Shopify webhook from another shop ignored: ${shopDomain}`);
+      return { ok: true };
+    }
+    const attrs: { name: string; value: string }[] = body?.note_attributes || [];
+    const ref = attrs.find((a) => a?.name === 'paymentOrderId')?.value;
+    let candidates: PaymentOrder[] = [];
+    if (ref) {
+      const p = await this.model.findOne({ _id: ref, provider: PROVIDER });
+      if (p) candidates = [p];
+    } else {
+      // Fallback: our tag "pr-<n>" -> open Shopify payments for that PR
+      const prId = Number(String(body?.tags || '').match(/(?:^|,\s*)pr-(\d+)/)?.[1]);
+      if (prId)
+        candidates = await this.model.find({
+          prId,
+          provider: PROVIDER,
+          status: PaymentOrderStatusEnum.PENDING,
+          gatewayOrderId: DRAFT_ID
+        });
+    }
+    if (!candidates.length) {
+      this._logger.log(`Shopify order ${body?.name || body?.id} is not a 01 Wire payment`);
+      return { ok: true };
+    }
+    for (const p of candidates) {
+      if (p.status === PaymentOrderStatusEnum.PAID) continue;
+      let r: PaymentResult;
+      try {
+        r = await this.confirm(p);
+      } catch (e) {
+        // A mismatch will never succeed: log it, don't make Shopify retry
+        if (e instanceof BadRequestException) {
+          this._logger.error(`Shopify webhook: payment ${p._id} rejected: ${e.message}`);
+          continue;
+        }
+        throw e; // Shopify API down etc.: a non-2xx makes Shopify retry later
+      }
+      if (r.status === 'PAID') {
+        this._logger.log(`Shopify webhook: PR #${p.prId} paid (submitted: ${r.submitted})`);
+        return { ok: true };
+      }
+    }
+    // Paid on Shopify but not visible as paid yet: ask Shopify to send it again later
+    if (ref && candidates.some((p) => p.status !== PaymentOrderStatusEnum.PAID))
+      throw new ServiceUnavailableException('Payment not confirmed yet');
+    return { ok: true };
+  }
+
+  // Asks Shopify whether this checkout is paid (amount + currency checked) and, if so,
+  // adds the credits once and submits the PR. Used by the page's polling and the webhook.
+  private async confirm(pending: PaymentOrder): Promise<PaymentResult> {
     assert(this.enabled, new BadRequestException('Shopify is not available right now'));
 
     const draft = await this.client.getDraftOrder(pending.gatewayOrderId);

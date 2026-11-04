@@ -124,7 +124,8 @@ const config = (config: Record<string, unknown>) => {
           .replace(/\/+$/, '') || null,
       clientId: ENVS.SHOPIFY_CLIENT_ID?.trim() || null,
       clientSecret: ENVS.SHOPIFY_CLIENT_SECRET?.trim() || null,
-      apiVersion: ENVS.SHOPIFY_API_VERSION?.trim() || '2026-10'
+      apiVersion: ENVS.SHOPIFY_API_VERSION?.trim() || '2026-10',
+      webhookUrl: ENVS.SHOPIFY_WEBHOOK_URL?.trim() || null
     }
   } as const;
 };
