@@ -17,6 +17,8 @@ export interface IRazorpayPayment {
   amount: number;
   currency: string;
   status: string; // created | authorized | captured | refunded | failed
+  amount_refunded?: number; // paise
+  refund_status?: string | null; // null | partial | full
 }
 
 const safeEqual = (a: string, b: string) => {

@@ -31,6 +31,7 @@ import { WalletService } from 'src/core/wallet/services/wallet.service';
 import * as assert from 'assert';
 import { SequenceService } from 'src/core/sequence/sequence.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { ARTICLE_SUBMITTED_EVENT } from '../article.events';
 import { EventDomainEnum } from 'src/core/events/enum/event.domain.enum';
 import { EventActionEnum } from 'src/core/events/enum/event.action.enum';
 import { VisibilityEnum } from 'src/common/enum/visibility.enum';
@@ -556,10 +557,34 @@ export class ArticleService {
     );
   }
 
+  // Status straight from the database (no cache), for payment checks
+  async freshStatus(id: string): Promise<ArticleStatusEnum | null> {
+    const doc = await this.model.findOne({ _id: id }, { status: 1 }).lean();
+    return (doc as any)?.status || null;
+  }
+
+  // Total at today's prices (a publication's price may have changed since the PR was
+  // saved). Saves the new total when it differs and returns it.
+  async refreshTotal(articleObj: Pick<Article, '_id' | 'publicationIds' | 'bundleIds' | 'totalCredits'>): Promise<number> {
+    const [bundles, publications] = await Promise.all([
+      this.bundleService.loadMany(articleObj.bundleIds || []),
+      this.publicationService.loadMany(articleObj.publicationIds || [])
+    ]);
+    const total = [...bundles, ...publications]
+      .filter((x: any) => x && !(x instanceof Error))
+      .reduce((sum, x: any) => sum + (Number(x.price) || 0), 0);
+    if (total !== articleObj.totalCredits) {
+      await this.model.updateOne({ _id: articleObj._id }, { $set: { totalCredits: total } });
+      await this.loaderService.cleanCacheById(articleObj._id);
+      (articleObj as any).totalCredits = total;
+    }
+    return total;
+  }
+
   // DRAFT -> SUBMITTED: validate, claim, debit, create orders. Any failure
   // after a write is rolled back, so no order can exist without a debit.
   private async _submitDraft(articleObj: Article) {
-    const { _id, userId, prId, totalCredits } = articleObj;
+    const { _id, userId, prId } = articleObj;
     const publicationIds = articleObj.publicationIds || [];
     const bundleIds = articleObj.bundleIds || [];
 
@@ -567,8 +592,10 @@ export class ArticleService {
       publicationIds.length > 0 || bundleIds.length > 0,
       new BadRequestException('Select at least one publication or bundle')
     );
-    assert(totalCredits > 0, new BadRequestException('Invalid PR amount'));
     await this.assertMediaAvailable(articleObj);
+    // Charge today's prices, not the ones saved when the PR was made
+    const totalCredits = await this.refreshTotal(articleObj);
+    assert(totalCredits > 0, new BadRequestException('Invalid PR amount'));
 
     // Atomic claim: only one concurrent submit can move the PR out of DRAFT
     const claimed = await this.model.findOneAndUpdate(
@@ -618,6 +645,8 @@ export class ArticleService {
       await revertToDraft();
       throw e;
     }
+    // Other open checkouts for this PR (e.g. Shopify) must not be payable any more
+    this.eventEmitter.emit(ARTICLE_SUBMITTED_EVENT, { articleId: _id, prId, userId });
   }
 
   async delete(_id: string, me: IMe) {

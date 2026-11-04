@@ -20,6 +20,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { EventDomainEnum } from 'src/core/events/enum/event.domain.enum';
 import { EventActionEnum } from 'src/core/events/enum/event.action.enum';
 import * as assert from 'assert';
+import { toCopperxUnits } from 'src/core/payment/providers/copperx/copperx.service';
 
 @Injectable()
 export class TransactionService {
@@ -43,29 +44,53 @@ export class TransactionService {
     private eventEmitter: EventEmitter2
   ) {}
 
-  async onTransactionSuccess(transactionId) {
+  // A credit-pack purchase was paid (confirmed with the gateway by the caller).
+  // The paid amount must match the pack; PENDING -> SUCCESS is one atomic step, so two
+  // deliveries of the same webhook can never add the credits twice.
+  async onTransactionSuccess(
+    transactionId: string,
+    paid?: { amountTotal: string; currency: string }
+  ) {
     try {
       const transactionObj = await this.model.findOne({ _id: transactionId });
-      assert(
-        transactionObj.status === TransactionStatusEnum.PENDING,
-        new BadRequestException('Transaction not in pending state')
+      assert(!!transactionObj, new BadRequestException('Transaction not found'));
+      const credits = this.txnKindCreditMap[transactionObj.kind];
+      assert(credits > 0, new BadRequestException('Not a credit pack purchase'));
+      if (paid) {
+        const expected = toCopperxUnits(transactionObj.amount);
+        const okAmount = String(paid.amountTotal) === expected;
+        const okCurrency = /^usdt$/i.test(paid.currency || '');
+        if (!okAmount || !okCurrency) {
+          this.eventEmitter.emit(EventDomainEnum.SLACK, {
+            action: EventActionEnum.SEND,
+            data: `⚠️ CopperX payment does not match credit pack ${transactionId}: paid ${paid.amountTotal} ${paid.currency}, expected ${expected} USDT. No credits added.`
+          });
+          throw new BadRequestException('Paid amount does not match the credit pack');
+        }
+      }
+      const claimed = await this.model.findOneAndUpdate(
+        { _id: transactionId, status: TransactionStatusEnum.PENDING },
+        { $set: { status: TransactionStatusEnum.SUCCESS } },
+        { new: true }
       );
-      transactionObj.status = TransactionStatusEnum.SUCCESS;
-      await transactionObj.save();
-      await this.walletService.updateBalance(
-        transactionObj.walletId,
-        this.txnKindCreditMap[transactionObj.kind]
-      );
-      const userObj = await this.userService.load(transactionObj.userId);
+      if (!claimed) return; // already handled (repeat delivery)
+      try {
+        await this.walletService.updateBalance(claimed.walletId, credits);
+      } catch (e) {
+        // Put it back so a retry can add the credits
+        await this.model.updateOne(
+          { _id: transactionId, status: TransactionStatusEnum.SUCCESS },
+          { $set: { status: TransactionStatusEnum.PENDING } }
+        );
+        throw e;
+      }
+      const userObj = await this.userService.load(claimed.userId);
       this.eventEmitter.emit(EventDomainEnum.SLACK, {
         action: EventActionEnum.SEND,
-        data: `💰 Recharge ${transactionObj.amount} USDT : ${userObj.fullName} | ${userObj.email}`
+        data: `💰 Recharge ${claimed.amount} USDT : ${userObj?.fullName} | ${userObj?.email}`
       });
     } catch (e) {
-      console.log(
-        `⚠ Error : onTransactionSuccess: ${transactionId} :`,
-        e.mesaage
-      );
+      this._logger.error(`onTransactionSuccess ${transactionId}: ${e?.message}`);
     }
   }
 

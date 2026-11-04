@@ -7,11 +7,13 @@ import {
   ServiceUnavailableException
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
+import { OnEvent } from '@nestjs/event-emitter';
 import { Model } from 'mongoose';
 import * as assert from 'assert';
 import { IMe } from 'src/common/graphql/interface/context.interface';
 import { ArticleService } from 'src/core/article/services/article.service';
 import { ArticleStatusEnum } from 'src/core/article/enum/article.status.enum';
+import { ARTICLE_SUBMITTED_EVENT } from 'src/core/article/article.events';
 import { PublicationService } from 'src/core/publication/services/publication.service';
 import { PaymentOrder, PaymentOrderStatusEnum } from '../razorpay/payment.order.schema';
 import { PaymentFulfilService, PaymentResult } from '../razorpay/payment.fulfil.service';
@@ -23,6 +25,8 @@ const toPaise = (amount: string) => Math.round(Number(amount) * 100);
 
 // Pay for a PR on Shopify's checkout: draft order (full PR amount in INR) ->
 // the user pays on Shopify -> we ask Shopify whether it is paid -> credits -> submit.
+// Also: refunds / cancellations on Shopify take the credits back (or flag for an admin),
+// and checkouts that should no longer be paid are deleted.
 @Injectable()
 export class ShopifyService implements OnApplicationBootstrap {
   private _logger = new Logger(ShopifyService.name);
@@ -39,14 +43,16 @@ export class ShopifyService implements OnApplicationBootstrap {
     return this.client.enabled;
   }
 
-  // On start (when SHOPIFY_WEBHOOK_URL is set): make sure Shopify sends "order paid" to us.
-  // Never blocks or breaks the start; the payment page's polling works without it.
+  // On start (when SHOPIFY_WEBHOOK_URL is set): make sure Shopify sends paid / refund /
+  // cancelled events to us. Never blocks or breaks the start.
   onApplicationBootstrap() {
     const uri = this.client.webhookUrl;
     if (!this.enabled || !uri) return;
     this.client
-      .ensureOrdersPaidWebhook(uri)
-      .then((r) => this._logger.log(`Shopify orders/paid webhook ${r}: ${uri}`))
+      .ensureWebhooks(uri)
+      .then((created) =>
+        this._logger.log(`Shopify webhooks ready (${created.length ? 'created ' + created.join(', ') : 'all existed'}): ${uri}`)
+      )
       .catch((e) => this._logger.error(`Shopify webhook registration failed: ${e.message}`));
   }
 
@@ -59,10 +65,11 @@ export class ShopifyService implements OnApplicationBootstrap {
       article.status === ArticleStatusEnum.DRAFT,
       new BadRequestException('This PR has already been submitted')
     );
-    const credits = article.totalCredits;
-    assert(credits > 0, new BadRequestException('Select at least one publication'));
     // Never take money for a PR that cannot be submitted (e.g. a deleted publication)
     await this.articleService.assertMediaAvailable(article);
+    // Today's prices (not the ones saved when the PR was made)
+    const credits = await this.articleService.refreshTotal(article);
+    assert(credits > 0, new BadRequestException('Select at least one publication'));
     const rate = (await this.publicationService.getSettings()).usdInrRate;
     const amount = Math.round(credits * rate * 100); // paise
 
@@ -88,6 +95,8 @@ export class ShopifyService implements OnApplicationBootstrap {
         this._logger.warn(`Could not reuse Shopify draft ${open.gatewayOrderId}: ${e.message}`);
       }
     }
+    // Only one payable checkout per PR: close older ones (e.g. made before the media changed)
+    await this.cancelOpenCheckouts(articleId);
 
     const created = await this.model.create({
       provider: PROVIDER,
@@ -152,15 +161,53 @@ export class ShopifyService implements OnApplicationBootstrap {
     return this.confirm(pending);
   }
 
-  // Shopify "orders/paid" webhook (signature already checked by the controller).
-  // The body only tells us which payment to look at; the payment itself is always
-  // confirmed by asking Shopify (same check as the page's polling).
+  // The PR was submitted (any way: credits, Razorpay, Shopify): its other Shopify
+  // checkouts must not be payable any more, or the customer could pay twice.
+  @OnEvent(ARTICLE_SUBMITTED_EVENT, { async: true })
+  async onArticleSubmitted({ articleId }: { articleId: string }) {
+    if (!this.enabled || !articleId) return;
+    try {
+      await this.cancelOpenCheckouts(articleId);
+    } catch (e) {
+      this._logger.error(`Closing Shopify checkouts for PR ${articleId} failed: ${e.message}`);
+    }
+  }
+
+  // Deletes the still-open Shopify checkouts of a PR. A checkout that turns out to be
+  // paid already is processed normally (credits; flagged if the PR can't take it).
+  async cancelOpenCheckouts(articleId: string) {
+    const open = await this.model.find({
+      articleId,
+      provider: PROVIDER,
+      status: PaymentOrderStatusEnum.PENDING,
+      gatewayOrderId: DRAFT_ID
+    });
+    for (const p of open) {
+      const draft = await this.client.getDraftOrder(p.gatewayOrderId);
+      if (draft?.status === 'COMPLETED') {
+        await this.confirm(p).catch((e) => this._logger.warn(`Paid checkout ${p._id}: ${e.message}`));
+        continue;
+      }
+      if (draft) await this.client.deleteDraftOrder(p.gatewayOrderId);
+      await this.model.updateOne(
+        { _id: p._id, status: PaymentOrderStatusEnum.PENDING },
+        { $set: { status: PaymentOrderStatusEnum.CANCELLED } }
+      );
+      this._logger.log(`Closed Shopify checkout ${draft?.name || p.gatewayOrderId} for PR #${p.prId}`);
+    }
+  }
+
+  // Shopify webhooks (signature already checked by the controller). The body only tells
+  // us which payment to look at; amounts and states are always read from Shopify itself.
   async handleWebhook(topic: string, shopDomain: string, body: any): Promise<{ ok: boolean }> {
-    if (topic !== 'orders/paid') return { ok: true };
     if (!this.client.isOurShop(shopDomain)) {
       this._logger.warn(`Shopify webhook from another shop ignored: ${shopDomain}`);
       return { ok: true };
     }
+    if (topic === 'refunds/create') return this.onRefund(body?.order_id);
+    if (topic === 'orders/cancelled') return this.onCancelled(body?.id);
+    if (topic !== 'orders/paid') return { ok: true };
+
     const attrs: { name: string; value: string }[] = body?.note_attributes || [];
     const ref = attrs.find((a) => a?.name === 'paymentOrderId')?.value;
     let candidates: PaymentOrder[] = [];
@@ -174,7 +221,7 @@ export class ShopifyService implements OnApplicationBootstrap {
         candidates = await this.model.find({
           prId,
           provider: PROVIDER,
-          status: PaymentOrderStatusEnum.PENDING,
+          status: { $in: [PaymentOrderStatusEnum.PENDING, PaymentOrderStatusEnum.CANCELLED] },
           gatewayOrderId: DRAFT_ID
         });
     }
@@ -188,7 +235,7 @@ export class ShopifyService implements OnApplicationBootstrap {
       try {
         r = await this.confirm(p);
       } catch (e) {
-        // A mismatch will never succeed: log it, don't make Shopify retry
+        // A mismatch will never succeed (already flagged): don't make Shopify retry
         if (e instanceof BadRequestException) {
           this._logger.error(`Shopify webhook: payment ${p._id} rejected: ${e.message}`);
           continue;
@@ -206,6 +253,35 @@ export class ShopifyService implements OnApplicationBootstrap {
     return { ok: true };
   }
 
+  // Money went back to the customer on Shopify: take back the matching credits (shared step;
+  // the refunded total is read from Shopify, only the new part counts).
+  private async onRefund(orderNumericId: number | string) {
+    if (!orderNumericId) return { ok: true };
+    const gid = `gid://shopify/Order/${orderNumericId}`;
+    const payment = await this.model.findOne({ provider: PROVIDER, gatewayPaymentId: gid, status: PaymentOrderStatusEnum.PAID });
+    if (!payment) return { ok: true }; // not ours, or never credited (nothing to take back)
+    const order = await this.client.getOrder(gid);
+    await this.fulfil.applyRefund(payment, toPaise(order?.totalRefundedSet?.shopMoney?.amount || '0'), 'Shopify', order?.name || gid);
+    return { ok: true };
+  }
+
+  // Cancelled on Shopify. With a refund, onRefund takes the credits back; a cancel
+  // without (full) refund needs a person to decide.
+  private async onCancelled(orderNumericId: number | string) {
+    if (!orderNumericId) return { ok: true };
+    const gid = `gid://shopify/Order/${orderNumericId}`;
+    const payment = await this.model.findOne({ provider: PROVIDER, gatewayPaymentId: gid });
+    if (!payment) return { ok: true };
+    const order = await this.client.getOrder(gid);
+    const refunded = toPaise(order?.totalRefundedSet?.shopMoney?.amount || '0');
+    if (order?.cancelledAt && refunded < payment.amount)
+      await this.fulfil.flag(
+        payment,
+        `Shopify order ${order.name} was cancelled (refunded ₹${(refunded / 100).toFixed(2)} of ₹${(payment.amount / 100).toFixed(2)}).`
+      );
+    return { ok: true };
+  }
+
   // Asks Shopify whether this checkout is paid (amount + currency checked) and, if so,
   // adds the credits once and submits the PR. Used by the page's polling and the webhook.
   private async confirm(pending: PaymentOrder): Promise<PaymentResult> {
@@ -215,19 +291,26 @@ export class ShopifyService implements OnApplicationBootstrap {
     const order = draft?.order;
     if (!draft || draft.status !== 'COMPLETED' || !order)
       return { status: 'PENDING', submitted: false, message: 'Waiting for the payment on Shopify' };
-    if (order.displayFinancialStatus !== 'PAID')
+    if (order.displayFinancialStatus !== 'PAID') {
+      // Refunded / voided before we credited it: nothing to add, but someone should know
+      if (/REFUND|VOID/.test(order.displayFinancialStatus))
+        await this.fulfil.flag(pending, `Shopify order ${order.name} is ${order.displayFinancialStatus.toLowerCase()} before it was credited.`);
       return {
         status: 'PENDING',
         submitted: false,
-        message: `Shopify shows the payment as ${order.displayFinancialStatus.toLowerCase()}`
+        message: `Shopify shows the payment as ${order.displayFinancialStatus.toLowerCase().replace(/_/g, ' ')}`
       };
+    }
     const total = order.totalPriceSet?.shopMoney;
-    assert(
-      total && toPaise(total.amount) === pending.amount && total.currencyCode === pending.currency,
-      new BadRequestException('Payment does not match this order')
-    );
+    if (!(total && toPaise(total.amount) === pending.amount && total.currencyCode === pending.currency)) {
+      await this.fulfil.flag(
+        pending,
+        `Shopify order ${order.name} was paid ${total?.amount} ${total?.currencyCode} but this checkout expects ₹${(pending.amount / 100).toFixed(2)}. No credits were added.`
+      );
+      throw new BadRequestException('Payment does not match this order');
+    }
     // Money confirmed by Shopify: add the credits once and submit the PR
-    return this.fulfil.claimAndFulfil(pending, order.id, 'Shopify');
+    return this.fulfil.claimAndFulfil(pending, order.id, 'Shopify', { gatewayRef: order.name, test: order.test });
   }
 
   private view(p: PaymentOrder, checkoutUrl: string) {

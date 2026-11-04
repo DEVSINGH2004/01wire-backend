@@ -5,6 +5,8 @@ import {
   NotFoundException
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
+import { OnEvent } from '@nestjs/event-emitter';
+import { ARTICLE_SUBMITTED_EVENT } from 'src/core/article/article.events';
 import { Model } from 'mongoose';
 import * as assert from 'assert';
 import { IMe } from 'src/common/graphql/interface/context.interface';
@@ -13,7 +15,7 @@ import { ArticleStatusEnum } from 'src/core/article/enum/article.status.enum';
 import { PublicationService } from 'src/core/publication/services/publication.service';
 import { RazorpayClient } from './razorpay.client';
 import { PaymentOrder, PaymentOrderStatusEnum } from './payment.order.schema';
-import { PaymentFulfilService, PaymentResult } from './payment.fulfil.service';
+import { PaymentFulfilService, PaymentResult, inr } from './payment.fulfil.service';
 
 export { PaymentResult };
 
@@ -52,13 +54,14 @@ export class RazorpayService {
       article.status === ArticleStatusEnum.DRAFT,
       new BadRequestException('This PR has already been submitted')
     );
-    const credits = article.totalCredits;
+    // Never take money for a PR that cannot be submitted (e.g. a deleted publication)
+    await this.articleService.assertMediaAvailable(article);
+    // Today's prices (not the ones saved when the PR was made)
+    const credits = await this.articleService.refreshTotal(article);
     assert(
       credits > 0,
       new BadRequestException('Select at least one publication')
     );
-    // Never take money for a PR that cannot be submitted (e.g. a deleted publication)
-    await this.articleService.assertMediaAvailable(article);
     const rate = await this.inrPerCredit();
     const amount = Math.round(credits * rate * 100); // paise
 
@@ -143,8 +146,24 @@ export class RazorpayService {
     return this.complete(payment, paymentId);
   }
 
+  // The PR was submitted (any way): its open Razorpay attempts are closed. A payment that
+  // still arrives for one is credited and flagged for review (paid twice).
+  @OnEvent(ARTICLE_SUBMITTED_EVENT, { async: true })
+  async onArticleSubmitted({ articleId }: { articleId: string }) {
+    if (!articleId) return;
+    await this.model
+      .updateMany(
+        { articleId, provider: 'RAZORPAY', status: PaymentOrderStatusEnum.PENDING },
+        { $set: { status: PaymentOrderStatusEnum.CANCELLED } }
+      )
+      .catch((e) => this._logger.error(`Closing Razorpay attempts for PR ${articleId} failed: ${e.message}`));
+  }
+
   // Razorpay webhook; the body signature is checked by the controller
   async handleWebhook(body: any) {
+    if (body?.event === 'refund.processed' || body?.event === 'payment.refunded')
+      return this.onRefund(body?.payload?.refund?.entity?.payment_id || body?.payload?.payment?.entity?.id);
+    if (body?.event === 'payment.dispute.created') return this.onDispute(body);
     if (!['payment.captured', 'order.paid'].includes(body?.event))
       return { ok: true };
     const p = body?.payload?.payment?.entity;
@@ -155,6 +174,30 @@ export class RazorpayService {
       return { ok: true };
     }
     await this.complete(payment, p.id);
+    return { ok: true };
+  }
+
+  // Money went back to the customer: take back the matching credits. The refunded total
+  // is read from Razorpay itself (shared step: only the new part counts, once).
+  private async onRefund(paymentId: string) {
+    if (!paymentId) return { ok: true };
+    const payment = await this.model.findOne({ provider: 'RAZORPAY', gatewayPaymentId: paymentId, status: PaymentOrderStatusEnum.PAID });
+    if (!payment) return { ok: true }; // not ours, or never credited
+    const gw = await this.client.getPayment(paymentId);
+    await this.fulfil.applyRefund(payment, gw.amount_refunded || 0, 'Razorpay', paymentId);
+    return { ok: true };
+  }
+
+  // Customer opened a dispute / chargeback with their bank: a person must decide.
+  private async onDispute(body: any) {
+    const d = body?.payload?.dispute?.entity;
+    const paymentId = d?.payment_id || body?.payload?.payment?.entity?.id;
+    const payment = paymentId && (await this.model.findOne({ provider: 'RAZORPAY', gatewayPaymentId: paymentId }));
+    if (payment)
+      await this.fulfil.flag(
+        payment,
+        `Razorpay dispute ${d?.id || ''} opened on ${paymentId} for ${inr(d?.amount || payment.amount)} (${d?.reason_code || d?.phase || 'chargeback'}). Respond in the Razorpay dashboard.`
+      );
     return { ok: true };
   }
 
@@ -196,6 +239,9 @@ export class RazorpayService {
     }
 
     // Money confirmed by Razorpay: add the credits once and submit the PR
-    return this.fulfil.claimAndFulfil(payment, paymentId, 'Razorpay');
+    return this.fulfil.claimAndFulfil(payment, paymentId, 'Razorpay', {
+      gatewayRef: paymentId,
+      test: String(this.client.keyId || '').startsWith('rzp_test_')
+    });
   }
 }

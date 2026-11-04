@@ -27,6 +27,11 @@ export const ConfigValidationSchema = z.object({
 
   COPPERX_SECRET_KEY: z.string(),
   COPPERX_WEBHOOK_SECRET_KEY: z.string(),
+  // Optional: force the CopperX API (e.g. https://api.copperx.dev/api/v1 for test keys
+  // on a production server). Default: .dev outside production, .io in production.
+  COPPERX_API_URL: z.string().url().nullish(),
+  // Optional: where CopperX sends the buyer back (defaults to the old app.01wire.com)
+  FRONTEND_URL: z.string().url().nullish(),
 
   // Razorpay (optional: the Razorpay option stays hidden until these are set)
   RAZORPAY_KEY_ID: z.string().nullish(),

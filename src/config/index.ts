@@ -100,11 +100,12 @@ const config = (config: Record<string, unknown>) => {
 
     copperx: {
       baseUrl:
-        NODE_ENV !== 'production'
+        ENVS.COPPERX_API_URL?.trim() ||
+        (NODE_ENV !== 'production'
           ? 'https://api.copperx.dev/api/v1'
-          : 'https://api.copperx.io/api/v1',
-      successUrl: 'https://app.01wire.com/payment-success', // TODO: Add urls
-      cancelUrl: 'https://app.01wire.com/payment-failed',
+          : 'https://api.copperx.io/api/v1'),
+      successUrl: `${(ENVS.FRONTEND_URL?.trim() || 'https://app.01wire.com').replace(/\/+$/, '')}/payment-success`,
+      cancelUrl: `${(ENVS.FRONTEND_URL?.trim() || 'https://app.01wire.com').replace(/\/+$/, '')}/payment-failed`,
       secretKey: ENVS.COPPERX_SECRET_KEY,
       webhookSecretKey: ENVS.COPPERX_WEBHOOK_SECRET_KEY
     },

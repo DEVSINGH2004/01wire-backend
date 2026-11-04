@@ -10,18 +10,33 @@ export interface IShopifyDraftOrder {
   status: string; // OPEN | INVOICE_SENT | COMPLETED
   invoiceUrl: string;
   totalPriceSet?: { shopMoney: { amount: string; currencyCode: string } };
-  order?: {
-    id: string; // gid://shopify/Order/123
-    name: string; // #1001
-    displayFinancialStatus: string; // PAID | PENDING | AUTHORIZED | ...
-    totalPriceSet: { shopMoney: { amount: string; currencyCode: string } };
-  } | null;
+  order?: IShopifyOrder | null;
 }
+
+export interface IShopifyOrder {
+  id: string; // gid://shopify/Order/123
+  name: string; // #1001
+  test: boolean; // paid with the test gateway (no real money)
+  displayFinancialStatus: string; // PAID | PENDING | AUTHORIZED | REFUNDED | PARTIALLY_REFUNDED ...
+  cancelledAt?: string | null;
+  totalPriceSet: { shopMoney: { amount: string; currencyCode: string } };
+  totalRefundedSet?: { shopMoney: { amount: string; currencyCode: string } };
+}
+
+// Shopify events we listen to (one webhook URL, routed by topic)
+export const SHOPIFY_WEBHOOK_TOPICS = ['ORDERS_PAID', 'REFUNDS_CREATE', 'ORDERS_CANCELLED'] as const;
+
+const ORDER_FIELDS = `
+  id name test displayFinancialStatus cancelledAt
+  totalPriceSet { shopMoney { amount currencyCode } }
+  totalRefundedSet { shopMoney { amount currencyCode } }
+`;
+
 
 const DRAFT_FIELDS = `
   id name status invoiceUrl
   totalPriceSet { shopMoney { amount currencyCode } }
-  order { id name displayFinancialStatus totalPriceSet { shopMoney { amount currencyCode } } }
+  order { ${ORDER_FIELDS} }
 `;
 
 // Thin wrapper over the Shopify Admin GraphQL API for one store.
@@ -153,24 +168,46 @@ export class ShopifyClient {
     return !!domain && domain.toLowerCase() === (this.cfg?.storeDomain || '').toLowerCase();
   }
 
-  // Makes sure the store sends "order paid" to our webhook URL (creates it once; safe to repeat)
-  async ensureOrdersPaidWebhook(uri: string): Promise<'exists' | 'created'> {
-    const found = await this.gql<{ webhookSubscriptions: { nodes: { id: string; uri: string }[] } }>(
-      `{ webhookSubscriptions(first: 50, topics: [ORDERS_PAID]) { nodes { id uri } } }`
+  // Makes sure the store sends our topics (paid, refund, cancelled) to our webhook URL.
+  // Creates only the missing ones; safe to repeat.
+  async ensureWebhooks(uri: string): Promise<string[]> {
+    const found = await this.gql<{ webhookSubscriptions: { nodes: { topic: string; uri: string }[] } }>(
+      `{ webhookSubscriptions(first: 100) { nodes { topic uri } } }`
     );
-    if (found.webhookSubscriptions.nodes.some((w) => w.uri === uri)) return 'exists';
-    const data = await this.gql<{ webhookSubscriptionCreate: { userErrors: { message: string }[] } }>(
-      `mutation create($uri: String!) {
-        webhookSubscriptionCreate(topic: ORDERS_PAID, webhookSubscription: { uri: $uri, format: JSON }) {
-          webhookSubscription { id }
-          userErrors { message }
-        }
-      }`,
-      { uri }
+    const have = new Set(found.webhookSubscriptions.nodes.filter((w) => w.uri === uri).map((w) => w.topic));
+    const created: string[] = [];
+    for (const topic of SHOPIFY_WEBHOOK_TOPICS) {
+      if (have.has(topic)) continue;
+      const data = await this.gql<{ webhookSubscriptionCreate: { userErrors: { message: string }[] } }>(
+        `mutation create($uri: String!) {
+          webhookSubscriptionCreate(topic: ${topic}, webhookSubscription: { uri: $uri, format: JSON }) {
+            webhookSubscription { id }
+            userErrors { message }
+          }
+        }`,
+        { uri }
+      );
+      const errs = data.webhookSubscriptionCreate.userErrors;
+      if (errs?.length) throw new Error(`${topic}: ${errs.map((e) => e.message).join('; ')}`);
+      created.push(topic);
+    }
+    return created;
+  }
+
+  // Removes a checkout nobody should pay any more (only while it is still open)
+  async deleteDraftOrder(id: string): Promise<boolean> {
+    const data = await this.gql<{ draftOrderDelete: { deletedId: string; userErrors: { message: string }[] } }>(
+      `mutation del($id: ID!) { draftOrderDelete(input: { id: $id }) { deletedId userErrors { message } } }`,
+      { id }
     );
-    const errs = data.webhookSubscriptionCreate.userErrors;
+    const errs = data.draftOrderDelete.userErrors;
     if (errs?.length) throw new Error(errs.map((e) => e.message).join('; '));
-    return 'created';
+    return !!data.draftOrderDelete.deletedId;
+  }
+
+  async getOrder(id: string): Promise<IShopifyOrder | null> {
+    const data = await this.gql<{ order: IShopifyOrder }>(`query get($id: ID!) { order(id: $id) { ${ORDER_FIELDS} } }`, { id });
+    return data.order;
   }
 
   async getDraftOrder(id: string): Promise<IShopifyDraftOrder | null> {

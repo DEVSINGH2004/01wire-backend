@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 
 import { AxiosInstance, AxiosResponse } from 'axios';
+import { createHmac, timingSafeEqual } from 'crypto';
 import {
   ICheckoutCreateRequest,
   ICheckoutCreateResponse,
@@ -17,6 +18,10 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { ConfigVariablesType } from 'src/config';
 import { COPPERX_HTTP_CLIENT } from './constants';
+
+// CopperX amounts: whole integer with 8 decimals (1 USDT = "100000000")
+export const toCopperxUnits = (amount: number) =>
+  (BigInt(Math.round(amount * 100)) * BigInt(1000000)).toString();
 
 @Injectable()
 export class CopperxService {
@@ -60,8 +65,9 @@ export class CopperxService {
             priceData: {
               // NOTE: this is hardcoded for now
               currency,
-              // TODO: Fix this unit amount
-              unitAmount: amount.toString(),
+              // Already in CopperX units (8 decimals: 1 USDT = 100000000) - scaled in
+              // TransactionService.create
+              unitAmount: String(Math.round(amount)),
 
               // TODO: Fill this product data
               productData: {
@@ -93,26 +99,56 @@ export class CopperxService {
     return data;
   }
 
-  async parseWebhookData(data: IWebhookPayload, webhookToken: string) {
+  // The session as CopperX has it now (status, paymentStatus, amountTotal, currency...)
+  async getCheckoutSession(id: string): Promise<{
+    id: string;
+    status: string;
+    paymentStatus: string;
+    amountTotal: string;
+    currency: string;
+    clientReferenceId: string | null;
+  }> {
+    const { data } = await this.client.get(`/checkout/sessions/${encodeURIComponent(id)}`);
+    return data;
+  }
+
+  // Checks the webhook token (and the body signature when CopperX sends one);
+  // returns which session the event is about. The payment itself is confirmed by the caller.
+  async parseWebhookData(
+    data: IWebhookPayload,
+    webhookToken: string,
+    signature?: string,
+    rawBody?: Buffer
+  ) {
     const webhookSecretKey = this.configService.get(
       'copperx.webhookSecretKey',
       {
         infer: true
       }
     );
+    const same = (a: string, b: string) => {
+      const x = Buffer.from(a || '');
+      const y = Buffer.from(b || '');
+      return x.length > 0 && x.length === y.length && timingSafeEqual(x, y);
+    };
 
-    if (webhookSecretKey !== webhookToken) {
-      this._logger.error('Invalid webhook token', {
-        incomingToken: webhookToken,
-        data
-      });
+    if (!same(webhookSecretKey, webhookToken)) {
+      this._logger.error('Invalid CopperX webhook token');
       throw new ForbiddenException();
     }
+    if (signature && rawBody) {
+      const expected = createHmac('sha256', webhookSecretKey).update(rawBody).digest('hex');
+      if (!same(expected, signature.replace(/^sha256=/, ''))) {
+        this._logger.error('Invalid CopperX webhook signature');
+        throw new ForbiddenException();
+      }
+    }
 
-    if (data.type === 'checkout_session.completed') {
+    if (data?.type === 'checkout_session.completed') {
       return {
         status: 'CAPTURED' as const,
-        transactionId: data.data.object.clientReferenceId
+        sessionId: data.data?.object?.id,
+        transactionId: data.data?.object?.clientReferenceId
       };
     }
     this._logger.error('Invalid webhook data', data);
