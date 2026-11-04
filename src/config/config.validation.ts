@@ -33,5 +33,11 @@ export const ConfigValidationSchema = z.object({
   RAZORPAY_KEY_SECRET: z.string().nullish(),
   RAZORPAY_WEBHOOK_SECRET: z.string().nullish(),
   // Only for local tests against a fake Razorpay; live uses the real API
-  RAZORPAY_API_URL: z.string().url().nullish()
+  RAZORPAY_API_URL: z.string().url().nullish(),
+
+  // Shopify checkout (optional: the Shopify option stays hidden until these are set)
+  SHOPIFY_STORE_DOMAIN: z.string().nullish(),
+  SHOPIFY_CLIENT_ID: z.string().nullish(),
+  SHOPIFY_CLIENT_SECRET: z.string().nullish(),
+  SHOPIFY_API_VERSION: z.string().nullish()
 });

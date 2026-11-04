@@ -114,6 +114,17 @@ const config = (config: Record<string, unknown>) => {
       keyId: ENVS.RAZORPAY_KEY_ID?.trim() || null,
       keySecret: ENVS.RAZORPAY_KEY_SECRET?.trim() || null,
       webhookSecret: ENVS.RAZORPAY_WEBHOOK_SECRET?.trim() || null
+    },
+
+    shopify: {
+      // e.g. general-test-lfj6mfwb.myshopify.com (https:// and slashes are ignored)
+      storeDomain:
+        ENVS.SHOPIFY_STORE_DOMAIN?.trim()
+          .replace(/^https?:\/\//, '')
+          .replace(/\/+$/, '') || null,
+      clientId: ENVS.SHOPIFY_CLIENT_ID?.trim() || null,
+      clientSecret: ENVS.SHOPIFY_CLIENT_SECRET?.trim() || null,
+      apiVersion: ENVS.SHOPIFY_API_VERSION?.trim() || '2026-10'
     }
   } as const;
 };

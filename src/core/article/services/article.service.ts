@@ -522,6 +522,40 @@ export class ArticleService {
     return res;
   }
 
+  // Every publication / package in the PR must still exist (not deleted). Checked before
+  // any payment is taken or credits are debited, with a message naming what to replace.
+  async assertMediaAvailable(articleObj: Pick<Article, 'publicationIds' | 'bundleIds'>) {
+    const pubIds = articleObj?.publicationIds || [];
+    const bundleIds = articleObj?.bundleIds || [];
+    const [pubs, bundles] = await Promise.all([
+      this.publicationService.loadMany(pubIds),
+      this.bundleService.loadMany(bundleIds)
+    ]);
+    const gone = (list: any[], ids: string[]) =>
+      ids.filter((_, i) => !list[i] || list[i] instanceof Error);
+    const missingPubs = gone(pubs, pubIds);
+    const missingBundles = gone(bundles, bundleIds);
+    if (!missingPubs.length && !missingBundles.length) return;
+    // Names of the removed items (loaded including deleted ones)
+    const [deadPubs, deadBundles] = await Promise.all([
+      this.publicationService.loadMany(missingPubs, { deletedAt: true }),
+      this.bundleService.loadMany(missingBundles, { deletedAt: true })
+    ]);
+    const names = [
+      ...deadPubs.map((p: any) => p?.title || p?.domain),
+      ...deadBundles.map((b: any) => b?.name)
+    ].filter(Boolean);
+    const count = missingPubs.length + missingBundles.length;
+    const what = names.length
+      ? names.map((n) => `"${n}"`).join(', ')
+      : `${count} of the selected media`;
+    throw new BadRequestException(
+      `${what} ${count === 1 ? 'is' : 'are'} no longer available. Remove ${
+        count === 1 ? 'it' : 'them'
+      } from this PR and choose ${count === 1 ? 'another' : 'others'} in the Marketplace.`
+    );
+  }
+
   // DRAFT -> SUBMITTED: validate, claim, debit, create orders. Any failure
   // after a write is rolled back, so no order can exist without a debit.
   private async _submitDraft(articleObj: Article) {
@@ -534,6 +568,7 @@ export class ArticleService {
       new BadRequestException('Select at least one publication or bundle')
     );
     assert(totalCredits > 0, new BadRequestException('Invalid PR amount'));
+    await this.assertMediaAvailable(articleObj);
 
     // Atomic claim: only one concurrent submit can move the PR out of DRAFT
     const claimed = await this.model.findOneAndUpdate(

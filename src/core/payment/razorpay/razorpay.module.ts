@@ -8,8 +8,14 @@ import { RazorpayClient } from './razorpay.client';
 import { RazorpayService } from './razorpay.service';
 import { RazorpayResolver } from './graphql/razorpay.resolver';
 import { RazorpayController } from './razorpay.controller';
+import { PaymentFulfilService } from './payment.fulfil.service';
+import { ShopifyClient } from '../shopify/shopify.client';
+import { ShopifyService } from '../shopify/shopify.service';
+import { ShopifyResolver } from '../shopify/shopify.resolver';
 
-// Pay for a PR with Razorpay: order -> checkout -> verify/webhook -> credits -> submit
+// Pay for a PR through a gateway (one shared credits + submit step):
+// - Razorpay: order -> checkout popup -> verify/webhook -> credits -> submit
+// - Shopify: draft order -> Shopify checkout -> status check -> credits -> submit
 @Module({
   imports: [
     MongooseModule.forFeature([
@@ -19,7 +25,15 @@ import { RazorpayController } from './razorpay.controller';
     WalletModule,
     PublicationModule
   ],
-  providers: [RazorpayClient, RazorpayService, RazorpayResolver],
+  providers: [
+    PaymentFulfilService,
+    RazorpayClient,
+    RazorpayService,
+    RazorpayResolver,
+    ShopifyClient,
+    ShopifyService,
+    ShopifyResolver
+  ],
   controllers: [RazorpayController]
 })
 export class RazorpayModule {}

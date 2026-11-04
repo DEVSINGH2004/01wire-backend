@@ -5,6 +5,9 @@ export class PaymentMethodsType {
   @Field(() => Boolean)
   razorpay: boolean;
 
+  @Field(() => Boolean, { description: 'Shopify checkout is set up' })
+  shopify: boolean;
+
   @Field(() => Float, { description: 'INR charged per credit' })
   inrPerCredit: number;
 }
