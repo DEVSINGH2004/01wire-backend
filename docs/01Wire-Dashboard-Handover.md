@@ -1,8 +1,31 @@
 # 01 Wire Dashboard: Handover (flow, payments, going live)
 
-_Prepared 03 Nov 2026 for a senior developer and their AI assistant. It covers the whole dashboard flow, where each payment option stands, what is needed to take payments live, and how to get each key, click by click._
+_Prepared for **Rahul sir** (and his AI assistant) by Dev, 04 Nov 2026. It covers the whole dashboard flow, where each payment option stands, what is needed to take payments live, and how to get each key, click by click._
 
 > **Note for an AI assistant reading this:** treat this file as the map and the code as the truth. The repos are listed in §1. Never ask for keys or passwords in chat. Keys go only into the hosting settings (Render) or a local `.env` that is never committed.
+
+---
+
+## ⭐ First request: Razorpay **test** keys before live keys
+
+Rahul sir, please send me the Razorpay **Test Mode** keys **first**, before any live keys. Test mode uses fake money: no real card is charged and no real money moves. With these keys I can switch the payment gateway on in our 01 Wire dashboard and test the whole payment flow end to end. Only after that works should we use the live keys.
+
+**What I need (all 3 come from the company Razorpay account, in Test Mode):**
+
+| # | Item | Looks like | Where to get it |
+|---|---|---|---|
+| 1 | Test **Key ID** | `rzp_test_xxxxxxxxxxxxxx` | §4.1 steps 1–5 |
+| 2 | Test **Key Secret** | a long random string, shown only once | §4.1 steps 1–5 |
+| 3 | Test **Webhook secret** | any long random text you choose | §4.1 step 6 (webhook URL and events are listed there) |
+
+- Test keys can be generated **before** the business KYC / activation is finished.
+- **How to send them:** a private message or password-manager share to Dev only. Please don't use email groups, screenshots in shared chats, or any document or repo. If you prefer, you can also add them on Render yourself (§4.2) and just tell me when it's done.
+
+**What I'll do with them:**
+1. Add them to a local `.env` and to Render (§4.2). The Razorpay option then appears on the PR payment page; it stays hidden until the keys are set.
+2. Pay for a test PR with Razorpay's test card or UPI (`success@razorpay`). Then check that the PR goes to review, the credits are added and used only once, the webhook arrives, and the payment shows in Razorpay → Transactions.
+3. Also test the failed and cancelled cases (`failure@razorpay`) and check that no credits are added.
+4. Send you the results. **Only then** do we move to live keys (§4.3), which need the company's KYC (business PAN, bank account).
 
 ---
 
@@ -12,7 +35,7 @@ _Prepared 03 Nov 2026 for a senior developer and their AI assistant. It covers t
 |---|---|
 | Dashboard (users and admins) | **Live** and in daily use |
 | Paying for a PR with **01Wire Credits** (wallet) | **Live**. This is the only payment method working end to end today |
-| **Razorpay** (pay the full PR amount in ₹) | **Built and tested against a fake Razorpay, but hidden.** It switches on as soon as 3 keys are added on Render. Needs the company's Razorpay account (business PAN / KYC) |
+| **Razorpay** (pay the full PR amount in ₹) | **Built and tested against a fake Razorpay, but hidden.** It switches on as soon as 3 keys are added on Render. **Next step: test-mode keys from Rahul sir (see the first request above)**, then live keys after the company's KYC (business PAN) |
 | **CopperX** (buy credit packs on *My Credits*) | **Older code, not verified by us.** Its return links point to `app.01wire.com`, which is not the current site |
 | **Shopify** checkout | **Not built.** A plan is ready (§5.4). Needs a Shopify app's Client ID and Secret |
 
@@ -200,7 +223,7 @@ See §4.
 
 ## 6. Open items
 
-1. **Razorpay:** get keys from the company account, do a test-mode payment, then go live (§4).
+1. **Razorpay:** Rahul sir sends the **test-mode** keys first (see the first request at the top). Dev tests the full flow on the dashboard, then we switch to live keys after KYC (§4).
 2. **CopperX:** confirm the keys, fix the return links, test in the sandbox (§5.3).
 3. **Shopify:** decide the currency (INR, or USD with credits × $1) and build it (§5.4).
 4. Pricing settings "Last updated" changes on every read (backend `getSettings` uses an update-on-read). This is a small fix.
