@@ -16,6 +16,7 @@ import { PublicationService } from 'src/core/publication/services/publication.se
 import { RazorpayClient } from './razorpay.client';
 import { PaymentOrder, PaymentOrderStatusEnum } from './payment.order.schema';
 import { PaymentFulfilService, PaymentResult, inr } from './payment.fulfil.service';
+import { PaymentAccessService } from '../access/payment.access.service';
 
 export { PaymentResult };
 
@@ -28,11 +29,22 @@ export class RazorpayService {
     private client: RazorpayClient,
     private articleService: ArticleService,
     private publicationService: PublicationService,
-    private fulfil: PaymentFulfilService
+    private fulfil: PaymentFulfilService,
+    private access: PaymentAccessService
   ) {}
 
   get enabled() {
     return this.client.enabled;
+  }
+
+  // Test keys (rzp_test_...): only test accounts may use them
+  get testMode() {
+    return String(this.client.keyId || '').startsWith('rzp_test_');
+  }
+
+  // Shown on the payment page only for accounts allowed to pay (PAYMENT_ALLOWED_USERS)
+  async availableFor(userId: string) {
+    return this.enabled && (await this.access.canPay(userId, this.testMode));
   }
 
   async inrPerCredit() {
@@ -45,6 +57,7 @@ export class RazorpayService {
       this.enabled,
       new BadRequestException('Razorpay is not available right now')
     );
+    await this.access.assertCanPay(me.userId, this.testMode);
     const article = await this.articleService.getById(articleId, me);
     assert(
       article && article.userId === me.userId,
@@ -241,7 +254,7 @@ export class RazorpayService {
     // Money confirmed by Razorpay: add the credits once and submit the PR
     return this.fulfil.claimAndFulfil(payment, paymentId, 'Razorpay', {
       gatewayRef: paymentId,
-      test: String(this.client.keyId || '').startsWith('rzp_test_')
+      test: this.testMode
     });
   }
 }

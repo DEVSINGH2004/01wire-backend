@@ -18,6 +18,7 @@ import { PublicationService } from 'src/core/publication/services/publication.se
 import { PaymentOrder, PaymentOrderStatusEnum } from '../razorpay/payment.order.schema';
 import { PaymentFulfilService, PaymentResult } from '../razorpay/payment.fulfil.service';
 import { ShopifyClient } from './shopify.client';
+import { PaymentAccessService } from '../access/payment.access.service';
 
 const PROVIDER = 'SHOPIFY';
 const DRAFT_ID = /^gid:\/\/shopify\/DraftOrder\//;
@@ -36,11 +37,22 @@ export class ShopifyService implements OnApplicationBootstrap {
     private client: ShopifyClient,
     private articleService: ArticleService,
     private publicationService: PublicationService,
-    private fulfil: PaymentFulfilService
+    private fulfil: PaymentFulfilService,
+    private access: PaymentAccessService
   ) {}
 
   get enabled() {
     return this.client.enabled;
+  }
+
+  // Development store = test payments only: only test accounts may use it
+  testMode(): Promise<boolean> {
+    return this.client.isTestStore();
+  }
+
+  // Shown on the payment page only for accounts allowed to pay (PAYMENT_ALLOWED_USERS)
+  async availableFor(userId: string) {
+    return this.enabled && (await this.access.canPay(userId, await this.testMode()));
   }
 
   // On start (when SHOPIFY_WEBHOOK_URL is set): make sure Shopify sends paid / refund /
@@ -59,6 +71,7 @@ export class ShopifyService implements OnApplicationBootstrap {
   // Returns the Shopify checkout link for this PR (reuses an open one when nothing changed)
   async createCheckout(articleId: string, me: IMe) {
     assert(this.enabled, new BadRequestException('Shopify is not available right now'));
+    await this.access.assertCanPay(me.userId, await this.testMode());
     const article = await this.articleService.getById(articleId, me);
     assert(article && article.userId === me.userId, new NotFoundException('PR not found'));
     assert(
@@ -248,7 +261,8 @@ export class ShopifyService implements OnApplicationBootstrap {
       }
     }
     // Paid on Shopify but not visible as paid yet: ask Shopify to send it again later
-    if (ref && candidates.some((p) => p.status !== PaymentOrderStatusEnum.PAID))
+    const fresh = ref ? await this.model.findOne({ _id: ref }) : null;
+    if (fresh?.status === PaymentOrderStatusEnum.PENDING)
       throw new ServiceUnavailableException('Payment not confirmed yet');
     return { ok: true };
   }
@@ -310,7 +324,10 @@ export class ShopifyService implements OnApplicationBootstrap {
       throw new BadRequestException('Payment does not match this order');
     }
     // Money confirmed by Shopify: add the credits once and submit the PR
-    return this.fulfil.claimAndFulfil(pending, order.id, 'Shopify', { gatewayRef: order.name, test: order.test });
+    return this.fulfil.claimAndFulfil(pending, order.id, 'Shopify', {
+      gatewayRef: order.name,
+      test: !!order.test || (await this.testMode())
+    });
   }
 
   private view(p: PaymentOrder, checkoutUrl: string) {

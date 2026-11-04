@@ -10,6 +10,7 @@ import { UserTypeEnum } from 'src/core/user/enum/user.type.enum';
 import { EventDomainEnum } from 'src/core/events/enum/event.domain.enum';
 import { EventActionEnum } from 'src/core/events/enum/event.action.enum';
 import { PaymentOrder, PaymentOrderStatusEnum } from './payment.order.schema';
+import { PaymentAccessService, PAYMENTS_NOT_OPEN } from '../access/payment.access.service';
 
 export type PaymentResult = {
   status: 'PAID' | 'PENDING';
@@ -32,7 +33,8 @@ export class PaymentFulfilService {
     @InjectModel(PaymentOrder.name) private model: Model<PaymentOrder>,
     private articleService: ArticleService,
     private walletService: WalletService,
-    private eventEmitter: EventEmitter2
+    private eventEmitter: EventEmitter2,
+    private access: PaymentAccessService
   ) {}
 
   // Result for a payment already marked PAID (no gateway call needed). While another
@@ -71,6 +73,19 @@ export class PaymentFulfilService {
     gateway: string,
     extra: { gatewayRef?: string; test?: boolean } = {}
   ): Promise<PaymentResult> {
+    // A test-mode payment (test keys, test store, test order) only counts for the test
+    // accounts in PAYMENT_ALLOWED_USERS - anyone else would get a PR without paying.
+    if (extra.test && !(await this.access.canPay(payment.userId, true))) {
+      await this.model.updateOne(
+        { _id: payment._id, status: PaymentOrderStatusEnum.PENDING },
+        { $set: { status: PaymentOrderStatusEnum.CANCELLED } }
+      );
+      await this.flag(
+        payment,
+        `${gateway} TEST payment ${extra.gatewayRef || gatewayPaymentId} by an account that may not use test payments - no credits added, PR not submitted.`
+      );
+      return { status: 'PENDING', submitted: false, message: PAYMENTS_NOT_OPEN };
+    }
     // Atomic claim: only one caller adds the credits
     const claimed = await this.model.findOneAndUpdate(
       { _id: payment._id, status: { $in: [PaymentOrderStatusEnum.PENDING, PaymentOrderStatusEnum.CANCELLED] } },

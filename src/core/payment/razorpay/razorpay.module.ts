@@ -10,6 +10,7 @@ import { RazorpayResolver } from './graphql/razorpay.resolver';
 import { RazorpayController } from './razorpay.controller';
 import { PaymentFulfilService } from './payment.fulfil.service';
 import { PaymentAdminResolver } from './graphql/payment.admin.resolver';
+import { PaymentAccessModule } from '../access/payment.access.module';
 import { ShopifyClient } from '../shopify/shopify.client';
 import { ShopifyService } from '../shopify/shopify.service';
 import { ShopifyResolver } from '../shopify/shopify.resolver';
@@ -25,7 +26,8 @@ import { ShopifyController } from '../shopify/shopify.controller';
     ]),
     ArticleModule,
     WalletModule,
-    PublicationModule
+    PublicationModule,
+    PaymentAccessModule
   ],
   providers: [
     PaymentFulfilService,

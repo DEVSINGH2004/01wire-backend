@@ -21,6 +21,7 @@ import { EventDomainEnum } from 'src/core/events/enum/event.domain.enum';
 import { EventActionEnum } from 'src/core/events/enum/event.action.enum';
 import * as assert from 'assert';
 import { toCopperxUnits } from 'src/core/payment/providers/copperx/copperx.service';
+import { PaymentAccessService } from 'src/core/payment/access/payment.access.service';
 
 @Injectable()
 export class TransactionService {
@@ -41,8 +42,14 @@ export class TransactionService {
     private userService: UserService,
     private walletService: WalletService,
     private paymentService: PaymentService,
-    private eventEmitter: EventEmitter2
+    private eventEmitter: EventEmitter2,
+    private access: PaymentAccessService
   ) {}
+
+  // CopperX test environment unless the live API (api.copperx.io) is used
+  private get copperxTest() {
+    return !String(this.configService.get('copperx', { infer: true })?.baseUrl || '').includes('api.copperx.io');
+  }
 
   // A credit-pack purchase was paid (confirmed with the gateway by the caller).
   // The paid amount must match the pack; PENDING -> SUCCESS is one atomic step, so two
@@ -56,6 +63,14 @@ export class TransactionService {
       assert(!!transactionObj, new BadRequestException('Transaction not found'));
       const credits = this.txnKindCreditMap[transactionObj.kind];
       assert(credits > 0, new BadRequestException('Not a credit pack purchase'));
+      // A test-mode CopperX payment only counts for listed test accounts
+      if (this.copperxTest && !(await this.access.canPay(transactionObj.userId, true))) {
+        this.eventEmitter.emit(EventDomainEnum.SLACK, {
+          action: EventActionEnum.SEND,
+          data: `⚠️ CopperX TEST payment for credit pack ${transactionId} by an account that may not use test payments. No credits added.`
+        });
+        throw new BadRequestException('Test payments are not allowed for this account');
+      }
       if (paid) {
         const expected = toCopperxUnits(transactionObj.amount);
         const okAmount = String(paid.amountTotal) === expected;
@@ -136,6 +151,9 @@ export class TransactionService {
 
   async create(dto: TransactionCreateDto, userId: string) {
     dto = validate(dto, TransactionCreateDto);
+    // Buying credits with money: only accounts in PAYMENT_ALLOWED_USERS (for now)
+    if (!('status' in dto))
+      await this.access.assertCanPay(userId, this.copperxTest);
     const amount =
       'amount' in dto ? dto.amount : this.txnKindCreditMap[dto.kind];
     const status = 'status' in dto ? dto.status : TransactionStatusEnum.PENDING;

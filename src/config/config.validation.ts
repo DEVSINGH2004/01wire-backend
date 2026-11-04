@@ -30,6 +30,9 @@ export const ConfigValidationSchema = z.object({
   // Optional: force the CopperX API (e.g. https://api.copperx.dev/api/v1 for test keys
   // on a production server). Default: .dev outside production, .io in production.
   COPPERX_API_URL: z.string().url().nullish(),
+  // Who may pay with Razorpay / Shopify / CopperX: comma-separated emails, or "*" for
+  // everyone. Not set = nobody. Test keys / test stores only ever for listed emails.
+  PAYMENT_ALLOWED_USERS: z.string().nullish(),
   // Optional: where CopperX sends the buyer back (defaults to the old app.01wire.com)
   FRONTEND_URL: z.string().url().nullish(),
 

@@ -5,8 +5,17 @@ export class PaymentMethodsType {
   @Field(() => Boolean)
   razorpay: boolean;
 
-  @Field(() => Boolean, { description: 'Shopify checkout is set up' })
+  @Field(() => Boolean, { description: 'Shopify checkout is set up and allowed for you' })
   shopify: boolean;
+
+  @Field(() => Boolean, { description: 'Razorpay runs on test keys (no real money)' })
+  razorpayTest: boolean;
+
+  @Field(() => Boolean, { description: 'Shopify store is a test store (no real money)' })
+  shopifyTest: boolean;
+
+  @Field(() => Boolean, { description: 'Buying credit packs (CopperX) is allowed for you' })
+  creditPacks: boolean;
 
   @Field(() => Float, { description: 'INR charged per credit' })
   inrPerCredit: number;

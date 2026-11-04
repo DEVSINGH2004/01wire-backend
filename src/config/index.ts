@@ -98,6 +98,8 @@ const config = (config: Record<string, unknown>) => {
       'getArticleById'
     ] as string[],
 
+    paymentAllowedUsers: ENVS.PAYMENT_ALLOWED_USERS?.trim() || '',
+
     copperx: {
       baseUrl:
         ENVS.COPPERX_API_URL?.trim() ||

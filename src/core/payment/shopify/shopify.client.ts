@@ -57,6 +57,23 @@ export class ShopifyClient {
     return !!(this.cfg?.storeDomain && this.cfg?.clientId && this.cfg?.clientSecret);
   }
 
+  // Development store (only test payments possible): asked once, then cached
+  private testStore: Promise<boolean> | null = null;
+  isTestStore(): Promise<boolean> {
+    if (!this.enabled) return Promise.resolve(false);
+    if (!this.testStore)
+      this.testStore = this.gql<{ shop: { plan: { partnerDevelopment: boolean } } }>(
+        `{ shop { plan { partnerDevelopment } } }`
+      )
+        .then((d) => !!d.shop?.plan?.partnerDevelopment)
+        .catch((e) => {
+          this.testStore = null; // ask again next time
+          this._logger.warn(`Shopify store check failed: ${e.message}`);
+          return true; // unknown = treat as test (safe)
+        });
+    return this.testStore;
+  }
+
   get webhookUrl(): string | null {
     return this.cfg?.webhookUrl || null;
   }

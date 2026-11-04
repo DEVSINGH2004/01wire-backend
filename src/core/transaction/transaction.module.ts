@@ -1,3 +1,4 @@
+import { PaymentAccessModule } from 'src/core/payment/access/payment.access.module';
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { TransactionResolver } from './graphql/transaction.resolver';
@@ -16,7 +17,8 @@ import { UserModule } from '../user/user.module';
     CouponModule,
     WalletModule,
     PaymentModule,
-    UserModule
+    UserModule,
+    PaymentAccessModule
   ],
   providers: [TransactionService, TransactionResolver],
   exports: [TransactionService]
