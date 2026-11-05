@@ -58,6 +58,10 @@ export class BundleCreateInput {
   @Field(() => String, { nullable: true })
   disclaimer?: string;
 
+  // Up to 3 sample report links (https://…)
+  @Field(() => [String], { nullable: true })
+  sampleUrls?: string[];
+
   @Field(() => String, { nullable: true })
   language?: string;
 

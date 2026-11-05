@@ -34,6 +34,10 @@ export const bundleBaseDto = z.object({
   contentRule: text,
   backlinks: text,
   disclaimer: text,
+  sampleUrls: z
+    .array(z.string().trim().max(1000).regex(/^https?:\/\/\S+\.\S+$/i, 'Sample link must start with http:// or https://'))
+    .max(3, 'Add at most 3 sample links')
+    .nullish(),
   language: text,
   tat: text,
   featured: z.boolean().nullish(),

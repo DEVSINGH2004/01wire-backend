@@ -57,6 +57,9 @@ export class BundleType {
   @Field(() => String, { nullable: true })
   disclaimer: string;
 
+  @Field(() => [String], { nullable: true })
+  sampleUrls: string[];
+
   @Field(() => String, { nullable: true })
   language: string;
 

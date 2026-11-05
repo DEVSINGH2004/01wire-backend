@@ -134,7 +134,7 @@ export class BundleService {
     assert(!!oldObj, new NotFoundException('Bundle not found'));
     // Marking a live package as Popular (or not) doesn't need it hidden first
     const onlyFeatured = Object.keys(needToUpdate).every((k) =>
-      ['featured', 'featuredRank'].includes(k)
+      ['featured', 'featuredRank', 'sampleUrls'].includes(k)
     );
     assert(
       onlyFeatured || oldObj.visibility === VisibilityEnum.SUPPRESSED,

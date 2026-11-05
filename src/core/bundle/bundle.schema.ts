@@ -65,6 +65,10 @@ class Bundle extends Document {
   @Prop({ type: String, default: null })
   disclaimer: string;
 
+  // Up to 3 sample report links (PDF, Drive, live article) shown to clients
+  @Prop({ type: [String], default: [] })
+  sampleUrls: string[];
+
   @Prop({ type: String, default: null })
   language: string;
 
