@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Otp, OtpTypeWithoutDocument } from '../otp.schema';
 import { Model } from 'mongoose';
@@ -17,6 +17,7 @@ import { AuthStatusEnum } from 'src/core/auth/enum/auth.status.enum';
 
 @Injectable()
 export class OtpService {
+  private readonly _logger = new Logger(OtpService.name);
   private _expireInMs: number;
   private _maxAttempts: number;
 
@@ -57,11 +58,7 @@ export class OtpService {
 
     if (otpObj) {
       // Same code, sent again: the first email may have been lost or not arrived yet
-      await this.emailService.sendVerificationOtp({
-        receiver,
-        otp: otpObj.otp,
-        validity: otpObj.expireAt
-      });
+      await this.sendCodeEmail(receiver, otpObj.otp, otpObj.expireAt);
       return otpObj;
     }
     const otp = GenerateOtp(4, {
@@ -78,13 +75,20 @@ export class OtpService {
       expireAt: new Date(now.getTime() + (expireInMs || this._expireInMs))
     });
 
-    await this.emailService.sendVerificationOtp({
-      receiver,
-      otp,
-      validity: otpObj.expireAt
-    });
+    await this.sendCodeEmail(receiver, otp, otpObj.expireAt);
 
     return otpObj.toObject();
+  }
+
+  private async sendCodeEmail(receiver: string, otp: string, validity: Date) {
+    try {
+      await this.emailService.sendVerificationOtp({ receiver, otp, validity });
+    } catch (e) {
+      this._logger.error(`code email to ${receiver} failed: ${e?.message}`);
+      throw new ServiceUnavailableException(
+        "We couldn't send the code email. Please try again in a few minutes."
+      );
+    }
   }
 
   async verifyOtp(dto: OtpVerifyDto): Promise<{

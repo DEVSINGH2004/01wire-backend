@@ -28,6 +28,13 @@ export const ConfigValidationSchema = z.object({
   SMTP_USER: z.string().nullish(),
   SMTP_PASS: z.string().nullish(),
   SMTP_FROM: z.string().nullish(),
+  // Optional Brevo email API (HTTPS, works on Render's free plan where SMTP ports are
+  // blocked). Takes priority over SMTP and SES when set.
+  BREVO_API_KEY: z.string().nullish(),
+  // Only for local tests against a fake Brevo; live uses the real API
+  BREVO_API_URL: z.string().url().nullish(),
+  // Sender for every email (must be a verified sender in Brevo). Default: SMTP_FROM / SMTP_USER
+  EMAIL_FROM: z.string().nullish(),
 
   //Slack
   SLACK_WEBHOOK_URL: z.string().url(),

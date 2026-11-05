@@ -54,7 +54,12 @@ const config = (config: Record<string, unknown>) => {
       // Gmail shows app passwords in groups of 4 ("abcd efgh ..."): spaces are not part of it
       pass: (ENVS.SMTP_PASS || '').replace(/\s+/g, ''),
       // Gmail only sends as the logged-in address, so that is the default sender
-      from: ENVS.SMTP_FROM?.trim() || ENVS.SMTP_USER?.trim() || ENVS.AWS_SES_SENDER_EMAIL
+      from: ENVS.EMAIL_FROM?.trim() || ENVS.SMTP_FROM?.trim() || ENVS.SMTP_USER?.trim() || ENVS.AWS_SES_SENDER_EMAIL
+    },
+    brevo: {
+      apiKey: ENVS.BREVO_API_KEY?.trim() || '',
+      apiUrl: (ENVS.BREVO_API_URL?.trim() || 'https://api.brevo.com/v3').replace(/\/+$/, ''),
+      from: ENVS.EMAIL_FROM?.trim() || ENVS.SMTP_FROM?.trim() || ENVS.SMTP_USER?.trim() || ENVS.AWS_SES_SENDER_EMAIL
     },
     cache: {
       user: {
