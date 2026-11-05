@@ -1,4 +1,4 @@
-import { Field, ID, InputType, Int, ObjectType } from '@nestjs/graphql';
+import { Field, Float, ID, InputType, Int, ObjectType } from '@nestjs/graphql';
 import { PaginationType } from 'src/common/graphql/type/pagination.type';
 
 // One site or package inside a PR (one order once the PR is paid)
@@ -145,6 +145,32 @@ export class AdminPrPageType {
 
   @Field(() => AdminPrCountsType)
   counts: AdminPrCountsType;
+}
+
+// Admin "Overview" page: work waiting + the last 7 days
+@ObjectType()
+export class AdminWeekType {
+  @Field(() => Int) newPaidPrs: number;
+  @Field(() => Int) sitesPublished: number;
+  @Field(() => Int) newCustomers: number;
+  @Field(() => Int) creditsSpent: number; // credits customers paid for PRs
+  @Field(() => Int) creditsRefunded: number; // credits given back (rejected sites / PRs)
+  @Field(() => Int) gatewayPayments: number; // number of real Razorpay + Shopify payments
+  @Field(() => Int) gatewayPaymentsTest: number; // number of test-mode payments
+  @Field(() => Float) gatewayInr: number; // paise, real money
+  @Field(() => Float) gatewayInrTest: number; // paise, test mode (no real money)
+  @Field(() => Float) razorpayInr: number; // paise, real money only
+  @Field(() => Float) shopifyInr: number; // paise, real money only
+}
+
+@ObjectType()
+export class AdminOverviewType {
+  @Field(() => AdminPrCountsType) counts: AdminPrCountsType;
+  @Field(() => Int) pendingSites: number; // sites still to publish in accepted PRs
+  @Field(() => Int) lateSites: number; // pending sites past their publish-by date
+  @Field({ nullable: true }) oldestToReviewAt: Date; // when the longest-waiting PR to review last changed
+  @Field(() => Int) paymentsToCheck: number;
+  @Field(() => AdminWeekType) week: AdminWeekType;
 }
 
 @InputType()

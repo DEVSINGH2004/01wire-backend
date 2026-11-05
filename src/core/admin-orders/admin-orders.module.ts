@@ -7,6 +7,7 @@ import { Client, ClientSchema } from '../client/client.schema';
 import { Publication, PublicationSchema } from '../publication/publication.schema';
 import { Bundle, BundleSchema } from '../bundle/bundle.schema';
 import { PaymentOrder, PaymentOrderSchema } from '../payment/razorpay/payment.order.schema';
+import { Transaction, TransactionSchema } from '../transaction/transaction.schema';
 import { AdminOrdersService } from './admin-orders.service';
 import { AdminOrdersResolver } from './admin-orders.resolver';
 
@@ -20,7 +21,8 @@ import { AdminOrdersResolver } from './admin-orders.resolver';
       { name: Client.name, schema: ClientSchema },
       { name: Publication.name, schema: PublicationSchema },
       { name: Bundle.name, schema: BundleSchema },
-      { name: PaymentOrder.name, schema: PaymentOrderSchema }
+      { name: PaymentOrder.name, schema: PaymentOrderSchema },
+      { name: Transaction.name, schema: TransactionSchema }
     ])
   ],
   providers: [AdminOrdersService, AdminOrdersResolver]

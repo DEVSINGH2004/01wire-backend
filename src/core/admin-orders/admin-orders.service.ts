@@ -11,7 +11,9 @@ import { Publication } from '../publication/publication.schema';
 import { Bundle } from '../bundle/bundle.schema';
 import { PaymentOrder, PaymentOrderStatusEnum } from '../payment/razorpay/payment.order.schema';
 import { paginateResponse } from 'src/common/utils';
-import { AdminPrCountsType, AdminPrFilterInput, AdminPrItemType, AdminPrPageType, AdminPrRowType } from './admin-orders.types';
+import { Transaction } from '../transaction/transaction.schema';
+import { UserTypeEnum } from '../user/enum/user.type.enum';
+import { AdminOverviewType, AdminPrCountsType, AdminPrFilterInput, AdminPrItemType, AdminPrPageType, AdminPrRowType } from './admin-orders.types';
 
 const S = ArticleStatusEnum;
 // Which PR statuses each tab shows ("all" = every paid PR, not drafts)
@@ -36,8 +38,58 @@ export class AdminOrdersService {
     @InjectModel(Client.name) private clientModel: Model<Client>,
     @InjectModel(Publication.name) private publicationModel: Model<Publication>,
     @InjectModel(Bundle.name) private bundleModel: Model<Bundle>,
-    @InjectModel(PaymentOrder.name) private paymentModel: Model<PaymentOrder>
+    @InjectModel(PaymentOrder.name) private paymentModel: Model<PaymentOrder>,
+    @InjectModel(Transaction.name) private transactionModel: Model<Transaction>
   ) {}
+
+  // Admin "Overview": what is waiting, and what happened in the last 7 days (read-only)
+  async overview(): Promise<AdminOverviewType> {
+    const now = new Date();
+    const since = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const scheduled = (await this.articleModel.find({ status: S.SCHEDULED }).select('_id').lean()).map((a) => a._id);
+    const sum = async (model: Model<any>, match: Record<string, any>, field: string) =>
+      ((await model.aggregate([{ $match: { ...match, deletedAt: null } }, { $group: { _id: null, t: { $sum: `$${field}` } } }]))[0]?.t as number) || 0;
+    const paid = { status: PaymentOrderStatusEnum.PAID, paidAt: { $gte: since } };
+    const real = { ...paid, test: { $ne: true } }; // money that actually came in
+    const [counts, pendingSites, lateSites, oldest, paymentsToCheck, newPrIds, sitesPublished, newCustomers, spent, refunded, gwCount, gwTestCount, gwLive, gwTest, rzp, shp] = await Promise.all([
+      this.counts({}),
+      this.orderModel.countDocuments({ status: OrderStatusEnum.PENDING, articleId: { $in: scheduled }, deletedAt: null }),
+      this.orderModel.countDocuments({ status: OrderStatusEnum.PENDING, articleId: { $in: scheduled }, publishBy: { $lt: now }, deletedAt: null }),
+      this.articleModel.findOne({ status: { $in: TABS.toReview } }).sort({ updatedAt: 1 }).select('updatedAt').lean(),
+      this.paymentModel.countDocuments({ issue: { $ne: null }, deletedAt: null }),
+      this.orderModel.distinct('articleId', { createdAt: { $gte: since }, deletedAt: null }),
+      this.orderModel.countDocuments({ status: OrderStatusEnum.PUBLISHED, updatedAt: { $gte: since }, deletedAt: null }),
+      this.userModel.countDocuments({ type: UserTypeEnum.USER, createdAt: { $gte: since }, deletedAt: null }),
+      sum(this.transactionModel, { type: 'DEBIT', notes: /^Debited for PR ID/, createdAt: { $gte: since } }, 'amount'),
+      sum(this.transactionModel, { type: 'CREDIT', notes: /^Refund for PR ID/, createdAt: { $gte: since } }, 'amount'),
+      this.paymentModel.countDocuments({ ...real, deletedAt: null }),
+      this.paymentModel.countDocuments({ ...paid, test: true, deletedAt: null }),
+      sum(this.paymentModel, real, 'amount'),
+      sum(this.paymentModel, { ...paid, test: true }, 'amount'),
+      sum(this.paymentModel, { ...real, provider: 'RAZORPAY' }, 'amount'),
+      sum(this.paymentModel, { ...real, provider: 'SHOPIFY' }, 'amount')
+    ]);
+    return {
+      counts,
+      pendingSites,
+      lateSites,
+      oldestToReviewAt: (oldest as any)?.updatedAt || null,
+      paymentsToCheck,
+      week: {
+        newPaidPrs: newPrIds.length,
+        sitesPublished,
+        newCustomers,
+        creditsSpent: spent,
+        creditsRefunded: refunded,
+        gatewayPayments: gwCount,
+        gatewayPaymentsTest: gwTestCount,
+        gatewayInr: gwLive,
+        gatewayInrTest: gwTest,
+        razorpayInr: rzp,
+        shopifyInr: shp
+      }
+    };
+  }
 
   async list(currentPage = 0, perPage = 10, filter: AdminPrFilterInput = {}): Promise<AdminPrPageType> {
     perPage = Math.min(Math.max(perPage || 10, 1), 100);

@@ -3,7 +3,7 @@ import { PaginationInput } from 'src/common/graphql/input/pagination.input';
 import { AllowedRoles } from 'src/core/auth/decorator/allowedroles.decorator';
 import { UserTypeEnum } from 'src/core/user/enum/user.type.enum';
 import { AdminOrdersService } from './admin-orders.service';
-import { AdminPrFilterInput, AdminPrPageType, AdminPrRowType } from './admin-orders.types';
+import { AdminOverviewType, AdminPrFilterInput, AdminPrPageType, AdminPrRowType } from './admin-orders.types';
 
 @Resolver()
 export class AdminOrdersResolver {
@@ -17,6 +17,13 @@ export class AdminOrdersResolver {
     @Args('filterInput', { nullable: true }) filterInput: AdminPrFilterInput
   ) {
     return this.service.list(paginationInput.currentPage, paginationInput.perPage, filterInput || {});
+  }
+
+  // The admin "Overview" page: counts of work waiting + the last 7 days (incl. money)
+  @Query(() => AdminOverviewType)
+  @AllowedRoles([UserTypeEnum.ADMIN])
+  async adminOverview() {
+    return this.service.overview();
   }
 
   // The same summary for one PR (the PR page)
