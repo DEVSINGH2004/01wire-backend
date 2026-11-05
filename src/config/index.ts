@@ -100,6 +100,15 @@ const config = (config: Record<string, unknown>) => {
 
     paymentAllowedUsers: ENVS.PAYMENT_ALLOWED_USERS?.trim() || '',
 
+    email: {
+      // Links in receipts and reminders
+      appUrl: (ENVS.FRONTEND_URL?.trim() || 'https://01wire-frontend.vercel.app').replace(/\/+$/, ''),
+      apiUrl: (ENVS.PUBLIC_API_URL?.trim() || 'https://zero1wire-backend.onrender.com').replace(/\/+$/, ''),
+      reminders: ENVS.EMAIL_REMINDERS?.trim() || '',
+      reminderDelayMinutes: ENVS.REMINDER_DELAY_MINUTES || 24 * 60,
+      reminderCheckMinutes: ENVS.REMINDER_CHECK_MINUTES || 15
+    },
+
     copperx: {
       baseUrl:
         ENVS.COPPERX_API_URL?.trim() ||

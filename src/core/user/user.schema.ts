@@ -93,6 +93,10 @@ class User extends Document {
   @Prop()
   unblockAt: Date;
 
+  // Cart / unpaid-PR reminder emails; turned off by the unsubscribe link
+  @Prop({ type: Boolean, default: true })
+  emailReminders: boolean;
+
   @Prop()
   createdAt: Date;
 

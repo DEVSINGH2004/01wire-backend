@@ -22,6 +22,7 @@ import { EventActionEnum } from 'src/core/events/enum/event.action.enum';
 import * as assert from 'assert';
 import { toCopperxUnits } from 'src/core/payment/providers/copperx/copperx.service';
 import { PaymentAccessService } from 'src/core/payment/access/payment.access.service';
+import { CREDITS_PURCHASED_EVENT } from 'src/core/notification/notification.events';
 
 @Injectable()
 export class TransactionService {
@@ -99,6 +100,8 @@ export class TransactionService {
         );
         throw e;
       }
+      // Receipt email for the credit pack
+      this.eventEmitter.emit(CREDITS_PURCHASED_EVENT, { transactionId: claimed._id, userId: claimed.userId, credits });
       const userObj = await this.userService.load(claimed.userId);
       this.eventEmitter.emit(EventDomainEnum.SLACK, {
         action: EventActionEnum.SEND,

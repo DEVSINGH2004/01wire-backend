@@ -26,6 +26,7 @@ import { RazorpayModule } from './core/payment/razorpay/razorpay.module';
 import { OrderModule } from './core/order/order.module';
 import { SequenceModule } from './core/sequence/sequence.module';
 import { EstimateModule } from './core/estimate/estimate.module';
+import { NotificationModule } from './core/notification/notification.module';
 
 @Module({
   imports: [
@@ -57,7 +58,8 @@ import { EstimateModule } from './core/estimate/estimate.module';
     RazorpayModule,
     OrderModule,
     SequenceModule,
-    EstimateModule
+    EstimateModule,
+    NotificationModule
   ],
   controllers: [AppController],
   providers: [AppService, EmailService, JwtService, SlackService]

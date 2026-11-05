@@ -35,6 +35,15 @@ export const ConfigValidationSchema = z.object({
   PAYMENT_ALLOWED_USERS: z.string().nullish(),
   // Optional: where CopperX sends the buyer back (defaults to the old app.01wire.com)
   FRONTEND_URL: z.string().url().nullish(),
+  // Cart / unpaid-PR reminder emails: comma-separated emails, or "*" for every user.
+  // Not set = no reminders. Receipts are always sent.
+  EMAIL_REMINDERS: z.string().nullish(),
+  // This backend's public address, for the unsubscribe link (default: the Render URL)
+  PUBLIC_API_URL: z.string().url().nullish(),
+  // Minutes a cart / draft PR must sit untouched before the first reminder (default 1440 = 24 h)
+  REMINDER_DELAY_MINUTES: z.coerce.number().int().positive().nullish(),
+  // How often the reminder job runs (default 15 minutes)
+  REMINDER_CHECK_MINUTES: z.coerce.number().int().positive().nullish(),
 
   // Razorpay (optional: the Razorpay option stays hidden until these are set)
   RAZORPAY_KEY_ID: z.string().nullish(),

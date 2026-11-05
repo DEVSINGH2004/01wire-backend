@@ -1,0 +1,59 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Your press release is ready</title>
+  </head>
+  <body style="margin:0;padding:0;background:#f2f5f8;font-family:Arial,Helvetica,sans-serif;color:#344767;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f2f5f8;padding:32px 12px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:8px;">
+            <tr>
+              <td style="padding:28px 32px 8px;">
+                <div style="font-size:22px;font-weight:bold;letter-spacing:1px;">01 WIRE</div>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:16px 32px 0;font-size:15px;line-height:1.5;">
+                Hi {{name}},<br />
+                Your press release <b>PR #{{prId}} · {{title}}</b> is saved but not paid yet, so it hasn't gone out. One step left:
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:16px 32px 0;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;border:1px solid #e9ecef;border-radius:6px;">
+                  {{#each items}}
+                  <tr>
+                    <td style="padding:10px 12px;{{#unless @first}}border-top:1px solid #e9ecef;{{/unless}}">{{name}} <span style="color:#7b809a;">· {{type}}</span></td>
+                    <td align="right" style="padding:10px 12px;white-space:nowrap;{{#unless @first}}border-top:1px solid #e9ecef;{{/unless}}">{{credits}} credits</td>
+                  </tr>
+                  {{/each}}
+                  {{#if more}}
+                  <tr><td colspan="2" style="padding:10px 12px;border-top:1px solid #e9ecef;color:#7b809a;">and {{more}} more</td></tr>
+                  {{/if}}
+                  <tr>
+                    <td style="padding:12px;border-top:1px solid #e9ecef;font-weight:bold;">Total</td>
+                    <td align="right" style="padding:12px;border-top:1px solid #e9ecef;font-weight:bold;color:#e5484d;white-space:nowrap;">{{totalCredits}} credits</td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:24px 32px 8px;">
+                <a href="{{link}}" style="display:inline-block;background:#e5484d;color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:6px;font-size:14px;font-weight:bold;">Pay and submit PR #{{prId}}</a>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:16px 32px 28px;font-size:12px;color:#7b809a;line-height:1.5;">
+                Prices are checked again when you pay, so the total may change if a site updates its rate.<br />
+                Don't want these reminders? <a href="{{unsubscribe}}" style="color:#7b809a;">Unsubscribe</a>.
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

@@ -1,0 +1,316 @@
+import { Injectable, Logger, OnApplicationBootstrap, OnModuleDestroy, BadRequestException } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { ConfigService } from '@nestjs/config';
+import { OnEvent } from '@nestjs/event-emitter';
+import { Model } from 'mongoose';
+import { createHmac, timingSafeEqual } from 'crypto';
+import { ConfigVariablesType } from 'src/config';
+import { EmailService } from '../services/email.service';
+import { ARTICLE_SUBMITTED_EVENT } from '../article/article.events';
+import { CREDITS_PURCHASED_EVENT } from './notification.events';
+import { Article } from '../article/article.schema';
+import { ArticleStatusEnum } from '../article/enum/article.status.enum';
+import { Publication } from '../publication/publication.schema';
+import { Bundle } from '../bundle/bundle.schema';
+import { User } from '../user/user.schema';
+import { UserTypeEnum } from '../user/enum/user.type.enum';
+import { Wallet } from '../wallet/wallet.schema';
+import { PaymentOrder, PaymentOrderStatusEnum } from '../payment/razorpay/payment.order.schema';
+import { Cart, EmailLog } from './notification.schema';
+
+const MAX_REMINDERS = 2;
+const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // never remind about anything untouched for over a week
+const MAX_ITEMS = 300;
+
+const inr = (paise: number) =>
+  '₹' + (Number(paise || 0) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const istDate = (d: Date) =>
+  new Date(d).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short' }) + ' IST';
+
+type Item = { name: string; type: string; credits: number };
+
+// Receipts after a purchase and reminders for an abandoned cart or an unpaid draft PR.
+// Every email goes to the account's own email address.
+@Injectable()
+export class NotificationService implements OnApplicationBootstrap, OnModuleDestroy {
+  private readonly _logger = new Logger(NotificationService.name);
+  private timer: NodeJS.Timeout = null;
+  private running = false;
+
+  constructor(
+    @InjectModel(Cart.name) private cartModel: Model<Cart>,
+    @InjectModel(EmailLog.name) private logModel: Model<EmailLog>,
+    @InjectModel(Article.name) private articleModel: Model<Article>,
+    @InjectModel(Publication.name) private publicationModel: Model<Publication>,
+    @InjectModel(Bundle.name) private bundleModel: Model<Bundle>,
+    @InjectModel(User.name) private userModel: Model<User>,
+    @InjectModel(Wallet.name) private walletModel: Model<Wallet>,
+    @InjectModel(PaymentOrder.name) private paymentModel: Model<PaymentOrder>,
+    private emailService: EmailService,
+    private configService: ConfigService<ConfigVariablesType>
+  ) {}
+
+  private get cfg() {
+    return this.configService.get('email', { infer: true });
+  }
+
+  // ---------- cart (saved from the Marketplace page) ----------
+
+  async saveCart(userId: string, publicationIds: string[] = [], bundleIds: string[] = []): Promise<boolean> {
+    const clean = (ids: string[]) => [...new Set((ids || []).filter((x) => typeof x === 'string' && x.length <= 64))];
+    const pubs = clean(publicationIds), bundles = clean(bundleIds);
+    if (pubs.length > MAX_ITEMS || bundles.length > MAX_ITEMS) throw new BadRequestException('Too many items in the cart');
+    const has = pubs.length + bundles.length > 0;
+    const now = await this.cartModel.findOne({ _id: userId }).lean();
+    const wasEmpty = !now || !(now.publicationIds?.length || now.bundleIds?.length);
+    await this.cartModel.updateOne(
+      { _id: userId },
+      {
+        $set: {
+          publicationIds: pubs,
+          bundleIds: bundles,
+          // a new reminder series starts each time an empty cart gets items
+          startedAt: has ? (wasEmpty ? new Date() : now?.startedAt || new Date()) : null
+        }
+      },
+      { upsert: true }
+    );
+    return true;
+  }
+
+  // ---------- receipts ----------
+
+  @OnEvent(ARTICLE_SUBMITTED_EVENT, { async: true })
+  async onArticleSubmitted(e: { articleId: string; prId: number; userId: string }) {
+    // The PR is paid: its media are no longer "left in the cart"
+    await this.cartModel
+      .updateOne({ _id: e.userId }, { $set: { publicationIds: [], bundleIds: [], startedAt: null } })
+      .catch(() => null);
+    await this.sendReceipt(e.articleId).catch((err) => this._logger.error(`receipt for PR ${e.prId}: ${err?.message}`));
+  }
+
+  async sendReceipt(articleId: string) {
+    const article = await this.articleModel.findOne({ _id: articleId }).lean();
+    if (!article) return;
+    const user = await this.userModel.findOne({ _id: article.userId }).lean();
+    if (!user?.email) return;
+    const [items, wallet, paid] = await Promise.all([
+      this.itemsOf(article.publicationIds, article.bundleIds),
+      this.walletModel.findOne({ userId: article.userId }).lean(),
+      this.paymentModel
+        .findOne({ articleId, status: PaymentOrderStatusEnum.PAID })
+        .sort({ paidAt: -1 })
+        .lean()
+    ]);
+    const method = paid
+      ? `${paid.provider === 'SHOPIFY' ? 'Shopify order' : 'Razorpay payment'} ${paid.gatewayRef || paid.gatewayPaymentId || ''}`.trim()
+      : '01Wire Credits';
+    const params = {
+      appName: '01 Wire',
+      name: user.fullName || 'there',
+      prId: article.prId,
+      title: article.title,
+      date: istDate(new Date()),
+      items,
+      totalCredits: article.totalCredits,
+      method,
+      amountPaid: paid ? inr(paid.amount) : null,
+      test: !!paid?.test,
+      balance: wallet ? String(wallet.balance) : null,
+      link: `${this.cfg.appUrl}/releases/${articleId}`
+    };
+    await this.sendOnce(`receipt:${articleId}`, 'RECEIPT', articleId, user, `01 Wire receipt - PR #${article.prId} (${article.totalCredits} credits)`, 'order.receipt', params);
+  }
+
+  @OnEvent(CREDITS_PURCHASED_EVENT, { async: true })
+  async onCreditsPurchased(e: { transactionId: string; userId: string; credits: number }) {
+    try {
+      const user = await this.userModel.findOne({ _id: e.userId }).lean();
+      const wallet = await this.walletModel.findOne({ userId: e.userId }).lean();
+      if (!user?.email) return;
+      await this.sendOnce(`credits:${e.transactionId}`, 'CREDITS_RECEIPT', e.transactionId, user, `01 Wire receipt - ${e.credits} credits added`, 'recharge.acknowledgement', {
+        credits: e.credits,
+        balance: wallet?.balance ?? ''
+      });
+    } catch (err) {
+      this._logger.error(`credits receipt ${e.transactionId}: ${err?.message}`);
+    }
+  }
+
+  // ---------- reminders ----------
+
+  onApplicationBootstrap() {
+    if (!this.cfg.reminders) {
+      this._logger.log('Reminder emails are off (EMAIL_REMINDERS not set)');
+      return;
+    }
+    const every = this.cfg.reminderCheckMinutes * 60 * 1000;
+    this._logger.log(`Reminder emails on for "${this.cfg.reminders}": after ${this.cfg.reminderDelayMinutes} min, checked every ${this.cfg.reminderCheckMinutes} min`);
+    this.timer = setInterval(() => this.runReminders(), every);
+    setTimeout(() => this.runReminders(), 30 * 1000);
+  }
+
+  onModuleDestroy() {
+    if (this.timer) clearInterval(this.timer);
+  }
+
+  private remindable(user: any): boolean {
+    if (!user?.email || user.isBlocked || user.emailReminders === false) return false;
+    const list = this.cfg.reminders;
+    if (list === '*') return user.type === UserTypeEnum.USER;
+    return list.split(',').map((x) => x.trim().toLowerCase()).filter(Boolean).includes(String(user.email).toLowerCase());
+  }
+
+  // How many reminders were sent for this thing, and whether the next one is due
+  private async nextReminder(kind: string, refId: string, now: number) {
+    const sent = await this.logModel.find({ kind, refId }).sort({ createdAt: -1 }).lean();
+    if (sent.length >= MAX_REMINDERS) return 0;
+    // the second reminder comes 3 delays after the first (3 days with the 24 h default)
+    if (sent.length && now - new Date(sent[0].createdAt).getTime() < 3 * this.cfg.reminderDelayMinutes * 60 * 1000) return 0;
+    return sent.length + 1;
+  }
+
+  // At most one reminder email per person per delay window (24 h by default)
+  private async remindedRecently(userId: string, now: number) {
+    const since = new Date(now - this.cfg.reminderDelayMinutes * 60 * 1000);
+    return !!(await this.logModel.exists({ userId, kind: { $in: ['DRAFT_REMINDER', 'CART_REMINDER'] }, createdAt: { $gt: since } }));
+  }
+
+  async runReminders() {
+    if (this.running || !this.cfg.reminders) return;
+    this.running = true;
+    try {
+      const now = Date.now();
+      const due = new Date(now - this.cfg.reminderDelayMinutes * 60 * 1000);
+      const oldest = new Date(now - MAX_AGE_MS);
+      const remindedUsers = new Set<string>();
+      const seenDraftUsers = new Set<string>();
+      const newestDraftAt = new Map<string, number>();
+
+      // 1) Draft PRs with media that were never paid - only each person's newest one
+      const drafts = await this.articleModel
+        .find({
+          status: ArticleStatusEnum.DRAFT,
+          updatedAt: { $gte: oldest },
+          $or: [{ 'publicationIds.0': { $exists: true } }, { 'bundleIds.0': { $exists: true } }]
+        })
+        .sort({ updatedAt: -1 })
+        .limit(200)
+        .lean();
+      for (const d of drafts) {
+        if (seenDraftUsers.has(d.userId)) continue;
+        seenDraftUsers.add(d.userId);
+        newestDraftAt.set(d.userId, new Date(d.updatedAt).getTime());
+        // Still being worked on: wait, and don't nag about an older draft meanwhile
+        if (new Date(d.updatedAt) > due) continue;
+        const user = await this.userModel.findOne({ _id: d.userId }).lean();
+        if (!this.remindable(user) || (await this.remindedRecently(d.userId, now))) continue;
+        const n = await this.nextReminder('DRAFT_REMINDER', d._id, now);
+        if (!n) continue;
+        const items = await this.itemsOf(d.publicationIds, d.bundleIds);
+        if (!items.length) continue;
+        const sent = await this.sendOnce(`draft:${d._id}:${n}`, 'DRAFT_REMINDER', d._id, user, `Your press release PR #${d.prId} is ready to publish`, 'draft.reminder', {
+          name: user.fullName || 'there',
+          prId: d.prId,
+          title: d.title,
+          items: items.slice(0, 5),
+          more: Math.max(0, items.length - 5),
+          count: items.length,
+          totalCredits: items.reduce((s, i) => s + (i.credits || 0), 0),
+          link: `${this.cfg.appUrl}/releases/${d._id}/payment`,
+          unsubscribe: this.unsubscribeLink(user._id)
+        });
+        if (sent) remindedUsers.add(d.userId);
+      }
+
+      // 2) Carts with items and no purchase since
+      const carts = await this.cartModel
+        .find({
+          updatedAt: { $lte: due, $gte: oldest },
+          $or: [{ 'publicationIds.0': { $exists: true } }, { 'bundleIds.0': { $exists: true } }]
+        })
+        .limit(200)
+        .lean();
+      for (const c of carts) {
+        if (remindedUsers.has(c._id)) continue;
+        const started = new Date(c.startedAt || c.updatedAt).getTime();
+        // The cart was turned into a draft PR after it was filled: the draft reminder covers it
+        if ((newestDraftAt.get(c._id) || 0) >= started) continue;
+        const user = await this.userModel.findOne({ _id: c._id }).lean();
+        if (!this.remindable(user) || (await this.remindedRecently(c._id, now))) continue;
+        const series = `${c._id}:${started}`;
+        const n = await this.nextReminder('CART_REMINDER', series, now);
+        if (!n) continue;
+        const items = await this.itemsOf(c.publicationIds, c.bundleIds);
+        if (!items.length) continue;
+        const sent = await this.sendOnce(`cart:${series}:${n}`, 'CART_REMINDER', series, user, `You left ${items.length} ${items.length === 1 ? 'item' : 'items'} in your 01 Wire cart`, 'cart.reminder', {
+          name: user.fullName || 'there',
+          items: items.slice(0, 5),
+          more: Math.max(0, items.length - 5),
+          count: items.length,
+          itemWord: items.length === 1 ? 'item' : 'items',
+          totalCredits: items.reduce((s, i) => s + (i.credits || 0), 0),
+          link: `${this.cfg.appUrl}/marketplace`,
+          unsubscribe: this.unsubscribeLink(user._id)
+        });
+        if (sent) remindedUsers.add(c._id);
+      }
+      if (remindedUsers.size) this._logger.log(`Sent ${remindedUsers.size} reminder email(s)`);
+    } catch (err) {
+      this._logger.error(`reminders: ${err?.message}`);
+    } finally {
+      this.running = false;
+    }
+  }
+
+  // ---------- unsubscribe ----------
+
+  private sign(userId: string) {
+    const secret = this.configService.get('auth.jwtSecret', { infer: true });
+    return createHmac('sha256', `${secret}:email-unsubscribe`).update(userId).digest('hex').slice(0, 32);
+  }
+
+  unsubscribeLink(userId: string) {
+    return `${this.cfg.apiUrl}/email/unsubscribe?u=${encodeURIComponent(userId)}&t=${this.sign(userId)}`;
+  }
+
+  async unsubscribe(userId: string, token: string): Promise<boolean> {
+    if (!userId || !token) return false;
+    const want = Buffer.from(this.sign(userId)), got = Buffer.from(String(token));
+    if (want.length !== got.length || !timingSafeEqual(want, got)) return false;
+    const r = await this.userModel.updateOne({ _id: userId }, { $set: { emailReminders: false } });
+    return r.matchedCount > 0;
+  }
+
+  // ---------- helpers ----------
+
+  private async itemsOf(publicationIds: string[] = [], bundleIds: string[] = []): Promise<Item[]> {
+    const [pubs, bundles] = await Promise.all([
+      publicationIds?.length ? this.publicationModel.find({ _id: { $in: publicationIds } }).lean() : [],
+      bundleIds?.length ? this.bundleModel.find({ _id: { $in: bundleIds } }).lean() : []
+    ]);
+    return [
+      ...(pubs as any[]).map((p) => ({ name: p.variantLabel ? `${p.title} (${p.variantLabel})` : p.title, type: 'Publication', credits: p.price })),
+      ...(bundles as any[]).map((b) => ({ name: b.name || 'Package', type: 'Package', credits: b.price }))
+    ];
+  }
+
+  // Claims the email's log row first, so two servers (or a repeated event) never send it twice
+  private async sendOnce(id: string, kind: string, refId: string, user: any, subject: string, template: string, params: Record<string, any>): Promise<boolean> {
+    try {
+      await this.logModel.create({ _id: id, kind, refId, userId: user._id, to: user.email });
+    } catch (e) {
+      if (e?.code === 11000) return false; // already sent
+      throw e;
+    }
+    try {
+      await this.emailService.sendTemplate(user.email, subject, template, params);
+      return true;
+    } catch (err) {
+      // Kept as failed (not retried) so a broken mail setup cannot send floods later
+      await this.logModel.updateOne({ _id: id }, { $set: { failed: true, error: String(err?.message || err).slice(0, 300) } });
+      this._logger.warn(`email ${id} to ${user.email} failed: ${err?.message}`);
+      return false;
+    }
+  }
+}

@@ -1,0 +1,77 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>01 Wire receipt</title>
+  </head>
+  <body style="margin:0;padding:0;background:#f2f5f8;font-family:Arial,Helvetica,sans-serif;color:#344767;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f2f5f8;padding:32px 12px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:8px;">
+            <tr>
+              <td style="padding:28px 32px 8px;">
+                <div style="font-size:22px;font-weight:bold;letter-spacing:1px;">01 WIRE</div>
+                <div style="font-size:13px;color:#7b809a;margin-top:4px;">Payment receipt</div>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:16px 32px 0;font-size:15px;line-height:1.5;">
+                Hi {{name}},<br />
+                Thanks for your order. Your press release <b>PR #{{prId}}</b> is paid and has gone to our team for review.
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:20px 32px 0;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;">
+                  <tr><td style="color:#7b809a;padding:4px 0;">Press release</td><td align="right" style="padding:4px 0;">PR #{{prId}} · {{title}}</td></tr>
+                  <tr><td style="color:#7b809a;padding:4px 0;">Date</td><td align="right" style="padding:4px 0;">{{date}}</td></tr>
+                  <tr><td style="color:#7b809a;padding:4px 0;">Paid with</td><td align="right" style="padding:4px 0;">{{method}}{{#if test}} (TEST - no real money){{/if}}</td></tr>
+                  {{#if amountPaid}}<tr><td style="color:#7b809a;padding:4px 0;">Amount paid</td><td align="right" style="padding:4px 0;">{{amountPaid}}</td></tr>{{/if}}
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:20px 32px 0;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;border:1px solid #e9ecef;border-radius:6px;">
+                  <tr style="background:#f8f9fa;">
+                    <td style="padding:10px 12px;font-weight:bold;">Media</td>
+                    <td style="padding:10px 12px;font-weight:bold;">Type</td>
+                    <td align="right" style="padding:10px 12px;white-space:nowrap;font-weight:bold;">Credits</td>
+                  </tr>
+                  {{#each items}}
+                  <tr>
+                    <td style="padding:10px 12px;border-top:1px solid #e9ecef;">{{name}}</td>
+                    <td style="padding:10px 12px;border-top:1px solid #e9ecef;color:#7b809a;">{{type}}</td>
+                    <td align="right" style="padding:10px 12px;white-space:nowrap;border-top:1px solid #e9ecef;">{{credits}}</td>
+                  </tr>
+                  {{/each}}
+                  <tr>
+                    <td colspan="2" style="padding:12px;border-top:1px solid #e9ecef;font-weight:bold;">Total</td>
+                    <td align="right" style="padding:12px;border-top:1px solid #e9ecef;font-weight:bold;color:#e5484d;white-space:nowrap;">{{totalCredits}} credits</td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            {{#if balance}}
+            <tr>
+              <td style="padding:12px 32px 0;font-size:13px;color:#7b809a;">Credits left in your wallet: {{balance}}</td>
+            </tr>
+            {{/if}}
+            <tr>
+              <td style="padding:24px 32px 8px;">
+                <a href="{{link}}" style="display:inline-block;background:#e5484d;color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:6px;font-size:14px;font-weight:bold;">View your PR</a>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:16px 32px 28px;font-size:12px;color:#7b809a;line-height:1.5;">
+                This is a payment receipt, not a tax invoice. Questions about this order? Reply to the 01 Wire team with PR #{{prId}}.
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
