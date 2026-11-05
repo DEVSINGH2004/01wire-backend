@@ -32,6 +32,8 @@ import { Request, Response } from 'express';
 import { orderBulkUpdateSchema } from '../dto/order.bulk.update.dto';
 import { ArticleStatusEnum } from 'src/core/article/enum/article.status.enum';
 import { WalletService } from 'src/core/wallet/services/wallet.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { SITE_REJECTED_EVENT } from 'src/core/article/article.events';
 
 @Injectable()
 export class OrderService {
@@ -42,7 +44,8 @@ export class OrderService {
     private articleService: ArticleService,
     private publicationService: PublicationService,
     private bundleService: BundleService,
-    private walletService: WalletService
+    private walletService: WalletService,
+    private eventEmitter: EventEmitter2
   ) {}
 
   async load(id: string, q: Record<string, any> = null): Promise<Order> {
@@ -205,6 +208,9 @@ export class OrderService {
         await this.loaderService.cleanCacheById(id);
         throw e;
       }
+    }
+    if (status === OrderStatusEnum.REJECTED) {
+      this.eventEmitter.emit(SITE_REJECTED_EVENT, { orderId: id, articleId: orderObj.articleId, refund, notes });
     }
     return true;
   }

@@ -31,7 +31,7 @@ import { WalletService } from 'src/core/wallet/services/wallet.service';
 import * as assert from 'assert';
 import { SequenceService } from 'src/core/sequence/sequence.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { ARTICLE_SUBMITTED_EVENT } from '../article.events';
+import { ARTICLE_SUBMITTED_EVENT, PR_STATUS_CHANGED_EVENT } from '../article.events';
 import { EventDomainEnum } from 'src/core/events/enum/event.domain.enum';
 import { EventActionEnum } from 'src/core/events/enum/event.action.enum';
 import { VisibilityEnum } from 'src/common/enum/visibility.enum';
@@ -112,12 +112,15 @@ export class ArticleService {
       me.user.type === UserTypeEnum.ADMIN &&
       obj.status === ArticleStatusEnum.SUBMITTED
     ) {
-      await this.model.updateOne(
+      const moved = await this.model.updateOne(
         { _id: id, status: ArticleStatusEnum.SUBMITTED },
         { $set: { status: ArticleStatusEnum.REVIEW } }
       );
       await this.loaderService.cleanCacheById(id);
-      //TODO: send notification to user thaht article status has been changed to REVIEW
+      // Tell the customer (once: only the read that actually moved it)
+      if (moved.modifiedCount) {
+        this.eventEmitter.emit(PR_STATUS_CHANGED_EVENT, { articleId: id, status: ArticleStatusEnum.REVIEW, from: ArticleStatusEnum.SUBMITTED });
+      }
     }
     return obj;
   }
@@ -510,10 +513,12 @@ export class ArticleService {
         'This PR was just updated by someone else. Refresh and try again.'
       );
     }
+    let refunded = 0;
     if (isRefund === true) {
       // Sites rejected one by one were already refunded: give back only the rest
       const alreadyBack = await this.orderService.refundedCreditsOf(articleObj._id);
       const amount = Math.max(0, (articleObj.totalCredits || 0) - alreadyBack);
+      refunded = amount;
       await Promise.all([
         amount > 0
           ? this.walletService.creditBalanceByUserId({
@@ -524,6 +529,16 @@ export class ArticleService {
           : Promise.resolve(null),
         this.orderService.rejectBulkByArticleId(articleObj._id, notes)
       ]);
+    }
+    // Email the customer about the new status (a first submit from DRAFT gets the receipt instead)
+    if (!submittedFromDraft) {
+      this.eventEmitter.emit(PR_STATUS_CHANGED_EVENT, {
+        articleId: id,
+        status: userType === UserTypeEnum.USER ? 'RESUBMITTED' : status,
+        from: articleObj.status,
+        notes: notes || null,
+        refund: refunded
+      });
     }
     return res;
   }

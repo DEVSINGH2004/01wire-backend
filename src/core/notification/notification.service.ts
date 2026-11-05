@@ -6,7 +6,8 @@ import { Model } from 'mongoose';
 import { createHmac, timingSafeEqual } from 'crypto';
 import { ConfigVariablesType } from 'src/config';
 import { EmailService } from '../services/email.service';
-import { ARTICLE_SUBMITTED_EVENT } from '../article/article.events';
+import { ARTICLE_SUBMITTED_EVENT, PR_STATUS_CHANGED_EVENT, SITE_REJECTED_EVENT } from '../article/article.events';
+import { Order } from '../order/order.schema';
 import { CREDITS_PURCHASED_EVENT } from './notification.events';
 import { Article } from '../article/article.schema';
 import { ArticleStatusEnum } from '../article/enum/article.status.enum';
@@ -46,6 +47,7 @@ export class NotificationService implements OnApplicationBootstrap, OnModuleDest
     @InjectModel(User.name) private userModel: Model<User>,
     @InjectModel(Wallet.name) private walletModel: Model<Wallet>,
     @InjectModel(PaymentOrder.name) private paymentModel: Model<PaymentOrder>,
+    @InjectModel(Order.name) private orderModel: Model<Order>,
     private emailService: EmailService,
     private configService: ConfigService<ConfigVariablesType>
   ) {}
@@ -134,6 +136,131 @@ export class NotificationService implements OnApplicationBootstrap, OnModuleDest
       });
     } catch (err) {
       this._logger.error(`credits receipt ${e.transactionId}: ${err?.message}`);
+    }
+  }
+
+  // ---------- PR status emails ----------
+
+  // Sites / packages of a PR with their order status (for the Accepted and Published emails)
+  private async siteRowsOf(articleId: string) {
+    const orders: any[] = await this.orderModel.find({ articleId }).lean();
+    const pubIds = orders.map((o) => o.publicationId).filter(Boolean);
+    const bunIds = orders.map((o) => o.bundleId).filter(Boolean);
+    const [pubs, buns]: any[] = await Promise.all([
+      pubIds.length ? this.publicationModel.find({ _id: { $in: pubIds } }).select('title variantLabel').lean() : [],
+      bunIds.length ? this.bundleModel.find({ _id: { $in: bunIds } }).select('name').lean() : []
+    ]);
+    const P = new Map(pubs.map((p) => [p._id, p])), B = new Map(buns.map((b) => [b._id, b]));
+    return orders.map((o) => {
+      const p: any = o.publicationId ? P.get(o.publicationId) : null;
+      const b: any = o.bundleId ? B.get(o.bundleId) : null;
+      return {
+        name: p ? (p.variantLabel ? `${p.title} (${p.variantLabel})` : p.title) : b?.name || 'Package',
+        status: o.status,
+        url: o.url,
+        publishBy: o.publishBy,
+        refunded: o.refundedCredits || 0,
+        notes: o.notes
+      };
+    });
+  }
+
+  @OnEvent(PR_STATUS_CHANGED_EVENT, { async: true })
+  async onPrStatusChanged(e: { articleId: string; status: string; from?: string; notes?: string; refund?: number }) {
+    try {
+      const a: any = await this.articleModel.findOne({ _id: e.articleId }).lean();
+      if (!a) return;
+      const user: any = await this.userModel.findOne({ _id: a.userId }).lean();
+      if (!user?.email) return;
+      const link = `${this.cfg.appUrl}/releases/${a._id}`;
+      const day = (d: Date) => (d ? new Date(d).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric' }) : '');
+      const base = { name: user.fullName || 'there', prId: a.prId, title: a.title, link, buttonText: 'View your PR', color: '#344767' };
+      let id = `status:${a._id}:${e.status}`;
+      let subject: string;
+      let p: Record<string, any>;
+      switch (e.status) {
+        case 'REVIEW':
+          subject = `Your PR #${a.prId} is under review`;
+          p = { headline: 'Your press release is under review', intro: "Our team has started checking it. We'll email you when it's accepted, or if anything needs to change." };
+          break;
+        case 'AWAITING_APPROVAL':
+          id += `:${new Date(a.updatedAt).getTime()}`; // can happen more than once
+          subject = `Please update your PR #${a.prId}`;
+          p = { headline: 'A few changes are needed', intro: 'Before we can publish your press release, please make the change below and send it again. There is nothing more to pay.', messageLabel: 'What to change', message: e.notes || '', buttonText: 'Edit your PR', color: '#b26a00' };
+          break;
+        case 'RESUBMITTED':
+          id += `:${new Date(a.updatedAt).getTime()}`;
+          subject = `We got your updated PR #${a.prId}`;
+          p = { headline: 'Thanks, we got your update', intro: "Our team will review your updated press release and email you when it's accepted." };
+          break;
+        case 'SCHEDULED': {
+          const sites = (await this.siteRowsOf(a._id)).filter((s) => s.status === 'PENDING');
+          subject = `Your PR #${a.prId} is accepted`;
+          p = {
+            headline: 'Your press release is accepted',
+            intro: "We're now placing it on the sites below. We'll email you all the live links when it's published.",
+            col1: 'Site / package', col2: 'Expected by',
+            rows: sites.map((s) => ({ name: s.name, detail: day(s.publishBy) })),
+            color: '#1b5e20'
+          };
+          break;
+        }
+        case 'PUBLISHED': {
+          const sites = await this.siteRowsOf(a._id);
+          const live = sites.filter((s) => s.status === 'PUBLISHED');
+          const rejected = sites.filter((s) => s.status === 'REJECTED');
+          const back = rejected.reduce((s, r) => s + r.refunded, 0);
+          subject = `Your PR #${a.prId} is published`;
+          p = {
+            headline: `Your press release is live on ${live.length} ${live.length === 1 ? 'site' : 'sites'}`,
+            intro: 'Here are the links where it is published.',
+            col1: 'Site / package', col2: 'Live link',
+            rows: [...live.map((s) => ({ name: s.name, url: s.url })), ...rejected.map((s) => ({ name: s.name, detail: `Not published${s.refunded ? ` · ${s.refunded} credits refunded` : ''}` }))],
+            refundLine: back ? `${back} credits for sites that could not publish were already returned to your wallet.` : '',
+            color: '#1b5e20'
+          };
+          break;
+        }
+        case 'REJECTED':
+          subject = `Your PR #${a.prId} was not accepted`;
+          p = {
+            headline: "We couldn't accept this press release",
+            intro: 'Unfortunately it could not be published. The reason is below.',
+            messageLabel: 'Reason', message: e.notes || '',
+            refundLine: e.refund ? `${e.refund} credits are back in your wallet.` : '',
+            color: '#b71c1c'
+          };
+          break;
+        default:
+          return;
+      }
+      await this.sendOnce(id, 'STATUS', a._id, user, subject, 'status.update', { ...base, ...p });
+    } catch (err) {
+      this._logger.error(`status email for ${e.articleId} (${e.status}): ${err?.message}`);
+    }
+  }
+
+  @OnEvent(SITE_REJECTED_EVENT, { async: true })
+  async onSiteRejected(e: { orderId: string; articleId: string; refund: number; notes: string }) {
+    try {
+      const a: any = await this.articleModel.findOne({ _id: e.articleId }).lean();
+      const o: any = await this.orderModel.findOne({ _id: e.orderId }).lean();
+      if (!a || !o) return;
+      const user: any = await this.userModel.findOne({ _id: a.userId }).lean();
+      if (!user?.email) return;
+      const site = o.publicationId
+        ? ((p: any) => (p ? (p.variantLabel ? `${p.title} (${p.variantLabel})` : p.title) : 'A site'))(await this.publicationModel.findOne({ _id: o.publicationId }).lean())
+        : (await this.bundleModel.findOne({ _id: o.bundleId }).lean() as any)?.name || 'A package';
+      await this.sendOnce(`site:${o._id}:REJECTED`, 'STATUS', a._id, user, `${site} couldn't publish your PR #${a.prId}`, 'status.update', {
+        name: user.fullName || 'there', prId: a.prId, title: a.title,
+        link: `${this.cfg.appUrl}/releases/${a._id}`, buttonText: 'View your PR', color: '#b71c1c',
+        headline: `${site} couldn't publish your press release`,
+        intro: 'The rest of your PR goes ahead as planned. The reason is below.',
+        messageLabel: 'Reason', message: e.notes || '',
+        refundLine: e.refund ? `${e.refund} credits for this site are back in your wallet.` : ''
+      });
+    } catch (err) {
+      this._logger.error(`site-rejected email for ${e.orderId}: ${err?.message}`);
     }
   }
 
@@ -297,6 +424,8 @@ export class NotificationService implements OnApplicationBootstrap, OnModuleDest
 
   // Claims the email's log row first, so two servers (or a repeated event) never send it twice
   private async sendOnce(id: string, kind: string, refId: string, user: any, subject: string, template: string, params: Record<string, any>): Promise<boolean> {
+    const outbox = !!process.env.EMAIL_OUTBOX_DIR && process.env.NODE_ENV !== 'production';
+    if (!outbox && /@(example\.(com|org|net)|[^@]+\.(test|invalid|example))$/i.test(user?.email || '')) return false;
     try {
       await this.logModel.create({ _id: id, kind, refId, userId: user._id, to: user.email });
     } catch (e) {

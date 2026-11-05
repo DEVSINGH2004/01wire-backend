@@ -1,0 +1,77 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{headline}}</title>
+  </head>
+  <body style="margin:0;padding:0;background:#f2f5f8;font-family:Arial,Helvetica,sans-serif;color:#344767;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f2f5f8;padding:32px 12px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:8px;">
+            <tr>
+              <td style="padding:28px 32px 8px;">
+                <div style="font-size:22px;font-weight:bold;letter-spacing:1px;">01 WIRE</div>
+                <div style="font-size:13px;color:#7b809a;margin-top:4px;">PR #{{prId}} · {{title}}</div>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:16px 32px 0;">
+                <div style="font-size:18px;font-weight:bold;color:{{color}};">{{headline}}</div>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:10px 32px 0;font-size:15px;line-height:1.5;">
+                Hi {{name}},<br />
+                {{intro}}
+              </td>
+            </tr>
+            {{#if message}}
+            <tr>
+              <td style="padding:16px 32px 0;">
+                <div style="background:#fff8e1;border-left:4px solid #f5a623;border-radius:4px;padding:12px 14px;font-size:14px;line-height:1.5;">
+                  <b>{{messageLabel}}</b><br />{{message}}
+                </div>
+              </td>
+            </tr>
+            {{/if}}
+            {{#if rows.length}}
+            <tr>
+              <td style="padding:16px 32px 0;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;border:1px solid #e9ecef;border-radius:6px;">
+                  <tr style="background:#f8f9fa;">
+                    <td style="padding:10px 12px;font-weight:bold;">{{col1}}</td>
+                    <td style="padding:10px 12px;font-weight:bold;">{{col2}}</td>
+                  </tr>
+                  {{#each rows}}
+                  <tr>
+                    <td style="padding:10px 12px;border-top:1px solid #e9ecef;vertical-align:top;">{{name}}</td>
+                    <td style="padding:10px 12px;border-top:1px solid #e9ecef;vertical-align:top;">{{#if url}}<a href="{{url}}" style="color:#1a73e8;word-break:break-all;">{{url}}</a>{{else}}{{detail}}{{/if}}</td>
+                  </tr>
+                  {{/each}}
+                </table>
+              </td>
+            </tr>
+            {{/if}}
+            {{#if refundLine}}
+            <tr>
+              <td style="padding:14px 32px 0;font-size:14px;color:#1b5e20;font-weight:bold;">{{refundLine}}</td>
+            </tr>
+            {{/if}}
+            <tr>
+              <td style="padding:24px 32px 8px;">
+                <a href="{{link}}" style="display:inline-block;background:#e5484d;color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:6px;font-size:14px;font-weight:bold;">{{buttonText}}</a>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:16px 32px 28px;font-size:12px;color:#7b809a;line-height:1.5;">
+                You get this email because PR #{{prId}} on your 01 Wire account changed status. Questions? Reply to the 01 Wire team with your PR number.
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

@@ -6,6 +6,7 @@ import { Bundle, BundleSchema } from '../bundle/bundle.schema';
 import { User, UserSchema } from '../user/user.schema';
 import { Wallet, WalletSchema } from '../wallet/wallet.schema';
 import { PaymentOrder, PaymentOrderSchema } from '../payment/razorpay/payment.order.schema';
+import { Order, OrderSchema } from '../order/order.schema';
 import { EmailService } from '../services/email.service';
 import { Cart, CartSchema, EmailLog, EmailLogSchema } from './notification.schema';
 import { NotificationService } from './notification.service';
@@ -23,7 +24,8 @@ import { NotificationController } from './notification.controller';
       { name: Bundle.name, schema: BundleSchema },
       { name: User.name, schema: UserSchema },
       { name: Wallet.name, schema: WalletSchema },
-      { name: PaymentOrder.name, schema: PaymentOrderSchema }
+      { name: PaymentOrder.name, schema: PaymentOrderSchema },
+      { name: Order.name, schema: OrderSchema }
     ])
   ],
   controllers: [NotificationController],
