@@ -47,6 +47,15 @@ const config = (config: Record<string, unknown>) => {
         senderEmail: process.env.AWS_SES_SENDER_EMAIL
       }
     },
+    smtp: {
+      host: ENVS.SMTP_HOST?.trim() || '',
+      port: ENVS.SMTP_PORT || 465,
+      user: ENVS.SMTP_USER?.trim() || '',
+      // Gmail shows app passwords in groups of 4 ("abcd efgh ..."): spaces are not part of it
+      pass: (ENVS.SMTP_PASS || '').replace(/\s+/g, ''),
+      // Gmail only sends as the logged-in address, so that is the default sender
+      from: ENVS.SMTP_FROM?.trim() || ENVS.SMTP_USER?.trim() || ENVS.AWS_SES_SENDER_EMAIL
+    },
     cache: {
       user: {
         key: `user_${NODE_ENV}`,

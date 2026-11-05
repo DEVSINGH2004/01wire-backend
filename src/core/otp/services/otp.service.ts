@@ -55,7 +55,15 @@ export class OtpService {
       })
       .lean();
 
-    if (otpObj) return otpObj;
+    if (otpObj) {
+      // Same code, sent again: the first email may have been lost or not arrived yet
+      await this.emailService.sendVerificationOtp({
+        receiver,
+        otp: otpObj.otp,
+        validity: otpObj.expireAt
+      });
+      return otpObj;
+    }
     const otp = GenerateOtp(4, {
       lowerCaseAlphabets: false,
       upperCaseAlphabets: false,

@@ -21,6 +21,13 @@ export const ConfigValidationSchema = z.object({
   // aws
   AWS_REGION: z.string(),
   AWS_SES_SENDER_EMAIL: z.string(),
+  // Optional SMTP (e.g. Gmail with an app password). When SMTP_HOST is set, emails go
+  // through SMTP instead of AWS SES; the sender is SMTP_FROM, else SMTP_USER.
+  SMTP_HOST: z.string().nullish(),
+  SMTP_PORT: z.coerce.number().int().positive().nullish(),
+  SMTP_USER: z.string().nullish(),
+  SMTP_PASS: z.string().nullish(),
+  SMTP_FROM: z.string().nullish(),
 
   //Slack
   SLACK_WEBHOOK_URL: z.string().url(),
