@@ -27,6 +27,7 @@ import { OrderModule } from './core/order/order.module';
 import { SequenceModule } from './core/sequence/sequence.module';
 import { EstimateModule } from './core/estimate/estimate.module';
 import { NotificationModule } from './core/notification/notification.module';
+import { AdminOrdersModule } from './core/admin-orders/admin-orders.module';
 
 @Module({
   imports: [
@@ -59,7 +60,8 @@ import { NotificationModule } from './core/notification/notification.module';
     OrderModule,
     SequenceModule,
     EstimateModule,
-    NotificationModule
+    NotificationModule,
+    AdminOrdersModule
   ],
   controllers: [AppController],
   providers: [AppService, EmailService, JwtService, SlackService]

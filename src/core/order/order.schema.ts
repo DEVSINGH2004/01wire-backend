@@ -68,6 +68,14 @@ class Order extends Document {
   @Prop({ type: Date, required: true })
   publishBy: Date;
 
+  // Credits this site/package cost when the PR was paid (used to refund a rejected site)
+  @Prop({ type: Number, default: null })
+  credits: number;
+
+  // Credits given back to the customer for this order (site rejected)
+  @Prop({ type: Number, default: 0 })
+  refundedCredits: number;
+
   @Prop()
   createdAt: Date;
 

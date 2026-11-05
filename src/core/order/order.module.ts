@@ -9,6 +9,7 @@ import { Order, OrderSchema } from './order.schema';
 import { BundleModule } from '../bundle/bundle.module';
 import { OrderController } from './order.controller';
 import { UserModule } from '../user/user.module';
+import { WalletModule } from '../wallet/wallet.module';
 
 @Module({
   imports: [
@@ -16,7 +17,8 @@ import { UserModule } from '../user/user.module';
     PublicationModule,
     BundleModule,
     forwardRef(() => ArticleModule),
-    UserModule
+    UserModule,
+    WalletModule
   ],
   providers: [OrderService, OrderLoaderService, OrderResolver],
   exports: [OrderService],

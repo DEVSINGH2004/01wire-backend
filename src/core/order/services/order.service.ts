@@ -31,6 +31,7 @@ import { PublicationTypeWithoutDocument } from 'src/core/publication/publication
 import { Request, Response } from 'express';
 import { orderBulkUpdateSchema } from '../dto/order.bulk.update.dto';
 import { ArticleStatusEnum } from 'src/core/article/enum/article.status.enum';
+import { WalletService } from 'src/core/wallet/services/wallet.service';
 
 @Injectable()
 export class OrderService {
@@ -40,7 +41,8 @@ export class OrderService {
     private loaderService: OrderLoaderService,
     private articleService: ArticleService,
     private publicationService: PublicationService,
-    private bundleService: BundleService
+    private bundleService: BundleService,
+    private walletService: WalletService
   ) {}
 
   async load(id: string, q: Record<string, any> = null): Promise<Order> {
@@ -154,6 +156,8 @@ export class OrderService {
           new BadRequestException('rejection reason is needed to reject PR')
         );
         updateObj['notes'] = notes;
+        // The customer gets this site's credits back
+        updateObj['refundedCredits'] = await this.refundFor(orderObj, articleObj);
         break;
       }
       case OrderStatusEnum.PUBLISHED: {
@@ -184,7 +188,52 @@ export class OrderService {
         'This order was already updated. Refresh and try again.'
       );
     }
+    const refund = updateObj['refundedCredits'] || 0;
+    if (status === OrderStatusEnum.REJECTED && refund > 0) {
+      try {
+        await this.walletService.creditBalanceByUserId({
+          userId: orderObj.userId,
+          amount: refund,
+          notes: `Refund for PR ID: ${orderObj.prId} (${await this.orderName(orderObj)} rejected: ${notes})`.slice(0, 250)
+        });
+      } catch (e) {
+        // Put the order back so the admin can try again; nothing was refunded
+        await this.model.updateOne(
+          { _id: id, status: OrderStatusEnum.REJECTED },
+          { $set: { status: OrderStatusEnum.PENDING, notes: null, refundedCredits: 0 } }
+        );
+        await this.loaderService.cleanCacheById(id);
+        throw e;
+      }
+    }
     return true;
+  }
+
+  // Credits to give back for one rejected order: what it cost, never more than
+  // what is left of the PR's payment after earlier refunds
+  private async refundFor(orderObj: Order, articleObj: { _id: string; totalCredits?: number }): Promise<number> {
+    let price = orderObj.credits;
+    if (price == null) {
+      // Orders made before prices were stored: use the current price
+      if (orderObj.publicationId && !orderObj.bundleId) price = (await this.publicationService.load(orderObj.publicationId))?.price;
+      else if (orderObj.bundleId) price = (await this.bundleService.load(orderObj.bundleId))?.price;
+    }
+    const others = await this.model.find({ articleId: articleObj._id, _id: { $ne: orderObj._id } }).lean();
+    const alreadyBack = others.reduce((s, o) => s + (o.refundedCredits || 0), 0);
+    const left = Math.max(0, (articleObj.totalCredits || 0) - alreadyBack);
+    return Math.max(0, Math.min(price || 0, left));
+  }
+
+  private async orderName(orderObj: Order): Promise<string> {
+    if (orderObj.publicationId) return (await this.publicationService.load(orderObj.publicationId))?.title || 'site';
+    if (orderObj.bundleId) return (await this.bundleService.load(orderObj.bundleId))?.name || 'package';
+    return 'site';
+  }
+
+  // Credits already given back for single rejected sites of a PR
+  async refundedCreditsOf(articleId: string): Promise<number> {
+    const orders = await this.model.find({ articleId }).lean();
+    return orders.reduce((s, o) => s + (o.refundedCredits || 0), 0);
   }
 
   async createBulk(dto: OrderCreateBulkDto): Promise<boolean> {
@@ -203,6 +252,16 @@ export class OrderService {
     const publicationObjs = await this.publicationService.loadMany([
       ...new Set([...dto.publicationIds, ...bundlePubIds])
     ]);
+    // What each order cost: a publication its price; a package's sites share the package price
+    const bundleShare = new Map<string, number[]>();
+    bundleObjs
+      .filter((b) => b?.publicationIds?.length)
+      .forEach((b) => {
+        const n = publicationObjs.filter((p) => pubIdTobundleIdMap.get(p?._id) === b._id).length || 1;
+        const each = Math.floor((b.price || 0) / n);
+        const shares = Array.from({ length: n }, (_, i) => (i === 0 ? (b.price || 0) - each * (n - 1) : each));
+        bundleShare.set(b._id, shares);
+      });
     const orderBulkPayload: OrderDocument[] = [];
     publicationObjs.forEach((e) => {
       const publishByDate = new Date();
@@ -249,6 +308,7 @@ export class OrderService {
         }
       }
       const bundleId = pubIdTobundleIdMap.get(e._id);
+      const credits = bundleId ? bundleShare.get(bundleId)?.shift() ?? 0 : e.price;
       orderBulkPayload.push(
         new this.model({
           userId: dto.userId,
@@ -257,7 +317,8 @@ export class OrderService {
           status: OrderStatusEnum.PENDING,
           publishBy: publishByDate,
           bundleId,
-          prId: dto.prId
+          prId: dto.prId,
+          credits
         })
       );
     });
@@ -277,7 +338,8 @@ export class OrderService {
             bundleId: b._id,
             status: OrderStatusEnum.PENDING,
             publishBy: publishByDate,
-            prId: dto.prId
+            prId: dto.prId,
+            credits: b.price
           })
         );
       });

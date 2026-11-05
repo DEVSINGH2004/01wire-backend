@@ -511,12 +511,17 @@ export class ArticleService {
       );
     }
     if (isRefund === true) {
+      // Sites rejected one by one were already refunded: give back only the rest
+      const alreadyBack = await this.orderService.refundedCreditsOf(articleObj._id);
+      const amount = Math.max(0, (articleObj.totalCredits || 0) - alreadyBack);
       await Promise.all([
-        this.walletService.creditBalanceByUserId({
-          userId: articleObj.userId,
-          amount: articleObj.totalCredits,
-          notes: `Refund for PR ID: ${articleObj.prId}`
-        }),
+        amount > 0
+          ? this.walletService.creditBalanceByUserId({
+              userId: articleObj.userId,
+              amount,
+              notes: `Refund for PR ID: ${articleObj.prId}`
+            })
+          : Promise.resolve(null),
         this.orderService.rejectBulkByArticleId(articleObj._id, notes)
       ]);
     }
