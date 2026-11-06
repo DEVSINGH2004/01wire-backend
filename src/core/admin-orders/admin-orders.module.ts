@@ -8,6 +8,7 @@ import { Publication, PublicationSchema } from '../publication/publication.schem
 import { Bundle, BundleSchema } from '../bundle/bundle.schema';
 import { PaymentOrder, PaymentOrderSchema } from '../payment/razorpay/payment.order.schema';
 import { Transaction, TransactionSchema } from '../transaction/transaction.schema';
+import { OfflineOrdersModule } from '../offline-orders/offline-orders.module';
 import { AdminOrdersService } from './admin-orders.service';
 import { AdminOrdersResolver } from './admin-orders.resolver';
 
@@ -23,7 +24,8 @@ import { AdminOrdersResolver } from './admin-orders.resolver';
       { name: Bundle.name, schema: BundleSchema },
       { name: PaymentOrder.name, schema: PaymentOrderSchema },
       { name: Transaction.name, schema: TransactionSchema }
-    ])
+    ]),
+    OfflineOrdersModule
   ],
   providers: [AdminOrdersService, AdminOrdersResolver]
 })

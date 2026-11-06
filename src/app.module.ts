@@ -28,6 +28,7 @@ import { SequenceModule } from './core/sequence/sequence.module';
 import { EstimateModule } from './core/estimate/estimate.module';
 import { NotificationModule } from './core/notification/notification.module';
 import { AdminOrdersModule } from './core/admin-orders/admin-orders.module';
+import { OfflineOrdersModule } from './core/offline-orders/offline-orders.module';
 
 @Module({
   imports: [
@@ -61,7 +62,8 @@ import { AdminOrdersModule } from './core/admin-orders/admin-orders.module';
     SequenceModule,
     EstimateModule,
     NotificationModule,
-    AdminOrdersModule
+    AdminOrdersModule,
+    OfflineOrdersModule
   ],
   controllers: [AppController],
   providers: [AppService, EmailService, JwtService, SlackService]

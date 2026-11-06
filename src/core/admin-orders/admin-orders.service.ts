@@ -13,6 +13,7 @@ import { PaymentOrder, PaymentOrderStatusEnum } from '../payment/razorpay/paymen
 import { paginateResponse } from 'src/common/utils';
 import { Transaction } from '../transaction/transaction.schema';
 import { UserTypeEnum } from '../user/enum/user.type.enum';
+import { OfflineOrdersService } from '../offline-orders/offline-orders.service';
 import { AdminOverviewType, AdminPrCountsType, AdminPrFilterInput, AdminPrItemType, AdminPrPageType, AdminPrRowType } from './admin-orders.types';
 
 const S = ArticleStatusEnum;
@@ -39,7 +40,8 @@ export class AdminOrdersService {
     @InjectModel(Publication.name) private publicationModel: Model<Publication>,
     @InjectModel(Bundle.name) private bundleModel: Model<Bundle>,
     @InjectModel(PaymentOrder.name) private paymentModel: Model<PaymentOrder>,
-    @InjectModel(Transaction.name) private transactionModel: Model<Transaction>
+    @InjectModel(Transaction.name) private transactionModel: Model<Transaction>,
+    private offlineOrders: OfflineOrdersService
   ) {}
 
   // Admin "Overview": what is waiting, and what happened in the last 7 days (read-only)
@@ -69,7 +71,10 @@ export class AdminOrdersService {
       sum(this.paymentModel, { ...real, provider: 'RAZORPAY' }, 'amount'),
       sum(this.paymentModel, { ...real, provider: 'SHOPIFY' }, 'amount')
     ]);
+    const month = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
+    const off = await this.offlineOrders.monthTotals(month);
     return {
+      offlineThisMonth: { month, count: off.count, paid: off.paid, owedToVendors: off.owedToVendors, owedCount: off.owedCount },
       counts,
       pendingSites,
       lateSites,

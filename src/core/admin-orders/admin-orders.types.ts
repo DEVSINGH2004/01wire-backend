@@ -163,6 +163,16 @@ export class AdminWeekType {
   @Field(() => Float) shopifyInr: number; // paise, real money only
 }
 
+// Offline (WhatsApp / sheet) orders in the current month
+@ObjectType()
+export class AdminOfflineMonthType {
+  @Field() month: string; // "2026-11"
+  @Field(() => Int) count: number;
+  @Field(() => Float) paid: number; // rupees customers paid
+  @Field(() => Float) owedToVendors: number; // rupees not yet paid to vendors
+  @Field(() => Int) owedCount: number;
+}
+
 @ObjectType()
 export class AdminOverviewType {
   @Field(() => AdminPrCountsType) counts: AdminPrCountsType;
@@ -171,6 +181,7 @@ export class AdminOverviewType {
   @Field({ nullable: true }) oldestToReviewAt: Date; // when the longest-waiting PR to review last changed
   @Field(() => Int) paymentsToCheck: number;
   @Field(() => AdminWeekType) week: AdminWeekType;
+  @Field(() => AdminOfflineMonthType) offlineThisMonth: AdminOfflineMonthType;
 }
 
 @InputType()
