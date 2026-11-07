@@ -68,8 +68,11 @@ class OfflineOrder {
   @Prop({ type: String, default: null })
   notes: string;
 
+  @Prop({ type: Boolean, default: false })
+  isTest: boolean; // added by hand as a test: listed with a "Test" tag, left out of every total
+
   @Prop({ type: String, required: true, index: true })
-  importBatch: string; // e.g. "2026-10"
+  importBatch: string; // e.g. "2026-10", or "manual" for orders added by hand
 
   @Prop({ type: Number, default: null })
   sourceRow: number; // row number in the sheet

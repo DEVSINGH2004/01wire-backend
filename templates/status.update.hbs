@@ -27,6 +27,18 @@
                 {{intro}}
               </td>
             </tr>
+            {{#if changes.length}}
+            <tr>
+              <td style="padding:16px 32px 0;">
+                <div style="background:#fff8e1;border-left:4px solid #f5a623;border-radius:4px;padding:12px 14px;font-size:14px;line-height:1.5;">
+                  <b>What to change</b>
+                  <ul style="margin:6px 0 0;padding-left:20px;">
+                    {{#each changes}}<li style="margin:2px 0;">{{this}}</li>{{/each}}
+                  </ul>
+                </div>
+              </td>
+            </tr>
+            {{/if}}
             {{#if message}}
             <tr>
               <td style="padding:16px 32px 0;">

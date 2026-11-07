@@ -5,6 +5,18 @@ import { ArticlePublishTypeEnum } from '../../enum/article.publish.type.enum';
 import { ArticleMediaContactType } from './article.media.contact.type';
 import { LanguageEnum } from 'src/common/enum/language.enum';
 
+@ObjectType('ChangeRequestType')
+export class ChangeRequestType {
+  @Field(() => Date, { nullable: true })
+  at: Date;
+
+  @Field(() => [String], { nullable: true })
+  changes: string[];
+
+  @Field(() => String, { nullable: true })
+  note: string;
+}
+
 @ObjectType('ArticleType')
 export class ArticleType {
   @Field(() => ID)
@@ -63,6 +75,12 @@ export class ArticleType {
 
   @Field(() => String, { nullable: true })
   notes: string;
+
+  @Field(() => [String], { nullable: true })
+  changesRequested: string[];
+
+  @Field(() => [ChangeRequestType], { nullable: true })
+  changeRequests: ChangeRequestType[];
 
   @Field(() => [String], { nullable: true })
   bundleIds: string[];

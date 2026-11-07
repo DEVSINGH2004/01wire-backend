@@ -10,7 +10,8 @@ const articleUpdateStatusDto = articleCreateDto
   })
   .extend({
     id: z.string().uuid(),
-    notes: z.string().max(MAX_NOTES).nullish()
+    notes: z.string().max(MAX_NOTES).nullish(),
+    changes: z.array(z.string().trim().min(1).max(120)).max(20).nullish()
   });
 
 export class ArticleUpdateStatusDto extends createZodDto(

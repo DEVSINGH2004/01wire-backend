@@ -4,7 +4,7 @@ import { Model } from 'mongoose';
 import { Workbook } from 'exceljs';
 import { OfflineOrder } from './offline-order.schema';
 import { Publication } from '../publication/publication.schema';
-import { OfflineImportResultType, OfflineOrdersFilterInput, OfflineOrdersPageType, OfflineOrderUpdateInput, OfflineTotalsType } from './offline-orders.types';
+import { OfflineImportResultType, OfflineOrderCreateInput, OfflineOrdersFilterInput, OfflineOrdersPageType, OfflineOrderUpdateInput, OfflineTotalsType } from './offline-orders.types';
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
 const MONTH_RE = /^\d{4}-(0[1-9]|1[0-2])$/;
@@ -72,6 +72,9 @@ function linkAndNote(c: Cell): { link: string | null; links: string[]; note: str
 }
 const statusOf = (s: string) => (/not/i.test(s) ? 'NOT_DELIVERED' : /deli?v/i.test(s) ? 'DELIVERED' : null);
 const paidOf = (s: string) => (/unpaid|not\s*paid|due/i.test(s) ? 'UNPAID' : /paid/i.test(s) ? 'PAID' : null);
+// Order identity: date|customer|site|amount (then "|n" for the nth such order)
+const baseKey = (date: Date, group: string, item: string, amount: number) =>
+  `${monthOf(date)}-${String(date.getUTCDate()).padStart(2, '0')}|${group.toLowerCase()}|${item.toLowerCase()}|${amount}`;
 const domainOf = (s: string) => s.toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').split(/[/?#\s]/)[0];
 
 @Injectable()
@@ -129,19 +132,22 @@ export class OfflineOrdersService {
       const problems = [!date && 'no valid date', !group && 'no customer (Group Name)', !(amount > 0) && 'no amount paid', !item && 'no site or package'].filter(Boolean);
       if (problems.length) return errors.push({ row: r, reason: `Not imported: ${problems.join(', ')}` });
 
-      const status = statusOf(get('status').text) || 'NOT_DELIVERED';
-      if (!statusOf(get('status').text)) warnings.push({ row: r, reason: `Order status "${get('status').text}" not recognised; saved as Not delivered` });
+      // Warnings stay with their order: only orders that will be added report them
+      const warn: string[] = [];
+      const statusText = get('status').text.trim();
+      const status = statusOf(statusText) || 'NOT_DELIVERED';
+      if (!statusOf(statusText)) warn.push(statusText ? `Order status "${statusText}" not recognised; saved as Not delivered` : 'Order status is empty; saved as Not delivered');
       const live = linkAndNote(get('live'));
       const docsCell = linkAndNote(get('docs'));
       const vendorPayment = paidOf(get('vendorPayment').text) || 'UNPAID';
-      const base = `${monthOf(date)}-${String(date.getUTCDate()).padStart(2, '0')}|${group.toLowerCase()}|${item.toLowerCase()}|${amount}`;
+      const base = baseKey(date, group, item, amount);
       const rowsWithSame = seen.get(base) || [];
       rowsWithSame.push(r);
       seen.set(base, rowsWithSame);
-      if (rowsWithSame.length > 1) warnings.push({ row: r, reason: `Same date, customer, site and amount as row ${rowsWithSame[0]}; imported as a separate order` });
-      if (importBatch && monthOf(date) !== importBatch) warnings.push({ row: r, reason: `Dated ${dayLabel(date)}; it will show under ${MONTHS[date.getUTCMonth()]} ${date.getUTCFullYear()}` });
-      if (status === 'DELIVERED' && !live.link) warnings.push({ row: r, reason: live.note ? `Delivered without a link ("${live.note}")` : 'Delivered without a live link' });
+      if (rowsWithSame.length > 1) warn.push(`Same date, customer, site and amount as row ${rowsWithSame[0]}; imported as a separate order`);
+      if (status === 'DELIVERED' && !live.link) warn.push(live.note ? `Delivered without a link ("${live.note}")` : 'Delivered without a live link');
       docs.push({
+        warn,
         orderDate: date,
         customerGroup: group,
         articleLink: docsCell.link,
@@ -169,19 +175,19 @@ export class OfflineOrdersService {
     });
     if (!rowsRead) throw new BadRequestException('The sheet has no orders');
 
-    // The batch is the month most orders fall in (e.g. "2026-10") unless one is given
-    const tally = new Map<string, number>();
-    docs.forEach((d) => tally.set(monthOf(d.orderDate), (tally.get(monthOf(d.orderDate)) || 0) + 1));
-    const batch = importBatch && MONTH_RE.test(importBatch) ? importBatch : [...tally.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] || 'unknown';
-    if (!importBatch) {
-      docs.filter((d) => monthOf(d.orderDate) !== batch).forEach((d) =>
-        warnings.push({ row: d.sourceRow, reason: `Dated ${dayLabel(d.orderDate)}; it will show under ${MONTHS[d.orderDate.getUTCMonth()]} ${d.orderDate.getUTCFullYear()}` })
-      );
-    }
-
     // Orders already imported (same date + customer + site + amount + position) are skipped
     const existing = new Set((await this.model.find({ dedupeKey: { $in: docs.map((d) => d.dedupeKey) } }).select('dedupeKey').lean()).map((d: any) => d.dedupeKey));
-    const fresh = docs.filter((d) => !existing.has(d.dedupeKey)).map((d) => ({ ...d, importBatch: batch }));
+    const toAdd = docs.filter((d) => !existing.has(d.dedupeKey));
+
+    // The batch is the month most of the NEW orders fall in (e.g. "2026-11"), unless one is given
+    const tally = new Map<string, number>();
+    (toAdd.length ? toAdd : docs).forEach((d) => tally.set(monthOf(d.orderDate), (tally.get(monthOf(d.orderDate)) || 0) + 1));
+    const batch = importBatch && MONTH_RE.test(importBatch) ? importBatch : [...tally.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0]?.[0] || 'unknown';
+    const fresh = toAdd.map(({ warn, ...d }) => {
+      warn.forEach((reason: string) => warnings.push({ row: d.sourceRow, reason }));
+      if (monthOf(d.orderDate) !== batch) warnings.push({ row: d.sourceRow, reason: `Dated ${dayLabel(d.orderDate)}; it will show under ${MONTHS[d.orderDate.getUTCMonth()]} ${d.orderDate.getUTCFullYear()}` });
+      return { ...d, importBatch: batch };
+    });
     const months = new Map<string, { count: number; paid: number; vendorCost: number }>();
     fresh.forEach((d) => {
       const m = months.get(monthOf(d.orderDate)) || { count: 0, paid: 0, vendorCost: 0 };
@@ -205,7 +211,8 @@ export class OfflineOrdersService {
 
   // Soft-deletes one import (can be imported again)
   async undoImport(importBatch: string): Promise<number> {
-    const r = await this.model.updateMany({ importBatch, deletedAt: null } as any, { $set: { deletedAt: new Date() } });
+    if (!MONTH_RE.test(importBatch || '')) throw new BadRequestException('Enter the import to undo, e.g. 2026-10 (orders added by hand are deleted one by one)');
+    const r =await this.model.updateMany({ importBatch, deletedAt: null } as any, { $set: { deletedAt: new Date() } });
     return r.modifiedCount;
   }
 
@@ -217,7 +224,9 @@ export class OfflineOrdersService {
     return { $gte: new Date(Date.UTC(y, m - 1, 1)), $lt: new Date(Date.UTC(y, m, 1)) };
   }
 
-  totalsOf(list: any[]): OfflineTotalsType {
+  // Test orders are listed but never counted
+  totalsOf(all: any[]): OfflineTotalsType {
+    const list = all.filter((o) => !o.isTest);
     const r2 = (n: number) => Math.round(n * 100) / 100;
     const paid = list.reduce((s, o) => s + (o.amountPaid || 0), 0);
     const cost = list.reduce((s, o) => s + (o.vendorCost || 0), 0);
@@ -258,7 +267,7 @@ export class OfflineOrdersService {
   }
 
   view(o: any) {
-    return { ...o, id: o._id, margin: Math.round(((o.amountPaid || 0) - (o.vendorCost || 0)) * 100) / 100 };
+    return { ...o, id: o._id, isTest: !!o.isTest, margin: Math.round(((o.amountPaid || 0) - (o.vendorCost || 0)) * 100) / 100 };
   }
 
   // ---------- edit ----------
@@ -290,4 +299,63 @@ export class OfflineOrdersService {
     return this.view(after);
   }
 
+  // ---------- add by hand / delete ----------
+
+  async create(dto: OfflineOrderCreateInput, adminId: string) {
+    const date = dayOf(cellOf(dto.orderDate));
+    const group = (dto.customerGroup || '').trim().slice(0, 200);
+    const item = (dto.item || '').trim().slice(0, 300);
+    const amount = Number(dto.amountPaid);
+    const problems = [!date && 'a valid date', !group && 'the customer / group', !item && 'the site or package', !(amount > 0) && 'what the customer paid'].filter(Boolean);
+    if (problems.length) throw new BadRequestException(`Please enter ${problems.join(', ')}`);
+    const status = dto.status || 'NOT_DELIVERED';
+    if (!['DELIVERED', 'NOT_DELIVERED'].includes(status)) throw new BadRequestException('Status must be Delivered or Not delivered');
+    const vendorPayment = dto.vendorPaymentStatus || 'UNPAID';
+    if (!['PAID', 'UNPAID'].includes(vendorPayment)) throw new BadRequestException('Vendor paid must be Paid or Unpaid');
+    const cost = Number(dto.vendorCost || 0);
+    if (!(cost >= 0)) throw new BadRequestException('Vendor cost cannot be negative');
+    const link = (v?: string, what = 'link') => {
+      const s = (v || '').trim();
+      if (s && !/^https?:\/\/\S+\.\S+$/i.test(s)) throw new BadRequestException(`Enter the ${what} as a full link starting with https://`);
+      return s || null;
+    };
+    const live = link(dto.liveLink, 'live link');
+    const doc = link(dto.articleLink, 'article link');
+    const deliveredAt = status === 'DELIVERED' ? (dto.deliveredAt ? dayOf(cellOf(dto.deliveredAt)) : null) || dayOf(cellOf(new Date())) : null;
+
+    // Same key as the sheet import, so if this order later shows up in the sheet it is not added twice
+    const base = baseKey(date, group, item, amount);
+    const taken = new Set((await this.model.find({ dedupeKey: new RegExp(`^${base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\|\\d+$`) }).select('dedupeKey').lean()).map((d: any) => Number(d.dedupeKey.split('|').pop())));
+    let n = 1;
+    while (taken.has(n)) n++;
+
+    const created = await this.model.create({
+      orderDate: date,
+      customerGroup: group,
+      articleLink: doc,
+      item,
+      amountPaid: Math.round(amount * 100) / 100,
+      matchedPublicationId: (await this.publicationModel.findOne({ domain: new RegExp(`^(https?://)?(www\\.)?${domainOf(item).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/?$`, 'i') }).select('_id').lean() as any)?._id || null,
+      customerPaymentStatus: 'PAID',
+      status,
+      deliveredAt,
+      liveLink: live,
+      liveLinks: live ? [live] : [],
+      vendor: (dto.vendor || '').trim().slice(0, 200) || null,
+      vendorCost: Math.round(cost * 100) / 100,
+      vendorPaymentStatus: vendorPayment,
+      notes: (dto.notes || '').trim().slice(0, 2000) || null,
+      isTest: !!dto.isTest,
+      importBatch: 'manual',
+      dedupeKey: `${base}|${n}`,
+      importedBy: adminId
+    });
+    return this.view(created.toObject());
+  }
+
+  async remove(id: string): Promise<boolean> {
+    const r = await this.model.updateOne({ _id: id, deletedAt: null } as any, { $set: { deletedAt: new Date() } });
+    if (!r.modifiedCount) throw new NotFoundException('Order not found');
+    return true;
+  }
 }

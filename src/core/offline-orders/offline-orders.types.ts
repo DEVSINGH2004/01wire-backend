@@ -26,6 +26,7 @@ export class OfflineOrderType {
   @Field({ nullable: true }) notes: string;
   @Field() importBatch: string;
   @Field(() => Int, { nullable: true }) sourceRow: number;
+  @Field() isTest: boolean;
 }
 
 @ObjectType()
@@ -65,6 +66,24 @@ export class OfflineOrderUpdateInput {
   @Field({ nullable: true }) liveLink?: string;
   @Field({ nullable: true }) vendorPaymentStatus?: string;
   @Field({ nullable: true }) notes?: string;
+}
+
+// One order added by hand (an order the sheet doesn't have yet, or a test order)
+@InputType()
+export class OfflineOrderCreateInput {
+  @Field() orderDate: string; // "2026-11-07"
+  @Field() customerGroup: string;
+  @Field() item: string; // site or package
+  @Field(() => Float) amountPaid: number;
+  @Field({ nullable: true }) articleLink?: string;
+  @Field({ nullable: true }) status?: string; // DELIVERED | NOT_DELIVERED (default)
+  @Field({ nullable: true }) deliveredAt?: string;
+  @Field({ nullable: true }) liveLink?: string;
+  @Field({ nullable: true }) vendor?: string;
+  @Field(() => Float, { nullable: true }) vendorCost?: number;
+  @Field({ nullable: true }) vendorPaymentStatus?: string; // PAID | UNPAID (default)
+  @Field({ nullable: true }) notes?: string;
+  @Field({ nullable: true }) isTest?: boolean;
 }
 
 @ObjectType()

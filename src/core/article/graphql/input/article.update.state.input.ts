@@ -14,4 +14,8 @@ export class ArticleUpdateStateInput {
 
   @Field(() => String, { nullable: true })
   url: string;
+
+  // "Ask for changes": the ticked checklist items
+  @Field(() => [String], { nullable: true })
+  changes: string[];
 }

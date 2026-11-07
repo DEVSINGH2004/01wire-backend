@@ -186,7 +186,15 @@ export class NotificationService implements OnApplicationBootstrap, OnModuleDest
         case 'AWAITING_APPROVAL':
           id += `:${new Date(a.updatedAt).getTime()}`; // can happen more than once
           subject = `Please update your PR #${a.prId}`;
-          p = { headline: 'A few changes are needed', intro: 'Before we can publish your press release, please make the change below and send it again. There is nothing more to pay.', messageLabel: 'What to change', message: e.notes || '', buttonText: 'Edit your PR', color: '#b26a00' };
+          p = {
+            headline: 'A few changes are needed',
+            intro: 'Before we can publish your press release, please make the changes below and send it again. There is nothing more to pay.',
+            changes: a.changesRequested || [],
+            messageLabel: (a.changesRequested || []).length ? 'Note from our team' : 'What to change',
+            message: e.notes || '',
+            buttonText: 'Edit your PR',
+            color: '#b26a00'
+          };
           break;
         case 'RESUBMITTED':
           id += `:${new Date(a.updatedAt).getTime()}`;

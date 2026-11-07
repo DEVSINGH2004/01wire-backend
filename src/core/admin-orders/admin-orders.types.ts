@@ -62,6 +62,18 @@ export class AdminPrPaymentType {
   refundedCredits: number;
 }
 
+@ObjectType()
+export class AdminChangeRequestType {
+  @Field({ nullable: true })
+  at: Date;
+
+  @Field(() => [String])
+  changes: string[];
+
+  @Field({ nullable: true })
+  note: string;
+}
+
 // One PR = one purchase by one customer, with everything an admin needs to see
 @ObjectType()
 export class AdminPrRowType {
@@ -79,6 +91,9 @@ export class AdminPrRowType {
 
   @Field({ nullable: true })
   notes: string;
+
+  @Field(() => [AdminChangeRequestType], { nullable: true })
+  changeRequests: AdminChangeRequestType[]; // every "ask for changes", oldest first
 
   @Field()
   createdAt: Date;

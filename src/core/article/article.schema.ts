@@ -132,6 +132,14 @@ class Article extends Document {
   })
   notes: string;
 
+  // The checklist the admin ticked when asking for changes (latest request)
+  @Prop({ type: [String], default: [] })
+  changesRequested: string[];
+
+  // Every "ask for changes": when, what was ticked, the note
+  @Prop({ type: [{ _id: false, at: Date, changes: [String], note: String }], default: [] })
+  changeRequests: { at: Date; changes: string[]; note: string }[];
+
   @Prop({
     type: [String],
     default: null

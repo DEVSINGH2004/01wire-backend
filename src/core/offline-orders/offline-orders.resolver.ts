@@ -3,7 +3,7 @@ import { IGraphqlContext } from 'src/common/graphql/interface/context.interface'
 import { AllowedRoles } from 'src/core/auth/decorator/allowedroles.decorator';
 import { UserTypeEnum } from 'src/core/user/enum/user.type.enum';
 import { OfflineOrdersService } from './offline-orders.service';
-import { OfflineImportResultType, OfflineOrdersFilterInput, OfflineOrdersPageType, OfflineOrderType, OfflineOrderUpdateInput } from './offline-orders.types';
+import { OfflineImportResultType, OfflineOrderCreateInput, OfflineOrdersFilterInput, OfflineOrdersPageType, OfflineOrderType, OfflineOrderUpdateInput } from './offline-orders.types';
 
 // Admin-only: orders taken outside the dashboard (monthly sheet import)
 @Resolver()
@@ -32,6 +32,19 @@ export class OfflineOrdersResolver {
   @AllowedRoles([UserTypeEnum.ADMIN])
   async updateOfflineOrder(@Args('params') params: OfflineOrderUpdateInput) {
     return this.service.update(params);
+  }
+
+  @Mutation(() => OfflineOrderType)
+  @AllowedRoles([UserTypeEnum.ADMIN])
+  async createOfflineOrder(@Args('params') params: OfflineOrderCreateInput, @Context() { me }: IGraphqlContext) {
+    return this.service.create(params, me.userId);
+  }
+
+  // Soft delete (can be brought back from the database)
+  @Mutation(() => Boolean)
+  @AllowedRoles([UserTypeEnum.ADMIN])
+  async deleteOfflineOrder(@Args('id') id: string) {
+    return this.service.remove(id);
   }
 
   @Mutation(() => Int)

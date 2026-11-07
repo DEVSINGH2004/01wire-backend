@@ -374,6 +374,7 @@ export class ArticleService {
         : await this._validateOwnership(id, userId);
     assert(!!articleObj, new BadRequestException('PR not found'));
     const updateObj = {};
+    const pushObj: Record<string, any> = {};
     let isRefund = false;
 
     if (userType === UserTypeEnum.USER) {
@@ -409,12 +410,33 @@ export class ArticleService {
 
       switch (status) {
         case ArticleStatusEnum.AWAITING_APPROVAL: {
+          // Ask the customer for changes: before or after accepting, as long as no site is live yet
           assert(
             articleObj.status === ArticleStatusEnum.SUBMITTED ||
-              articleObj.status === ArticleStatusEnum.REVIEW,
-            new BadRequestException('PR not in SUBMITTED/REVIEW state')
+              articleObj.status === ArticleStatusEnum.REVIEW ||
+              articleObj.status === ArticleStatusEnum.SCHEDULED,
+            new BadRequestException('Changes can only be asked for before the PR is published')
           );
-          updateObj['notes'] = notes;
+          if (articleObj.status === ArticleStatusEnum.SCHEDULED) {
+            const liveCount = await this.orderService.countByQuery({
+              articleId: articleObj._id,
+              status: OrderStatusEnum.PUBLISHED,
+              deletedAt: null
+            });
+            assert(
+              !liveCount,
+              new BadRequestException('A site is already live, so the article can no longer be changed')
+            );
+          }
+          const changes = [...new Set((dto.changes || []).map((c) => c.trim()).filter(Boolean))];
+          const note = (notes || '').trim();
+          assert(
+            changes.length > 0 || !!note,
+            new BadRequestException('Tick at least one change or write what to change')
+          );
+          updateObj['notes'] = note || null;
+          updateObj['changesRequested'] = changes;
+          pushObj['changeRequests'] = { at: new Date(), changes, note: note || null };
           break;
         }
         case ArticleStatusEnum.SCHEDULED: {
@@ -501,7 +523,7 @@ export class ArticleService {
       : articleObj.status;
     const res = await this.model.findOneAndUpdate(
       { _id: id, status: expectedStatus },
-      { $set: { ...updateObj } },
+      { $set: { ...updateObj }, ...(Object.keys(pushObj).length ? { $push: pushObj } : {}) },
       { new: true }
     );
     await this.loaderService.cleanCacheById(id);

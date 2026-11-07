@@ -218,6 +218,7 @@ export class AdminOrdersService {
         title: a.title,
         status: a.status,
         notes: a.notes,
+        changeRequests: (a.changeRequests || []).map((c: any) => ({ at: c.at, changes: c.changes || [], note: c.note || null })),
         createdAt: a.createdAt,
         updatedAt: a.updatedAt,
         customerId: a.userId,

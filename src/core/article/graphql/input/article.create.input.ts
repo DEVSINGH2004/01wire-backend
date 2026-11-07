@@ -12,7 +12,10 @@ export class ArticleCreateInput extends OmitType(
     'status',
     'mediaContact',
     'createdAt',
-    'updatedAt'
+    'updatedAt',
+    // set only by the admin's "Make changes"
+    'changesRequested',
+    'changeRequests'
   ] as const,
   InputType
 ) {
